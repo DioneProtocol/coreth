@@ -40,11 +40,11 @@ import (
 // Dione ChainIDs
 var (
 	// DioneMainnetChainID ...
-	DioneMainnetChainID = big.NewInt(43114)
+	DioneMainnetChainID = big.NewInt(990099)
 	// DioneFujiChainID ...
-	DioneFujiChainID = big.NewInt(43113)
+	DioneFujiChainID = big.NewInt(990088)
 	// DioneLocalChainID ...
-	DioneLocalChainID = big.NewInt(43112)
+	DioneLocalChainID = big.NewInt(990077)
 
 	errNonGenesisForkByHeight = errors.New("coreth only supports forking by height at the genesis block")
 )
