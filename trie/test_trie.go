@@ -10,9 +10,9 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/dioneprotocol/dionego/utils/wrappers"
 	"github.com/dioneprotocol/coreth/accounts/keystore"
 	"github.com/dioneprotocol/coreth/core/types"
+	"github.com/dioneprotocol/dionego/utils/wrappers"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -105,7 +105,7 @@ func AssertTrieConsistency(t testing.TB, root common.Hash, a, b *Database, onLea
 // CorruptTrie deletes every [n]th trie node from the trie given by [root] from the trieDB.
 // Assumes that the trie given by root can be iterated without issue.
 func CorruptTrie(t *testing.T, trieDB *Database, root common.Hash, n int) {
-	batch := trieDB.DiskDB().NewBatch()
+	batch := trieDB.diskdb.NewBatch()
 	// next delete some trie nodes
 	tr, err := New(common.Hash{}, root, trieDB)
 	if err != nil {

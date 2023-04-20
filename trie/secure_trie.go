@@ -27,8 +27,6 @@
 package trie
 
 import (
-	"fmt"
-
 	"github.com/dioneprotocol/coreth/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
@@ -76,7 +74,7 @@ type StateTrie struct {
 // cachelimit sets the number of past cache generations to keep.
 func NewStateTrie(owner common.Hash, root common.Hash, db *Database) (*StateTrie, error) {
 	if db == nil {
-		panic("trie.NewSecure called without a database")
+		panic("trie.NewStateTrie called without a database")
 	}
 	trie, err := New(owner, root, db)
 	if err != nil {
@@ -90,7 +88,7 @@ func NewStateTrie(owner common.Hash, root common.Hash, db *Database) (*StateTrie
 func (t *StateTrie) Get(key []byte) []byte {
 	res, err := t.TryGet(key)
 	if err != nil {
-		log.Error(fmt.Sprintf("Unhandled trie error: %v", err))
+		log.Error("Unhandled trie error in StateTrie.Get", "err", err)
 	}
 	return res
 }
@@ -103,55 +101,32 @@ func (t *StateTrie) TryGet(key []byte) ([]byte, error) {
 }
 
 func (t *StateTrie) TryGetAccount(key []byte) (*types.StateAccount, error) {
-	var ret types.StateAccount
 	res, err := t.trie.TryGet(t.hashKey(key))
-	if err != nil {
-		log.Error(fmt.Sprintf("Unhandled trie error: %v", err))
-		return &ret, err
+	if res == nil || err != nil {
+		return nil, err
 	}
-	if res == nil {
-		return nil, nil
-	}
-	err = rlp.DecodeBytes(res, &ret)
-	return &ret, err
+	ret := new(types.StateAccount)
+	err = rlp.DecodeBytes(res, ret)
+	return ret, err
 }
 
 // TryGetAccountWithPreHashedKey does the same thing as TryGetAccount, however
 // it expects a key that is already hashed. This constitutes an abstraction leak,
 // since the client code needs to know the key format.
 func (t *StateTrie) TryGetAccountWithPreHashedKey(key []byte) (*types.StateAccount, error) {
-	var ret types.StateAccount
 	res, err := t.trie.TryGet(key)
-	if err != nil {
-		log.Error(fmt.Sprintf("Unhandled trie error: %v", err))
-		return &ret, err
+	if res == nil || err != nil {
+		return nil, err
 	}
-	if res == nil {
-		return nil, nil
-	}
-	err = rlp.DecodeBytes(res, &ret)
-	return &ret, err
+	ret := new(types.StateAccount)
+	err = rlp.DecodeBytes(res, ret)
+	return ret, err
 }
 
 // TryGetNode attempts to retrieve a trie node by compact-encoded path. It is not
 // possible to use keybyte-encoding as the path might contain odd nibbles.
 func (t *StateTrie) TryGetNode(path []byte) ([]byte, int, error) {
 	return t.trie.TryGetNode(path)
-}
-
-// TryUpdateAccount account will abstract the write of an account to the
-// secure trie.
-func (t *StateTrie) TryUpdateAccount(key []byte, acc *types.StateAccount) error {
-	hk := t.hashKey(key)
-	data, err := rlp.EncodeToBytes(acc)
-	if err != nil {
-		return err
-	}
-	if err := t.trie.TryUpdate(hk, data); err != nil {
-		return err
-	}
-	t.getSecKeyCache()[string(hk)] = common.CopyBytes(key)
-	return nil
 }
 
 // Update associates key with value in the trie. Subsequent calls to
@@ -162,7 +137,7 @@ func (t *StateTrie) TryUpdateAccount(key []byte, acc *types.StateAccount) error 
 // stored in the trie.
 func (t *StateTrie) Update(key, value []byte) {
 	if err := t.TryUpdate(key, value); err != nil {
-		log.Error(fmt.Sprintf("Unhandled trie error: %v", err))
+		log.Error("Unhandled trie error in StateTrie.Update", "err", err)
 	}
 }
 
@@ -184,10 +159,25 @@ func (t *StateTrie) TryUpdate(key, value []byte) error {
 	return nil
 }
 
+// TryUpdateAccount account will abstract the write of an account to the
+// secure trie.
+func (t *StateTrie) TryUpdateAccount(key []byte, acc *types.StateAccount) error {
+	hk := t.hashKey(key)
+	data, err := rlp.EncodeToBytes(acc)
+	if err != nil {
+		return err
+	}
+	if err := t.trie.TryUpdate(hk, data); err != nil {
+		return err
+	}
+	t.getSecKeyCache()[string(hk)] = common.CopyBytes(key)
+	return nil
+}
+
 // Delete removes any existing value for key from the trie.
 func (t *StateTrie) Delete(key []byte) {
 	if err := t.TryDelete(key); err != nil {
-		log.Error(fmt.Sprintf("Unhandled trie error: %v", err))
+		log.Error("Unhandled trie error in StateTrie.Delete", "err", err)
 	}
 }
 

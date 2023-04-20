@@ -6,13 +6,14 @@ package handlers
 import (
 	"context"
 
-	"github.com/dioneprotocol/dionego/codec"
-	"github.com/dioneprotocol/dionego/ids"
 	"github.com/dioneprotocol/coreth/core/state/snapshot"
 	"github.com/dioneprotocol/coreth/core/types"
+	"github.com/dioneprotocol/coreth/ethdb"
 	"github.com/dioneprotocol/coreth/plugin/evm/message"
 	"github.com/dioneprotocol/coreth/sync/handlers/stats"
 	"github.com/dioneprotocol/coreth/trie"
+	"github.com/dioneprotocol/dionego/codec"
+	"github.com/dioneprotocol/dionego/ids"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -41,6 +42,7 @@ type syncHandler struct {
 // NewSyncHandler constructs the handler for serving state sync.
 func NewSyncHandler(
 	provider SyncDataProvider,
+	diskDB ethdb.KeyValueReader,
 	evmTrieDB *trie.Database,
 	atomicTrieDB *trie.Database,
 	networkCodec codec.Manager,
@@ -50,7 +52,7 @@ func NewSyncHandler(
 		stateTrieLeafsRequestHandler:  NewLeafsRequestHandler(evmTrieDB, provider, networkCodec, stats),
 		atomicTrieLeafsRequestHandler: NewLeafsRequestHandler(atomicTrieDB, nil, networkCodec, stats),
 		blockRequestHandler:           NewBlockRequestHandler(provider, networkCodec, stats),
-		codeRequestHandler:            NewCodeRequestHandler(evmTrieDB.DiskDB(), networkCodec, stats),
+		codeRequestHandler:            NewCodeRequestHandler(diskDB, networkCodec, stats),
 	}
 }
 

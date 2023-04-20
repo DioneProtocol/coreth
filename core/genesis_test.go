@@ -32,20 +32,18 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/dioneprotocol/coreth/consensus/dummy"
 	"github.com/dioneprotocol/coreth/core/rawdb"
 	"github.com/dioneprotocol/coreth/core/vm"
 	"github.com/dioneprotocol/coreth/ethdb"
 	"github.com/dioneprotocol/coreth/params"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 )
 
 func setupGenesisBlock(db ethdb.Database, genesis *Genesis, lastAcceptedHash common.Hash) (*params.ChainConfig, common.Hash, error) {
-	conf, err := SetupGenesisBlock(db, genesis, lastAcceptedHash, false)
-	stored := rawdb.ReadCanonicalHash(db, 0)
-	return conf, stored, err
+	return SetupGenesisBlock(db, genesis, lastAcceptedHash, false)
 }
 
 func TestGenesisBlockForTesting(t *testing.T) {
@@ -103,7 +101,6 @@ func TestSetupGenesis(t *testing.T) {
 				return setupGenesisBlock(db, nil, common.Hash{})
 			},
 			wantErr:    ErrNoGenesis,
-			wantHash:   customghash,
 			wantConfig: nil,
 		},
 		{
@@ -122,12 +119,11 @@ func TestSetupGenesis(t *testing.T) {
 				// Advance to block #4, past the ApricotPhase1 transition block of customg.
 				genesis := oldcustomg.MustCommit(db)
 
-				bc, _ := NewBlockChain(db, DefaultCacheConfig, oldcustomg.Config, dummy.NewFullFaker(), vm.Config{}, common.Hash{})
+				bc, _ := NewBlockChain(db, DefaultCacheConfig, &oldcustomg, dummy.NewFullFaker(), vm.Config{}, genesis.Hash(), false)
 				defer bc.Stop()
 
 				blocks, _, _ := GenerateChain(oldcustomg.Config, genesis, dummy.NewFullFaker(), db, 4, 25, nil)
 				bc.InsertChain(blocks)
-				bc.CurrentBlock()
 				for _, block := range blocks {
 					if err := bc.Accept(block); err != nil {
 						t.Fatal(err)
@@ -184,11 +180,11 @@ func TestNetworkUpgradeBetweenHeadAndAcceptedBlock(t *testing.T) {
 		},
 	}
 	genesis := customg.MustCommit(db)
-	bc, _ := NewBlockChain(db, DefaultCacheConfig, customg.Config, dummy.NewFullFaker(), vm.Config{}, common.Hash{})
+	bc, _ := NewBlockChain(db, DefaultCacheConfig, &customg, dummy.NewFullFaker(), vm.Config{}, common.Hash{}, false)
 	defer bc.Stop()
 
 	// Advance header to block #4, past the ApricotPhase2 timestamp.
-	blocks, _, _ := GenerateChain(customg.Config, genesis, dummy.NewFullFaker(), db, 4, 25, nil)
+	_, blocks, _, _ := GenerateChainWithGenesis(&customg, dummy.NewFullFaker(), 4, 25, nil)
 
 	require := require.New(t)
 	_, err := bc.InsertChain(blocks)
