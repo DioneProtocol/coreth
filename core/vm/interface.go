@@ -29,7 +29,7 @@ package vm
 import (
 	"math/big"
 
-	"github.com/dioneprotocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -58,7 +58,7 @@ type StateDB interface {
 	GetRefund() uint64
 
 	GetCommittedState(common.Address, common.Hash) common.Hash
-	GetCommittedStateAP1(common.Address, common.Hash) common.Hash
+	GetCommittedStateOP1(common.Address, common.Hash) common.Hash
 	GetState(common.Address, common.Hash) common.Hash
 	SetState(common.Address, common.Hash, common.Hash)
 

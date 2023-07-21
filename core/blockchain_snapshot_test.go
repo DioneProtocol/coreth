@@ -37,13 +37,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/consensus"
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/consensus"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -77,7 +77,7 @@ func (basic *snapshotTestBasic) prepare(t *testing.T) (*BlockChain, []*types.Blo
 	// Initialize a fresh chain
 	var (
 		gspec = &Genesis{
-			BaseFee: big.NewInt(params.ApricotPhase3InitialBaseFee),
+			BaseFee: big.NewInt(params.OdysseyPhase1InitialBaseFee),
 			Config:  params.TestChainConfig,
 		}
 		engine = dummy.NewFullFaker()
@@ -150,11 +150,11 @@ func (basic *snapshotTestBasic) verify(t *testing.T, chain *BlockChain, blocks [
 	// Check the disk layer, ensure they are matched
 	block := chain.GetBlockByNumber(basic.expSnapshotBottom)
 	if block == nil {
-		t.Errorf("The correspnding block[%d] of snapshot disk layer is missing", basic.expSnapshotBottom)
+		t.Errorf("The corresponding block[%d] of snapshot disk layer is missing", basic.expSnapshotBottom)
 	} else if !bytes.Equal(chain.snaps.DiskRoot().Bytes(), block.Root().Bytes()) {
 		t.Errorf("The snapshot disk layer root is incorrect, want %x, get %x", block.Root(), chain.snaps.DiskRoot())
 	} else if len(chain.snaps.Snapshots(block.Hash(), -1, false)) != 1 {
-		t.Errorf("The correspnding block[%d] of snapshot disk layer is missing", basic.expSnapshotBottom)
+		t.Errorf("The corresponding block[%d] of snapshot disk layer is missing", basic.expSnapshotBottom)
 	}
 
 	// Check the snapshot, ensure it's integrated
@@ -267,7 +267,7 @@ func (snaptest *crashSnapshotTest) test(t *testing.T) {
 	}
 	newchain.Stop()
 
-	newchain, err = NewBlockChain(newdb, DefaultCacheConfig, params.TestChainConfig, snaptest.engine, vm.Config{}, snaptest.lastAcceptedHash)
+	newchain, err = NewBlockChain(newdb, DefaultCacheConfig, snaptest.gspec, snaptest.engine, vm.Config{}, snaptest.lastAcceptedHash, false)
 	if err != nil {
 		t.Fatalf("Failed to recreate chain: %v", err)
 	}
@@ -369,7 +369,6 @@ func (snaptest *wipeCrashSnapshotTest) test(t *testing.T) {
 		t.Fatalf("Failed to recreate chain: %v", err)
 	}
 	// Simulate the blockchain crash.
-
 	newchain, err = NewBlockChain(snaptest.db, DefaultCacheConfig, snaptest.gspec, snaptest.engine, vm.Config{}, snaptest.lastAcceptedHash, false)
 	if err != nil {
 		t.Fatalf("Failed to recreate chain: %v", err)

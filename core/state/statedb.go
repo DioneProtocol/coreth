@@ -34,11 +34,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/state/snapshot"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/metrics"
-	"github.com/dioneprotocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/state/snapshot"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
@@ -383,8 +383,8 @@ func (s *StateDB) GetCommittedState(addr common.Address, hash common.Hash) commo
 	return common.Hash{}
 }
 
-// GetCommittedStateAP1 retrieves a value from the given account's committed storage trie.
-func (s *StateDB) GetCommittedStateAP1(addr common.Address, hash common.Hash) common.Hash {
+// GetCommittedStateOP1 retrieves a value from the given account's committed storage trie.
+func (s *StateDB) GetCommittedStateOP1(addr common.Address, hash common.Hash) common.Hash {
 	stateObject := s.getStateObject(addr)
 	if stateObject != nil {
 		NormalizeStateKey(&hash)
@@ -1083,7 +1083,7 @@ func (s *StateDB) commit(deleteEmptyObjects bool, snaps *snapshot.Tree, blockHas
 // - Add precompiles to access list (2929)
 // - Add the contents of the optional tx access list (2930)
 //
-// This method should only be called if Berlin/ApricotPhase2/2929+2930 is applicable at the current number.
+// This method should only be called if Berlin/OdysseyPhase1/2929+2930 is applicable at the current number.
 func (s *StateDB) PrepareAccessList(sender common.Address, dst *common.Address, precompiles []common.Address, list types.AccessList) {
 	// Clear out any leftover from previous executions
 	s.accessList = newAccessList()

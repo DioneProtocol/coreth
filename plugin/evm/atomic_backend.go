@@ -8,14 +8,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dioneprotocol/dionego/chains/atomic"
-	"github.com/dioneprotocol/dionego/codec"
-	"github.com/dioneprotocol/dionego/database"
-	"github.com/dioneprotocol/dionego/database/prefixdb"
-	"github.com/dioneprotocol/dionego/database/versiondb"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/utils/wrappers"
-	syncclient "github.com/dioneprotocol/coreth/sync/client"
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/database"
+	"github.com/DioneProtocol/odysseygo/database/prefixdb"
+	"github.com/DioneProtocol/odysseygo/database/versiondb"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
+	syncclient "github.com/DioneProtocol/coreth/sync/client"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 )
@@ -57,7 +57,7 @@ type AtomicBackend interface {
 
 	// Syncer creates and returns a new Syncer object that can be used to sync the
 	// state of the atomic trie from peers
-	Syncer(client syncclient.LeafClient, targetRoot common.Hash, targetHeight uint64) (Syncer, error)
+	Syncer(client syncclient.LeafClient, targetRoot common.Hash, targetHeight uint64, requestSize uint16) (Syncer, error)
 
 	// SetLastAccepted is used after state-sync to reset the last accepted block.
 	SetLastAccepted(lastAcceptedHash common.Hash)
@@ -325,8 +325,8 @@ func (a *atomicBackend) MarkApplyToSharedMemoryCursor(previousLastAcceptedHeight
 
 // Syncer creates and returns a new Syncer object that can be used to sync the
 // state of the atomic trie from peers
-func (a *atomicBackend) Syncer(client syncclient.LeafClient, targetRoot common.Hash, targetHeight uint64) (Syncer, error) {
-	return newAtomicSyncer(client, a, targetRoot, targetHeight)
+func (a *atomicBackend) Syncer(client syncclient.LeafClient, targetRoot common.Hash, targetHeight uint64, requestSize uint16) (Syncer, error) {
+	return newAtomicSyncer(client, a, targetRoot, targetHeight, requestSize)
 }
 
 func (a *atomicBackend) GetVerifiedAtomicState(blockHash common.Hash) (AtomicState, error) {

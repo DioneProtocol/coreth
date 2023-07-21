@@ -6,10 +6,10 @@ package statesyncclient
 import (
 	"errors"
 
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/coreth/peer"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/coreth/peer"
 
-	"github.com/dioneprotocol/dionego/version"
+	"github.com/DioneProtocol/odysseygo/version"
 )
 
 var _ peer.NetworkClient = &mockNetwork{}

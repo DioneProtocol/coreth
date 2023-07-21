@@ -35,7 +35,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dioneprotocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/metrics"
 	"github.com/ethereum/go-ethereum/log"
 	"golang.org/x/time/rate"
 )
@@ -58,7 +58,7 @@ import (
 // Now send the request, then wait for the reply to be delivered through handleMsg:
 //
 //	if err := op.wait(...); err != nil {
-//	    h.removeRequestOp(op) // timeout, etc.
+//		h.removeRequestOp(op) // timeout, etc.
 //	}
 type handler struct {
 	reg            *serviceRegistry

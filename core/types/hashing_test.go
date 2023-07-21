@@ -34,9 +34,9 @@ import (
 	mrand "math/rand"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"

@@ -36,16 +36,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/bloombits"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/interfaces"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/rpc"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/bloombits"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/interfaces"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/stretchr/testify/require"
@@ -198,10 +198,10 @@ func TestBlockSubscription(t *testing.T) {
 	var (
 		db           = rawdb.NewMemoryDatabase()
 		backend, sys = newTestFilterSystem(t, db, Config{})
-		api          = NewFilterAPI(sys, false)
+		api          = NewFilterAPI(sys)
 		genesis      = &core.Genesis{
 			Config:  params.TestChainConfig,
-			BaseFee: big.NewInt(params.ApricotPhase4MinBaseFee),
+			BaseFee: big.NewInt(params.OdysseyPhase1MinBaseFee),
 		}
 		_, chain, _, _ = core.GenerateChainWithGenesis(genesis, dummy.NewFaker(), 10, 10, func(i int, b *core.BlockGen) {})
 		chainEvents    = []core.ChainEvent{}
@@ -253,7 +253,7 @@ func TestPendingTxFilter(t *testing.T) {
 	var (
 		db           = rawdb.NewMemoryDatabase()
 		backend, sys = newTestFilterSystem(t, db, Config{})
-		api          = NewFilterAPI(sys, false)
+		api          = NewFilterAPI(sys)
 
 		transactions = []*types.Transaction{
 			types.NewTransaction(0, common.HexToAddress("0xb794f5ea0ba39494ce83a213fffba74279579268"), new(big.Int), 0, new(big.Int), nil),
@@ -308,7 +308,7 @@ func TestLogFilterCreation(t *testing.T) {
 	var (
 		db     = rawdb.NewMemoryDatabase()
 		_, sys = newTestFilterSystem(t, db, Config{})
-		api    = NewFilterAPI(sys, false)
+		api    = NewFilterAPI(sys)
 
 		testCases = []struct {
 			crit    FilterCriteria
@@ -355,7 +355,7 @@ func TestInvalidLogFilterCreation(t *testing.T) {
 	var (
 		db     = rawdb.NewMemoryDatabase()
 		_, sys = newTestFilterSystem(t, db, Config{})
-		api    = NewFilterAPI(sys, false)
+		api    = NewFilterAPI(sys)
 	)
 
 	// different situations where log filter creation should fail.
@@ -377,7 +377,7 @@ func TestInvalidGetLogsRequest(t *testing.T) {
 	var (
 		db        = rawdb.NewMemoryDatabase()
 		_, sys    = newTestFilterSystem(t, db, Config{})
-		api       = NewFilterAPI(sys, false)
+		api       = NewFilterAPI(sys)
 		blockHash = common.HexToHash("0x1111111111111111111111111111111111111111111111111111111111111111")
 	)
 
@@ -402,7 +402,7 @@ func TestLogFilter(t *testing.T) {
 	var (
 		db           = rawdb.NewMemoryDatabase()
 		backend, sys = newTestFilterSystem(t, db, Config{})
-		api          = NewFilterAPI(sys, false)
+		api          = NewFilterAPI(sys)
 
 		firstAddr      = common.HexToAddress("0x1111111111111111111111111111111111111111")
 		secondAddr     = common.HexToAddress("0x2222222222222222222222222222222222222222")
@@ -516,7 +516,7 @@ func TestPendingLogsSubscription(t *testing.T) {
 	var (
 		db           = rawdb.NewMemoryDatabase()
 		backend, sys = newTestFilterSystem(t, db, Config{})
-		api          = NewFilterAPI(sys, false)
+		api          = NewFilterAPI(sys)
 
 		firstAddr      = common.HexToAddress("0x1111111111111111111111111111111111111111")
 		secondAddr     = common.HexToAddress("0x2222222222222222222222222222222222222222")
@@ -700,7 +700,7 @@ func TestPendingTxFilterDeadlock(t *testing.T) {
 	var (
 		db           = rawdb.NewMemoryDatabase()
 		backend, sys = newTestFilterSystem(t, db, Config{Timeout: timeout})
-		api          = NewFilterAPI(sys, false)
+		api          = NewFilterAPI(sys)
 		done         = make(chan struct{})
 	)
 
@@ -769,7 +769,7 @@ func TestGetLogsRegression(t *testing.T) {
 	var (
 		db      = rawdb.NewMemoryDatabase()
 		_, sys  = newSectionedTestFilterSystem(t, db, Config{}, 4096)
-		api     = NewFilterAPI(sys, false)
+		api     = NewFilterAPI(sys)
 		genesis = &core.Genesis{
 			Config: params.TestChainConfig,
 		}

@@ -33,10 +33,10 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/vmerrs"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/vmerrs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )

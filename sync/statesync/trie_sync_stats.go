@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	utils_math "github.com/dioneprotocol/dionego/utils/math"
-	"github.com/dioneprotocol/coreth/metrics"
+	utils_math "github.com/DioneProtocol/odysseygo/utils/math"
+	"github.com/DioneProtocol/coreth/metrics"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 )

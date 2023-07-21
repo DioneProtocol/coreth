@@ -33,27 +33,27 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dioneprotocol/coreth/accounts"
-	"github.com/dioneprotocol/coreth/consensus"
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/bloombits"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/state/pruner"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/eth/ethconfig"
-	"github.com/dioneprotocol/coreth/eth/filters"
-	"github.com/dioneprotocol/coreth/eth/gasprice"
-	"github.com/dioneprotocol/coreth/eth/tracers"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/internal/ethapi"
-	"github.com/dioneprotocol/coreth/internal/shutdowncheck"
-	"github.com/dioneprotocol/coreth/miner"
-	"github.com/dioneprotocol/coreth/node"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/rpc"
-	"github.com/dioneprotocol/dionego/utils/timer/mockable"
+	"github.com/DioneProtocol/odysseygo/utils/timer/mockable"
+	"github.com/DioneProtocol/coreth/accounts"
+	"github.com/DioneProtocol/coreth/consensus"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/bloombits"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/state/pruner"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/eth/ethconfig"
+	"github.com/DioneProtocol/coreth/eth/filters"
+	"github.com/DioneProtocol/coreth/eth/gasprice"
+	"github.com/DioneProtocol/coreth/eth/tracers"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/internal/ethapi"
+	"github.com/DioneProtocol/coreth/internal/shutdowncheck"
+	"github.com/DioneProtocol/coreth/miner"
+	"github.com/DioneProtocol/coreth/node"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
@@ -147,6 +147,7 @@ func New(
 	if err := pruner.RecoverPruning(config.OfflinePruningDataDirectory, chainDb); err != nil {
 		log.Error("Failed to recover state", "error", err)
 	}
+
 	eth := &Ethereum{
 		config:            config,
 		chainDb:           chainDb,
@@ -281,7 +282,7 @@ func (s *Ethereum) APIs() []rpc.API {
 			Name:      "eth",
 		}, {
 			Namespace: "eth",
-			Service:   filters.NewFilterAPI(filterSystem, false /* isLightClient */),
+			Service:   filters.NewFilterAPI(filterSystem),
 			Name:      "eth-filter",
 		}, {
 			Namespace: "admin",

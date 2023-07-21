@@ -6,7 +6,7 @@ package stats
 import (
 	"time"
 
-	"github.com/dioneprotocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/metrics"
 )
 
 // RequestHandlerStats provides the interface for metrics for both app requests and cross chain requests.

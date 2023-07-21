@@ -40,7 +40,7 @@ import (
 	"text/template"
 	"unicode"
 
-	"github.com/dioneprotocol/coreth/accounts/abi"
+	"github.com/DioneProtocol/coreth/accounts/abi"
 	"github.com/ethereum/go-ethereum/log"
 )
 

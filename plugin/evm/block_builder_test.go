@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/params"
 
-	"github.com/dioneprotocol/dionego/snow"
+	"github.com/DioneProtocol/odysseygo/snow"
 )
 
 func TestBlockBuilderShutsDown(t *testing.T) {

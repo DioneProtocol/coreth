@@ -30,12 +30,11 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/dioneprotocol/coreth/consensus"
-	"github.com/dioneprotocol/coreth/consensus/misc"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/consensus"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -46,7 +45,7 @@ import (
 // StateProcessor implements Processor.
 type StateProcessor struct {
 	config *params.ChainConfig // Chain configuration options
-	bc     *BlockChain         // Canonical block chain
+	bc     *BlockChain         // Canonical blockchain
 	engine consensus.Engine    // Consensus engine used for block rewards
 }
 
@@ -81,10 +80,6 @@ func (p *StateProcessor) Process(block *types.Block, parent *types.Header, state
 	// Configure any stateful precompiles that should go into effect during this block.
 	p.config.CheckConfigurePrecompiles(new(big.Int).SetUint64(parent.Time), block, statedb)
 
-	// Mutate the block and state according to any hard-fork specs
-	if p.config.DAOForkSupport && p.config.DAOForkBlock != nil && p.config.DAOForkBlock.Cmp(block.Number()) == 0 {
-		misc.ApplyDAOHardFork(statedb)
-	}
 	blockContext := NewEVMBlockContext(header, p.bc, nil)
 	vmenv := vm.NewEVM(blockContext, vm.TxContext{}, statedb, p.config, cfg)
 	// Iterate over and process the individual transactions

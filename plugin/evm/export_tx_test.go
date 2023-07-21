@@ -9,15 +9,15 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/dioneprotocol/dionego/chains/atomic"
-	"github.com/dioneprotocol/dionego/ids"
-	engCommon "github.com/dioneprotocol/dionego/snow/engine/common"
-	"github.com/dioneprotocol/dionego/utils/constants"
-	"github.com/dioneprotocol/dionego/utils/crypto/secp256k1"
-	"github.com/dioneprotocol/dionego/utils/units"
-	"github.com/dioneprotocol/dionego/vms/components/dione"
-	"github.com/dioneprotocol/dionego/vms/secp256k1fx"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/ids"
+	engCommon "github.com/DioneProtocol/odysseygo/snow/engine/common"
+	"github.com/DioneProtocol/odysseygo/utils/constants"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/units"
+	"github.com/DioneProtocol/odysseygo/vms/components/dione"
+	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -128,14 +128,14 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 	tests := []struct {
 		name          string
 		tx            []EVMInput
-		dioneBalance   *big.Int
+		dioneBalance  *big.Int
 		balances      map[ids.ID]*big.Int
 		expectedNonce uint64
 		shouldErr     bool
 	}{
 		{
-			name:        "no transfers",
-			tx:          nil,
+			name:         "no transfers",
+			tx:           nil,
 			dioneBalance: big.NewInt(int64(dioneAmount) * x2cRateInt64),
 			balances: map[ids.ID]*big.Int{
 				customAssetID: big.NewInt(int64(customAmount)),
@@ -317,7 +317,7 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONApricotPhase0, "", "")
+			issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
 			defer func() {
 				if err := vm.Shutdown(context.Background()); err != nil {
 					t.Fatal(err)
@@ -434,7 +434,7 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 }
 
 func TestExportTxSemanticVerify(t *testing.T) {
-	_, vm, _, _, _ := GenesisVM(t, true, genesisJSONApricotPhase0, "", "")
+	_, vm, _, _, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
 
 	defer func() {
 		if err := vm.Shutdown(context.Background()); err != nil {
@@ -449,7 +449,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 	ethAddr := testEthAddrs[0]
 
 	var (
-		dioneBalance           = 10 * units.Dione
+		dioneBalance          = 10 * units.Dione
 		custom0Balance uint64 = 100
 		custom0AssetID        = ids.ID{1, 2, 3, 4, 5}
 		custom1Balance uint64 = 1000
@@ -537,11 +537,11 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: false,
 		},
 		{
-			name: "P-chain before AP5",
+			name: "P-chain before OP1",
 			tx: func() *Tx {
 				validExportTx := *validDIONEExportTx
 				validExportTx.DestinationChain = constants.PlatformChainID
@@ -551,11 +551,11 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
-			name: "P-chain after AP5",
+			name: "P-chain after OP1",
 			tx: func() *Tx {
 				validExportTx := *validDIONEExportTx
 				validExportTx.DestinationChain = constants.PlatformChainID
@@ -565,11 +565,11 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase5,
+			rules:     odysseyRulesPhase1,
 			shouldErr: false,
 		},
 		{
-			name: "random chain after AP5",
+			name: "random chain after OP1",
 			tx: func() *Tx {
 				validExportTx := *validDIONEExportTx
 				validExportTx.DestinationChain = ids.GenerateTestID()
@@ -579,11 +579,11 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase5,
+			rules:     odysseyRulesPhase1,
 			shouldErr: true,
 		},
 		{
-			name: "P-chain multi-coin before AP5",
+			name: "P-chain multi-coin before OP1",
 			tx: func() *Tx {
 				validExportTx := *validExportTx
 				validExportTx.DestinationChain = constants.PlatformChainID
@@ -595,11 +595,11 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
-			name: "P-chain multi-coin after AP5",
+			name: "P-chain multi-coin after OP1",
 			tx: func() *Tx {
 				validExportTx := *validExportTx
 				validExportTx.DestinationChain = constants.PlatformChainID
@@ -611,11 +611,11 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase5,
+			rules:     odysseyRulesPhase1,
 			shouldErr: true,
 		},
 		{
-			name: "random chain multi-coin  after AP5",
+			name: "random chain multi-coin after OP1",
 			tx: func() *Tx {
 				validExportTx := *validExportTx
 				validExportTx.DestinationChain = ids.GenerateTestID()
@@ -627,7 +627,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase5,
+			rules:     odysseyRulesPhase1,
 			shouldErr: true,
 		},
 		{
@@ -643,7 +643,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -659,7 +659,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -675,7 +675,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -692,7 +692,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -717,7 +717,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -758,7 +758,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -775,7 +775,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -802,7 +802,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -829,7 +829,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -842,7 +842,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -853,7 +853,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -865,7 +865,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -877,7 +877,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -889,7 +889,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 		{
@@ -897,7 +897,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 			tx:        &Tx{UnsignedAtomicTx: validExportTx},
 			signers:   [][]*secp256k1.PrivateKey{},
 			baseFee:   initialBaseFee,
-			rules:     apricotRulesPhase3,
+			rules:     odysseyRulesPhase0,
 			shouldErr: true,
 		},
 	}
@@ -922,7 +922,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 }
 
 func TestExportTxAccept(t *testing.T) {
-	_, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONApricotPhase0, "", "")
+	_, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
 
 	xChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.XChainID)
 
@@ -937,7 +937,7 @@ func TestExportTxAccept(t *testing.T) {
 	ethAddr := testEthAddrs[0]
 
 	var (
-		dioneBalance           = 10 * units.Dione
+		dioneBalance          = 10 * units.Dione
 		custom0Balance uint64 = 100
 		custom0AssetID        = ids.ID{1, 2, 3, 4, 5}
 	)
@@ -1131,7 +1131,7 @@ func TestExportTxVerify(t *testing.T) {
 				return (*UnsignedExportTx)(nil)
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: errNilTx.Error(),
 		},
 		"valid export tx": {
@@ -1139,7 +1139,7 @@ func TestExportTxVerify(t *testing.T) {
 				return exportTx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: "",
 		},
 		"valid export tx banff": {
@@ -1157,7 +1157,7 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: errWrongNetworkID.Error(),
 		},
 		"incorrect blockchainID": {
@@ -1167,7 +1167,7 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: errWrongBlockchainID.Error(),
 		},
 		"incorrect destination chain": {
@@ -1177,7 +1177,7 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: errWrongChainID.Error(), // TODO make this error more specific to destination not just chainID
 		},
 		"no exported outputs": {
@@ -1187,7 +1187,7 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: errNoExportOutputs.Error(),
 		},
 		"unsorted outputs": {
@@ -1200,7 +1200,7 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: errOutputsNotSorted.Error(),
 		},
 		"invalid exported output": {
@@ -1210,10 +1210,10 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: "nil transferable output is not valid",
 		},
-		"unsorted EVM inputs before AP1": {
+		"unsorted EVM inputs before OP1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
 				tx.Ins = []EVMInput{
@@ -1223,10 +1223,10 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: "",
 		},
-		"unsorted EVM inputs after AP1": {
+		"unsorted EVM inputs after OP1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
 				tx.Ins = []EVMInput{
@@ -1236,7 +1236,7 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase1,
+			rules:       odysseyRulesPhase1,
 			expectedErr: errInputsNotSortedUnique.Error(),
 		},
 		"EVM input with amount 0": {
@@ -1253,30 +1253,30 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: errNoValueInput.Error(),
 		},
-		"non-unique EVM input before AP1": {
+		"non-unique EVM input before OP1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
 				tx.Ins = []EVMInput{tx.Ins[0], tx.Ins[0]}
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: "",
 		},
-		"non-unique EVM input after AP1": {
+		"non-unique EVM input after OP1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
 				tx.Ins = []EVMInput{tx.Ins[0], tx.Ins[0]}
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase1,
+			rules:       odysseyRulesPhase1,
 			expectedErr: errInputsNotSortedUnique.Error(),
 		},
-		"non-DIONE input Apricot Phase 6": {
+		"non-DIONE input Odyssey Phase 1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
 				tx.Ins = []EVMInput{
@@ -1290,10 +1290,10 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase6,
+			rules:       odysseyRulesPhase1,
 			expectedErr: "",
 		},
-		"non-DIONE output Apricot Phase 6": {
+		"non-DIONE output Odyssey Phase 1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
 				tx.ExportedOutputs = []*dione.TransferableOutput{
@@ -1312,7 +1312,7 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase6,
+			rules:       odysseyRulesPhase1,
 			expectedErr: "",
 		},
 		"non-DIONE input Banff": {
@@ -1630,52 +1630,24 @@ func TestExportTxGasCost(t *testing.T) {
 
 func TestNewExportTx(t *testing.T) {
 	tests := []struct {
-		name               string
-		genesis            string
-		rules              params.Rules
-		bal                uint64
+		name                string
+		genesis             string
+		rules               params.Rules
+		bal                 uint64
 		expectedBurnedDIONE uint64
 	}{
 		{
-			name:               "apricot phase 0",
-			genesis:            genesisJSONApricotPhase0,
-			rules:              apricotRulesPhase0,
-			bal:                44000000,
+			name:                "odyssey phase 0",
+			genesis:             genesisJSONOdysseyPhase1,
+			rules:               odysseyRulesPhase0,
+			bal:                 44000000,
 			expectedBurnedDIONE: 1000000,
 		},
 		{
-			name:               "apricot phase 1",
-			genesis:            genesisJSONApricotPhase1,
-			rules:              apricotRulesPhase1,
-			bal:                44000000,
-			expectedBurnedDIONE: 1000000,
-		},
-		{
-			name:               "apricot phase 2",
-			genesis:            genesisJSONApricotPhase2,
-			rules:              apricotRulesPhase2,
-			bal:                43000000,
-			expectedBurnedDIONE: 1000000,
-		},
-		{
-			name:               "apricot phase 3",
-			genesis:            genesisJSONApricotPhase3,
-			rules:              apricotRulesPhase3,
-			bal:                44446500,
-			expectedBurnedDIONE: 276750,
-		},
-		{
-			name:               "apricot phase 4",
-			genesis:            genesisJSONApricotPhase4,
-			rules:              apricotRulesPhase4,
-			bal:                44446500,
-			expectedBurnedDIONE: 276750,
-		},
-		{
-			name:               "apricot phase 5",
-			genesis:            genesisJSONApricotPhase5,
-			rules:              apricotRulesPhase5,
-			bal:                39946500,
+			name:                "odyssey phase 1",
+			genesis:             genesisJSONOdysseyPhase1,
+			rules:               odysseyRulesPhase1,
+			bal:                 39946500,
 			expectedBurnedDIONE: 2526750,
 		},
 	}
@@ -1811,30 +1783,16 @@ func TestNewExportTxMulticoin(t *testing.T) {
 		balmc   uint64
 	}{
 		{
-			name:    "apricot phase 0",
-			genesis: genesisJSONApricotPhase0,
-			rules:   apricotRulesPhase0,
+			name:    "odyssey phase 0",
+			genesis: genesisJSONOdysseyPhase1,
+			rules:   odysseyRulesPhase0,
 			bal:     49000000,
 			balmc:   25000000,
 		},
 		{
-			name:    "apricot phase 1",
-			genesis: genesisJSONApricotPhase1,
-			rules:   apricotRulesPhase1,
-			bal:     49000000,
-			balmc:   25000000,
-		},
-		{
-			name:    "apricot phase 2",
-			genesis: genesisJSONApricotPhase2,
-			rules:   apricotRulesPhase2,
-			bal:     48000000,
-			balmc:   25000000,
-		},
-		{
-			name:    "apricot phase 3",
-			genesis: genesisJSONApricotPhase3,
-			rules:   apricotRulesPhase3,
+			name:    "odyssey phase 1",
+			genesis: genesisJSONOdysseyPhase1,
+			rules:   odysseyRulesPhase1,
 			bal:     48947900,
 			balmc:   25000000,
 		},

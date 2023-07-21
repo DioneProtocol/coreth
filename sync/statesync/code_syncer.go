@@ -9,12 +9,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/utils/set"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/params"
-	statesyncclient "github.com/dioneprotocol/coreth/sync/client"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/params"
+	statesyncclient "github.com/DioneProtocol/coreth/sync/client"
 	"github.com/ethereum/go-ethereum/common"
 )
 

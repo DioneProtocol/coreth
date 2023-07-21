@@ -31,13 +31,13 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/consensus"
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/consensus"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"golang.org/x/crypto/sha3"
@@ -229,8 +229,8 @@ func TestStateProcessorErrors(t *testing.T) {
 					PetersburgBlock:             big.NewInt(0),
 					IstanbulBlock:               big.NewInt(0),
 					MuirGlacierBlock:            big.NewInt(0),
-					ApricotPhase1BlockTimestamp: big.NewInt(0),
-					ApricotPhase2BlockTimestamp: big.NewInt(0),
+					OdysseyPhase1BlockTimestamp: big.NewInt(0),
+					OdysseyPhase2BlockTimestamp: big.NewInt(0),
 				},
 				Alloc: GenesisAlloc{
 					common.HexToAddress("0x71562b71999873DB5b286dF957af199Ec94617F7"): GenesisAccount{
@@ -238,7 +238,7 @@ func TestStateProcessorErrors(t *testing.T) {
 						Nonce:   0,
 					},
 				},
-				GasLimit: params.ApricotPhase1GasLimit,
+				GasLimit: params.OdysseyPhase1GasLimit,
 			}
 			blockchain, _ = NewBlockChain(db, DefaultCacheConfig, gspec, dummy.NewFaker(), vm.Config{}, common.Hash{}, false)
 		)
@@ -305,6 +305,7 @@ func TestStateProcessorErrors(t *testing.T) {
 		}
 	}
 
+	// ErrMaxInitCodeSizeExceeded, for this we need extra Shanghai (DUpgrade/EIP-3860) enabled.
 	{
 		var (
 			db    = rawdb.NewMemoryDatabase()
@@ -323,16 +324,10 @@ func TestStateProcessorErrors(t *testing.T) {
 					PetersburgBlock:                 big.NewInt(0),
 					IstanbulBlock:                   big.NewInt(0),
 					MuirGlacierBlock:                big.NewInt(0),
-					ApricotPhase1BlockTimestamp:     big.NewInt(0),
-					ApricotPhase2BlockTimestamp:     big.NewInt(0),
-					ApricotPhase3BlockTimestamp:     big.NewInt(0),
-					ApricotPhase4BlockTimestamp:     big.NewInt(0),
-					ApricotPhase5BlockTimestamp:     big.NewInt(0),
-					ApricotPhasePre6BlockTimestamp:  big.NewInt(0),
-					ApricotPhase6BlockTimestamp:     big.NewInt(0),
-					ApricotPhasePost6BlockTimestamp: big.NewInt(0),
+					OdysseyPhase1BlockTimestamp:     big.NewInt(0),
 					BanffBlockTimestamp:             big.NewInt(0),
 					CortinaBlockTimestamp:           big.NewInt(0),
+					DUpgradeBlockTimestamp:          big.NewInt(0),
 				},
 				Alloc: GenesisAlloc{
 					common.HexToAddress("0x71562b71999873DB5b286dF957af199Ec94617F7"): GenesisAccount{
@@ -354,13 +349,13 @@ func TestStateProcessorErrors(t *testing.T) {
 			{ // ErrMaxInitCodeSizeExceeded
 				txs: []*types.Transaction{
 
-					mkDynamicCreationTx(0, 500000, common.Big0, big.NewInt(params.ApricotPhase3InitialBaseFee), tooBigInitCode[:]),
+					mkDynamicCreationTx(0, 500000, common.Big0, big.NewInt(params.OdysseyPhase1InitialBaseFee), tooBigInitCode[:]),
 				},
 				want: "could not apply tx 0 [0x18a05f40f29ff16d5287f6f88b21c9f3c7fbc268f707251144996294552c4cd6]: max initcode size exceeded: code size 49153 limit 49152",
 			},
 			{ // ErrIntrinsicGas: Not enough gas to cover init code
 				txs: []*types.Transaction{
-					mkDynamicCreationTx(0, 54299, common.Big0, big.NewInt(params.ApricotPhase3InitialBaseFee), smallInitCode[:]),
+					mkDynamicCreationTx(0, 54299, common.Big0, big.NewInt(params.OdysseyPhase1InitialBaseFee), smallInitCode[:]),
 				},
 				want: "could not apply tx 0 [0x849278f616d51ab56bba399551317213ce7a10e4d9cbc3d14bb663e50cb7ab99]: intrinsic gas too low: have 54299, want 54300",
 			},
@@ -396,10 +391,8 @@ func GenerateBadBlock(parent *types.Block, engine consensus.Engine, txs types.Tr
 		Time:      parent.Time() + 10,
 		UncleHash: types.EmptyUncleHash,
 	}
-	if config.IsApricotPhase3(new(big.Int).SetUint64(header.Time)) {
+	if config.IsOdysseyPhase1(new(big.Int).SetUint64(header.Time)) {
 		header.Extra, header.BaseFee, _ = dummy.CalcBaseFee(config, parent.Header(), header.Time)
-	}
-	if config.IsApricotPhase4(new(big.Int).SetUint64(header.Time)) {
 		header.BlockGasCost = big.NewInt(0)
 		header.ExtDataGasUsed = big.NewInt(0)
 	}
@@ -460,7 +453,7 @@ func ExampleCostOfUsingGasLimitEachBlock() {
 			},
 		},
 		BaseFee:  big.NewInt(225 * params.GWei),
-		GasLimit: params.ApricotPhase1GasLimit,
+		GasLimit: params.OdysseyPhase1GasLimit,
 	}
 	cortina := &Genesis{
 		Config: params.TestCortinaChainConfig,
@@ -526,7 +519,7 @@ func nextBlock(config *params.ChainConfig, parent *types.Header, gasUsed uint64)
 		Number:     new(big.Int).Add(parent.Number, common.Big1),
 		Time:       parent.Time + 2,
 	}
-	if config.IsApricotPhase3(new(big.Int).SetUint64(header.Time)) {
+	if config.IsOdysseyPhase1(new(big.Int).SetUint64(header.Time)) {
 		header.Extra, header.BaseFee, _ = dummy.CalcBaseFee(config, parent, header.Time)
 	}
 	header.GasUsed = gasUsed

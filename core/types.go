@@ -27,9 +27,9 @@
 package core
 
 import (
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
 )
 
 // Validator is an interface which defines the standard for block validation. It

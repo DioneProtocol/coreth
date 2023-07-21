@@ -9,17 +9,17 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	safemath "github.com/dioneprotocol/dionego/utils/math"
+	safemath "github.com/DioneProtocol/odysseygo/utils/math"
 
-	"github.com/dioneprotocol/coreth/constants"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/constants"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/trie"
 )
 
 var (
-	apricotPhase0MinGasPrice = big.NewInt(params.LaunchMinGasPrice)
-	apricotPhase1MinGasPrice = big.NewInt(params.ApricotPhase1MinGasPrice)
+	odysseyPhase0MinGasPrice = big.NewInt(params.LaunchMinGasPrice)
+	odysseyPhase1MinGasPrice = big.NewInt(params.OdysseyPhase1MinGasPrice)
 )
 
 type BlockValidator interface {
@@ -44,7 +44,7 @@ func (v blockValidator) SyntacticVerify(b *Block, rules params.Rules) error {
 	ethHeader := b.ethBlock.Header()
 	blockHash := b.ethBlock.Hash()
 
-	if !rules.IsApricotPhase1 {
+	if !rules.IsOdysseyPhase1 {
 		if v.extDataHashes != nil {
 			extData := b.ethBlock.ExtData()
 			extDataHash := types.CalcExtDataHash(extData)
@@ -71,7 +71,7 @@ func (v blockValidator) SyntacticVerify(b *Block, rules params.Rules) error {
 	}
 
 	// Verify the ExtDataHash field
-	if rules.IsApricotPhase1 {
+	if rules.IsOdysseyPhase1 {
 		if hash := types.CalcExtDataHash(b.ethBlock.ExtData()); ethHeader.ExtDataHash != hash {
 			return fmt.Errorf("extra data hash mismatch: have %x, want %x", ethHeader.ExtDataHash, hash)
 		}
@@ -97,7 +97,7 @@ func (v blockValidator) SyntacticVerify(b *Block, rules params.Rules) error {
 		return fmt.Errorf("invalid mix digest: %v", ethHeader.MixDigest)
 	}
 
-	// Enforce static gas limit after ApricotPhase1 (prior to ApricotPhase1 it's handled in processing).
+	// Enforce static gas limit after OdysseyPhase1 (prior to OdysseyPhase1 it's handled in processing).
 	if rules.IsCortina {
 		if ethHeader.GasLimit != params.CortinaGasLimit {
 			return fmt.Errorf(
@@ -105,11 +105,11 @@ func (v blockValidator) SyntacticVerify(b *Block, rules params.Rules) error {
 				params.CortinaGasLimit, ethHeader.GasLimit,
 			)
 		}
-	} else if rules.IsApricotPhase1 {
-		if ethHeader.GasLimit != params.ApricotPhase1GasLimit {
+	} else if rules.IsOdysseyPhase1 {
+		if ethHeader.GasLimit != params.OdysseyPhase1GasLimit {
 			return fmt.Errorf(
-				"expected gas limit to be %d after apricot phase 1 but got %d",
-				params.ApricotPhase1GasLimit, ethHeader.GasLimit,
+				"expected gas limit to be %d after odyssey phase 1 but got %d",
+				params.OdysseyPhase1GasLimit, ethHeader.GasLimit,
 			)
 		}
 	}
@@ -117,18 +117,11 @@ func (v blockValidator) SyntacticVerify(b *Block, rules params.Rules) error {
 	// Check that the size of the header's Extra data field is correct for [rules].
 	headerExtraDataSize := uint64(len(ethHeader.Extra))
 	switch {
-	case rules.IsApricotPhase3:
-		if headerExtraDataSize != params.ApricotPhase3ExtraDataSize {
+	case rules.IsOdysseyPhase1:
+		if headerExtraDataSize != params.OdysseyPhase1ExtraDataSize {
 			return fmt.Errorf(
 				"expected header ExtraData to be %d but got %d",
-				params.ApricotPhase3ExtraDataSize, headerExtraDataSize,
-			)
-		}
-	case rules.IsApricotPhase1:
-		if headerExtraDataSize != 0 {
-			return fmt.Errorf(
-				"expected header ExtraData to be 0 but got %d",
-				headerExtraDataSize,
+				params.OdysseyPhase1ExtraDataSize, headerExtraDataSize,
 			)
 		}
 	default:
@@ -170,22 +163,14 @@ func (v blockValidator) SyntacticVerify(b *Block, rules params.Rules) error {
 	}
 
 	// Enforce minimum gas prices here prior to dynamic fees going into effect.
-	switch {
-	case !rules.IsApricotPhase1:
-		// If we are in ApricotPhase0, enforce each transaction has a minimum gas price of at least the LaunchMinGasPrice
+	if !rules.IsOdysseyPhase1 {
+		// If we are prior to OdysseyPhase1, enforce each transaction has a minimum gas price of at least the OdysseyPhase1MinGasPrice
 		for _, tx := range b.ethBlock.Transactions() {
-			if tx.GasPrice().Cmp(apricotPhase0MinGasPrice) < 0 {
-				return fmt.Errorf("block contains tx %s with gas price too low (%d < %d)", tx.Hash(), tx.GasPrice(), params.LaunchMinGasPrice)
+			if tx.GasPrice().Cmp(odysseyPhase1MinGasPrice) < 0 {
+				return fmt.Errorf("block contains tx %s with gas price too low (%d < %d)", tx.Hash(), tx.GasPrice(), params.OdysseyPhase1MinGasPrice)
 			}
 		}
-	case !rules.IsApricotPhase3:
-		// If we are prior to ApricotPhase3, enforce each transaction has a minimum gas price of at least the ApricotPhase1MinGasPrice
-		for _, tx := range b.ethBlock.Transactions() {
-			if tx.GasPrice().Cmp(apricotPhase1MinGasPrice) < 0 {
-				return fmt.Errorf("block contains tx %s with gas price too low (%d < %d)", tx.Hash(), tx.GasPrice(), params.ApricotPhase1MinGasPrice)
-			}
-		}
-	}
+    }
 
 	// Make sure the block isn't too far in the future
 	// TODO: move this to only be part of semantic verification.
@@ -194,10 +179,10 @@ func (v blockValidator) SyntacticVerify(b *Block, rules params.Rules) error {
 		return fmt.Errorf("block timestamp is too far in the future: %d > allowed %d", blockTimestamp, maxBlockTime)
 	}
 
-	// Ensure BaseFee is non-nil as of ApricotPhase3.
-	if rules.IsApricotPhase3 {
+	// Ensure BaseFee is non-nil as of OdysseyPhase1.
+	if rules.IsOdysseyPhase1 {
 		if ethHeader.BaseFee == nil {
-			return errNilBaseFeeApricotPhase3
+			return errNilBaseFeeOdysseyPhase1
 		}
 		// TODO: this should be removed as 256 is the maximum possible bit length of a big int
 		if bfLen := ethHeader.BaseFee.BitLen(); bfLen > 256 {
@@ -205,26 +190,20 @@ func (v blockValidator) SyntacticVerify(b *Block, rules params.Rules) error {
 		}
 	}
 
-	// If we are in ApricotPhase4, ensure that ExtDataGasUsed is populated correctly.
-	if rules.IsApricotPhase4 {
+	// If we are in OdysseyPhase1, ensure that ExtDataGasUsed is populated correctly.
+	if rules.IsOdysseyPhase1 {
 		// Make sure ExtDataGasUsed is not nil and correct
 		if ethHeader.ExtDataGasUsed == nil {
-			return errNilExtDataGasUsedApricotPhase4
+			return errNilExtDataGasUsedOdysseyPhase1
 		}
-		if rules.IsApricotPhase5 {
-			if ethHeader.ExtDataGasUsed.Cmp(params.AtomicGasLimit) == 1 {
-				return fmt.Errorf("too large extDataGasUsed: %d", ethHeader.ExtDataGasUsed)
-			}
-		} else {
-			if !ethHeader.ExtDataGasUsed.IsUint64() {
-				return fmt.Errorf("too large extDataGasUsed: %d", ethHeader.ExtDataGasUsed)
-			}
-		}
+        if ethHeader.ExtDataGasUsed.Cmp(params.AtomicGasLimit) == 1 {
+            return fmt.Errorf("too large extDataGasUsed: %d", ethHeader.ExtDataGasUsed)
+        }
 		var totalGasUsed uint64
 		for _, atomicTx := range b.atomicTxs {
 			// We perform this check manually here to avoid the overhead of having to
 			// reparse the atomicTx in `CalcExtDataGasUsed`.
-			fixedFee := rules.IsApricotPhase5 // Charge the atomic tx fixed fee as of ApricotPhase5
+			fixedFee := rules.IsOdysseyPhase1 // Charge the atomic tx fixed fee as of OdysseyPhase1
 			gasUsed, err := atomicTx.GasUsed(fixedFee)
 			if err != nil {
 				return err
@@ -242,7 +221,7 @@ func (v blockValidator) SyntacticVerify(b *Block, rules params.Rules) error {
 		// Make sure BlockGasCost is not nil
 		// NOTE: ethHeader.BlockGasCost correctness is checked in header verification
 		case ethHeader.BlockGasCost == nil:
-			return errNilBlockGasCostApricotPhase4
+			return errNilBlockGasCostOdysseyPhase1
 		case !ethHeader.BlockGasCost.IsUint64():
 			return fmt.Errorf("too large blockGasCost: %d", ethHeader.BlockGasCost)
 		}

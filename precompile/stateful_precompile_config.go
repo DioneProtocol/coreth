@@ -8,7 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/dioneprotocol/coreth/utils"
+	"github.com/DioneProtocol/coreth/utils"
 )
 
 // StatefulPrecompileConfig defines the interface for a stateful precompile to

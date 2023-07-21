@@ -16,29 +16,29 @@ import (
 	"sync"
 	"time"
 
-	dionegoMetrics "github.com/dioneprotocol/dionego/api/metrics"
+	odysseygoMetrics "github.com/DioneProtocol/odysseygo/api/metrics"
 
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	corethConstants "github.com/dioneprotocol/coreth/constants"
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/eth"
-	"github.com/dioneprotocol/coreth/eth/ethconfig"
-	"github.com/dioneprotocol/coreth/ethdb"
-	corethPrometheus "github.com/dioneprotocol/coreth/metrics/prometheus"
-	"github.com/dioneprotocol/coreth/miner"
-	"github.com/dioneprotocol/coreth/node"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/peer"
-	"github.com/dioneprotocol/coreth/plugin/evm/message"
-	"github.com/dioneprotocol/coreth/rpc"
-	statesyncclient "github.com/dioneprotocol/coreth/sync/client"
-	"github.com/dioneprotocol/coreth/sync/client/stats"
-	"github.com/dioneprotocol/coreth/sync/handlers"
-	handlerstats "github.com/dioneprotocol/coreth/sync/handlers/stats"
-	"github.com/dioneprotocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	corethConstants "github.com/DioneProtocol/coreth/constants"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/eth"
+	"github.com/DioneProtocol/coreth/eth/ethconfig"
+	"github.com/DioneProtocol/coreth/ethdb"
+	corethPrometheus "github.com/DioneProtocol/coreth/metrics/prometheus"
+	"github.com/DioneProtocol/coreth/miner"
+	"github.com/DioneProtocol/coreth/node"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/peer"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/rpc"
+	statesyncclient "github.com/DioneProtocol/coreth/sync/client"
+	"github.com/DioneProtocol/coreth/sync/client/stats"
+	"github.com/DioneProtocol/coreth/sync/handlers"
+	handlerstats "github.com/DioneProtocol/coreth/sync/handlers/stats"
+	"github.com/DioneProtocol/coreth/trie"
 
 	"github.com/prometheus/client_golang/prometheus"
 	// Force-load tracer engine to trigger registration
@@ -46,46 +46,46 @@ import (
 	// We must import this package (not referenced elsewhere) so that the native "callTracer"
 	// is added to a map of client-accessible tracers. In geth, this is done
 	// inside of cmd/geth.
-	_ "github.com/dioneprotocol/coreth/eth/tracers/js"
-	_ "github.com/dioneprotocol/coreth/eth/tracers/native"
+	_ "github.com/DioneProtocol/coreth/eth/tracers/js"
+	_ "github.com/DioneProtocol/coreth/eth/tracers/native"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/dioneprotocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/metrics"
 
-	dioneRPC "github.com/gorilla/rpc/v2"
+	odysseyRPC "github.com/gorilla/rpc/v2"
 
-	"github.com/dioneprotocol/dionego/cache"
-	"github.com/dioneprotocol/dionego/codec"
-	"github.com/dioneprotocol/dionego/codec/linearcodec"
-	"github.com/dioneprotocol/dionego/database"
-	"github.com/dioneprotocol/dionego/database/manager"
-	"github.com/dioneprotocol/dionego/database/prefixdb"
-	"github.com/dioneprotocol/dionego/database/versiondb"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/snow"
-	"github.com/dioneprotocol/dionego/snow/choices"
-	"github.com/dioneprotocol/dionego/snow/consensus/snowman"
-	"github.com/dioneprotocol/dionego/snow/engine/snowman/block"
-	"github.com/dioneprotocol/dionego/utils/constants"
-	"github.com/dioneprotocol/dionego/utils/crypto/secp256k1"
-	"github.com/dioneprotocol/dionego/utils/formatting/address"
-	"github.com/dioneprotocol/dionego/utils/logging"
-	"github.com/dioneprotocol/dionego/utils/math"
-	"github.com/dioneprotocol/dionego/utils/perms"
-	"github.com/dioneprotocol/dionego/utils/profiler"
-	"github.com/dioneprotocol/dionego/utils/set"
-	"github.com/dioneprotocol/dionego/utils/timer/mockable"
-	"github.com/dioneprotocol/dionego/utils/units"
-	"github.com/dioneprotocol/dionego/vms/components/chain"
-	"github.com/dioneprotocol/dionego/vms/components/dione"
-	"github.com/dioneprotocol/dionego/vms/secp256k1fx"
+	"github.com/DioneProtocol/odysseygo/cache"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/codec/linearcodec"
+	"github.com/DioneProtocol/odysseygo/database"
+	"github.com/DioneProtocol/odysseygo/database/manager"
+	"github.com/DioneProtocol/odysseygo/database/prefixdb"
+	"github.com/DioneProtocol/odysseygo/database/versiondb"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/snow"
+	"github.com/DioneProtocol/odysseygo/snow/choices"
+	"github.com/DioneProtocol/odysseygo/snow/consensus/snowman"
+	"github.com/DioneProtocol/odysseygo/snow/engine/snowman/block"
+	"github.com/DioneProtocol/odysseygo/utils/constants"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/formatting/address"
+	"github.com/DioneProtocol/odysseygo/utils/logging"
+	"github.com/DioneProtocol/odysseygo/utils/math"
+	"github.com/DioneProtocol/odysseygo/utils/perms"
+	"github.com/DioneProtocol/odysseygo/utils/profiler"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/utils/timer/mockable"
+	"github.com/DioneProtocol/odysseygo/utils/units"
+	"github.com/DioneProtocol/odysseygo/vms/components/dione"
+	"github.com/DioneProtocol/odysseygo/vms/components/chain"
+	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 
-	commonEng "github.com/dioneprotocol/dionego/snow/engine/common"
+	commonEng "github.com/DioneProtocol/odysseygo/snow/engine/common"
 
-	dioneJSON "github.com/dioneprotocol/dionego/utils/json"
+	odysseyJSON "github.com/DioneProtocol/odysseygo/utils/json"
 )
 
 const (
@@ -129,7 +129,7 @@ const (
 
 // Define the API endpoints for the VM
 const (
-	dioneEndpoint  = "/dione"
+	dioneEndpoint   = "/dione"
 	adminEndpoint  = "/admin"
 	ethRPCEndpoint = "/rpc"
 	ethWSEndpoint  = "/ws"
@@ -169,9 +169,9 @@ var (
 	errRejectedParent                 = errors.New("rejected parent")
 	errInsufficientFundsForFee        = errors.New("insufficient DIONE funds to pay transaction fee")
 	errNoEVMOutputs                   = errors.New("tx has no EVM outputs")
-	errNilBaseFeeApricotPhase3        = errors.New("nil base fee is invalid after apricotPhase3")
-	errNilExtDataGasUsedApricotPhase4 = errors.New("nil extDataGasUsed is invalid after apricotPhase4")
-	errNilBlockGasCostApricotPhase4   = errors.New("nil blockGasCost is invalid after apricotPhase4")
+	errNilBaseFeeOdysseyPhase1        = errors.New("nil base fee is invalid after OdysseyPhase1")
+	errNilExtDataGasUsedOdysseyPhase1 = errors.New("nil extDataGasUsed is invalid after OdysseyPhase1")
+	errNilBlockGasCostOdysseyPhase1   = errors.New("nil blockGasCost is invalid after OdysseyPhase1")
 	errConflictingAtomicTx            = errors.New("conflicting atomic tx present")
 	errTooManyAtomicTx                = errors.New("too many atomic tx")
 	errMissingAtomicTxs               = errors.New("cannot build a block with non-empty extra data and zero atomic transactions")
@@ -275,7 +275,7 @@ type VM struct {
 	networkCodec codec.Manager
 
 	// Metrics
-	multiGatherer dionegoMetrics.MultiGatherer
+	multiGatherer odysseygoMetrics.MultiGatherer
 
 	bootstrapped bool
 	IsPlugin     bool
@@ -306,7 +306,7 @@ func (vm *VM) Logger() logging.Logger { return vm.ctx.Log }
 
 // implements SnowmanPlusPlusVM interface
 func (vm *VM) GetActivationTime() time.Time {
-	return time.Unix(vm.chainConfig.ApricotPhase4BlockTimestamp.Int64(), 0)
+	return time.Unix(vm.chainConfig.OdysseyPhase1BlockTimestamp.Int64(), 0)
 }
 
 // Initialize implements the snowman.ChainVM interface
@@ -384,25 +384,25 @@ func (vm *VM) Initialize(
 	}
 
 	var extDataHashes map[common.Hash]common.Hash
-	// Set the chain config for mainnet/fuji chain IDs
+	// Set the chain config for mainnet/testnet chain IDs
 	switch {
-	case g.Config.ChainID.Cmp(params.DioneMainnetChainID) == 0:
-		g.Config = params.DioneMainnetChainConfig
+	case g.Config.ChainID.Cmp(params.OdysseyMainnetChainID) == 0:
+		g.Config = params.OdysseyMainnetChainConfig
 		extDataHashes = mainnetExtDataHashes
-	case g.Config.ChainID.Cmp(params.DioneFujiChainID) == 0:
-		g.Config = params.DioneFujiChainConfig
-		extDataHashes = fujiExtDataHashes
-	case g.Config.ChainID.Cmp(params.DioneLocalChainID) == 0:
-		g.Config = params.DioneLocalChainConfig
+	case g.Config.ChainID.Cmp(params.OdysseyTestnetChainID) == 0:
+		g.Config = params.OdysseyTestnetChainConfig
+		extDataHashes = testnetExtDataHashes
+	case g.Config.ChainID.Cmp(params.OdysseyLocalChainID) == 0:
+		g.Config = params.OdysseyLocalChainConfig
 	}
-	// Set the Dione Context on the ChainConfig
-	g.Config.DioneContext = params.DioneContext{
+	// Set the Odyssey Context on the ChainConfig
+	g.Config.OdysseyContext = params.OdysseyContext{
 		BlockchainID: common.Hash(chainCtx.ChainID),
 	}
 	vm.syntacticBlockValidator = NewBlockValidator(extDataHashes)
 
 	// Ensure that non-standard commit interval is only allowed for the local network
-	if g.Config.ChainID.Cmp(params.DioneLocalChainID) != 0 {
+	if g.Config.ChainID.Cmp(params.OdysseyLocalChainID) != 0 {
 		if vm.config.CommitInterval != defaultCommitInterval {
 			return fmt.Errorf("cannot start non-local network with commit interval %d", vm.config.CommitInterval)
 		}
@@ -412,8 +412,8 @@ func (vm *VM) Initialize(
 	}
 
 	// Free the memory of the extDataHash map that is not used (i.e. if mainnet
-	// config, free fuji)
-	fujiExtDataHashes = nil
+	// config, free testnet)
+	testnetExtDataHashes = nil
 	mainnetExtDataHashes = nil
 
 	vm.chainID = g.Config.ChainID
@@ -508,7 +508,7 @@ func (vm *VM) Initialize(
 		bonusBlockHeights     map[uint64]ids.ID
 		canonicalBlockHeights []uint64
 	)
-	if vm.chainID.Cmp(params.DioneMainnetChainID) == 0 {
+	if vm.chainID.Cmp(params.OdysseyMainnetChainID) == 0 {
 		bonusBlockHeights = bonusBlockMainnetHeights
 		canonicalBlockHeights = canonicalBlockMainnetHeights
 	}
@@ -517,7 +517,7 @@ func (vm *VM) Initialize(
 	vm.atomicTxRepository, err = NewAtomicTxRepository(
 		vm.db, vm.codec, lastAcceptedHeight,
 		bonusBlockHeights, canonicalBlockHeights,
-		vm.getAtomicTxFromPreApricot5BlockByHeight,
+		vm.getAtomicTxFromOdyssey1BlockByHeight,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create atomic repository: %w", err)
@@ -547,7 +547,7 @@ func (vm *VM) Initialize(
 }
 
 func (vm *VM) initializeMetrics() error {
-	vm.multiGatherer = dionegoMetrics.NewMultiGatherer()
+	vm.multiGatherer = odysseygoMetrics.NewMultiGatherer()
 	// If metrics are enabled, register the default metrics regitry
 	if metrics.Enabled {
 		gatherer := corethPrometheus.Gatherer(metrics.DefaultRegistry)
@@ -628,16 +628,17 @@ func (vm *VM) initializeStateSyncClient(lastAcceptedHeight uint64) error {
 				BlockParser:      vm,
 			},
 		),
-		enabled:            stateSyncEnabled,
-		skipResume:         vm.config.StateSyncSkipResume,
-		stateSyncMinBlocks: vm.config.StateSyncMinBlocks,
-		lastAcceptedHeight: lastAcceptedHeight, // TODO clean up how this is passed around
-		chaindb:            vm.chaindb,
-		metadataDB:         vm.metadataDB,
-		acceptedBlockDB:    vm.acceptedBlockDB,
-		db:                 vm.db,
-		atomicBackend:      vm.atomicBackend,
-		toEngine:           vm.toEngine,
+		enabled:              stateSyncEnabled,
+		skipResume:           vm.config.StateSyncSkipResume,
+		stateSyncMinBlocks:   vm.config.StateSyncMinBlocks,
+		stateSyncRequestSize: vm.config.StateSyncRequestSize,
+		lastAcceptedHeight:   lastAcceptedHeight, // TODO clean up how this is passed around
+		chaindb:              vm.chaindb,
+		metadataDB:           vm.metadataDB,
+		acceptedBlockDB:      vm.acceptedBlockDB,
+		db:                   vm.db,
+		atomicBackend:        vm.atomicBackend,
+		toEngine:             vm.toEngine,
 	})
 
 	// If StateSync is disabled, clear any ongoing summary so that we will not attempt to resume
@@ -708,7 +709,7 @@ func (vm *VM) preBatchOnFinalizeAndAssemble(header *types.Header, state *state.S
 		// Note: snapshot is taken inside the loop because you cannot revert to the same snapshot more than
 		// once.
 		snapshot := state.Snapshot()
-		rules := vm.chainConfig.DioneRules(header.Number, new(big.Int).SetUint64(header.Time))
+		rules := vm.chainConfig.OdysseyRules(header.Number, new(big.Int).SetUint64(header.Time))
 		if err := vm.verifyTx(tx, header.ParentHash, header.BaseFee, state, rules); err != nil {
 			// Discard the transaction from the mempool on failed verification.
 			vm.mempool.DiscardCurrentTx(tx.ID())
@@ -724,8 +725,8 @@ func (vm *VM) preBatchOnFinalizeAndAssemble(header *types.Header, state *state.S
 			return nil, nil, nil, fmt.Errorf("failed to marshal atomic transaction %s due to %w", tx.ID(), err)
 		}
 		var contribution, gasUsed *big.Int
-		if rules.IsApricotPhase4 {
-			contribution, gasUsed, err = tx.BlockFeeContribution(rules.IsApricotPhase5, vm.ctx.DIONEAssetID, header.BaseFee)
+		if rules.IsOdysseyPhase1 {
+			contribution, gasUsed, err = tx.BlockFeeContribution(rules.IsOdysseyPhase1, vm.ctx.DIONEAssetID, header.BaseFee)
 			if err != nil {
 				return nil, nil, nil, err
 			}
@@ -741,14 +742,14 @@ func (vm *VM) preBatchOnFinalizeAndAssemble(header *types.Header, state *state.S
 	return nil, nil, nil, nil
 }
 
-// assumes that we are in at least Apricot Phase 5.
+// assumes that we are in at least Odyssey Phase 1.
 func (vm *VM) postBatchOnFinalizeAndAssemble(header *types.Header, state *state.StateDB, txs []*types.Transaction) ([]byte, *big.Int, *big.Int, error) {
 	var (
 		batchAtomicTxs    []*Tx
 		batchAtomicUTXOs  set.Set[ids.ID]
 		batchContribution *big.Int = new(big.Int).Set(common.Big0)
 		batchGasUsed      *big.Int = new(big.Int).Set(common.Big0)
-		rules                      = vm.chainConfig.DioneRules(header.Number, new(big.Int).SetUint64(header.Time))
+		rules                      = vm.chainConfig.OdysseyRules(header.Number, new(big.Int).SetUint64(header.Time))
 		size              int
 	)
 
@@ -770,9 +771,9 @@ func (vm *VM) postBatchOnFinalizeAndAssemble(header *types.Header, state *state.
 			err                       error
 		)
 
-		// Note: we do not need to check if we are in at least ApricotPhase4 here because
+		// Note: we do not need to check if we are in at least OdysseyPhase0 here because
 		// we assume that this function will only be called when the block is in at least
-		// ApricotPhase5.
+		// OdysseyPhase1.
 		txContribution, txGasUsed, err = tx.BlockFeeContribution(true, vm.ctx.DIONEAssetID, header.BaseFee)
 		if err != nil {
 			return nil, nil, nil, err
@@ -840,7 +841,7 @@ func (vm *VM) postBatchOnFinalizeAndAssemble(header *types.Header, state *state.
 }
 
 func (vm *VM) onFinalizeAndAssemble(header *types.Header, state *state.StateDB, txs []*types.Transaction) ([]byte, *big.Int, *big.Int, error) {
-	if !vm.chainConfig.IsApricotPhase5(new(big.Int).SetUint64(header.Time)) {
+	if !vm.chainConfig.IsOdysseyPhase1(new(big.Int).SetUint64(header.Time)) {
 		return vm.preBatchOnFinalizeAndAssemble(header, state, txs)
 	}
 	return vm.postBatchOnFinalizeAndAssemble(header, state, txs)
@@ -851,10 +852,10 @@ func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB) (*big
 		batchContribution *big.Int = big.NewInt(0)
 		batchGasUsed      *big.Int = big.NewInt(0)
 		header                     = block.Header()
-		rules                      = vm.chainConfig.DioneRules(header.Number, new(big.Int).SetUint64(header.Time))
+		rules                      = vm.chainConfig.OdysseyRules(header.Number, new(big.Int).SetUint64(header.Time))
 	)
 
-	txs, err := ExtractAtomicTxs(block.ExtData(), rules.IsApricotPhase5, vm.codec)
+	txs, err := ExtractAtomicTxs(block.ExtData(), rules.IsOdysseyPhase1, vm.codec)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -885,20 +886,17 @@ func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB) (*big
 		if err := tx.UnsignedAtomicTx.EVMStateTransfer(vm.ctx, state); err != nil {
 			return nil, nil, err
 		}
-		// If ApricotPhase4 is enabled, calculate the block fee contribution
-		if rules.IsApricotPhase4 {
-			contribution, gasUsed, err := tx.BlockFeeContribution(rules.IsApricotPhase5, vm.ctx.DIONEAssetID, block.BaseFee())
+		// If OdysseyPhase1 is enabled, calculate the block fee contribution & enforce that the atomic gas used does not exceed the
+        // atomic gas limit.
+		if rules.IsOdysseyPhase1 {
+			contribution, gasUsed, err := tx.BlockFeeContribution(rules.IsOdysseyPhase1, vm.ctx.DIONEAssetID, block.BaseFee())
 			if err != nil {
 				return nil, nil, err
 			}
 
 			batchContribution.Add(batchContribution, contribution)
 			batchGasUsed.Add(batchGasUsed, gasUsed)
-		}
 
-		// If ApricotPhase5 is enabled, enforce that the atomic gas used does not exceed the
-		// atomic gas limit.
-		if rules.IsApricotPhase5 {
 			// Ensure that [tx] does not push [block] above the atomic gas limit.
 			if batchGasUsed.Cmp(params.AtomicGasLimit) == 1 {
 				return nil, nil, fmt.Errorf("atomic gas used (%d) by block (%s), exceeds atomic gas limit (%d)", batchGasUsed, block.Hash().Hex(), params.AtomicGasLimit)
@@ -1117,9 +1115,9 @@ func (vm *VM) Version(context.Context) (string, error) {
 //     By default the LockOption is WriteLock
 //     [lockOption] should have either 0 or 1 elements. Elements beside the first are ignored.
 func newHandler(name string, service interface{}, lockOption ...commonEng.LockOption) (*commonEng.HTTPHandler, error) {
-	server := dioneRPC.NewServer()
-	server.RegisterCodec(dioneJSON.NewCodec(), "application/json")
-	server.RegisterCodec(dioneJSON.NewCodec(), "application/json;charset=UTF-8")
+	server := odysseyRPC.NewServer()
+	server.RegisterCodec(odysseyJSON.NewCodec(), "application/json")
+	server.RegisterCodec(odysseyJSON.NewCodec(), "application/json;charset=UTF-8")
 	if err := server.RegisterService(service, name); err != nil {
 		return nil, err
 	}
@@ -1339,7 +1337,7 @@ func (vm *VM) verifyTxAtTip(tx *Tx) error {
 	var nextBaseFee *big.Int
 	timestamp := vm.clock.Time().Unix()
 	bigTimestamp := big.NewInt(timestamp)
-	if vm.chainConfig.IsApricotPhase3(bigTimestamp) {
+	if vm.chainConfig.IsOdysseyPhase1(bigTimestamp) {
 		_, nextBaseFee, err = dummy.EstimateNextBaseFee(vm.chainConfig, parentHeader, uint64(timestamp))
 		if err != nil {
 			// Return extremely detailed error since CalcBaseFee should never encounter an issue here
@@ -1634,7 +1632,7 @@ func (vm *VM) GetCurrentNonce(address common.Address) (uint64, error) {
 // currentRules returns the chain rules for the current block.
 func (vm *VM) currentRules() params.Rules {
 	header := vm.eth.APIBackend.CurrentHeader()
-	return vm.chainConfig.DioneRules(header.Number, big.NewInt(int64(header.Time)))
+	return vm.chainConfig.OdysseyRules(header.Number, big.NewInt(int64(header.Time)))
 }
 
 func (vm *VM) startContinuousProfiler() {
@@ -1680,7 +1678,7 @@ func (vm *VM) estimateBaseFee(ctx context.Context) (*big.Int, error) {
 	return baseFee, nil
 }
 
-func (vm *VM) getAtomicTxFromPreApricot5BlockByHeight(height uint64) (*Tx, error) {
+func (vm *VM) getAtomicTxFromOdyssey1BlockByHeight(height uint64) (*Tx, error) {
 	blk := vm.blockChain.GetBlockByNumber(height)
 	if blk == nil {
 		return nil, nil

@@ -1,3 +1,4 @@
+
 // (c) 2019-2020, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -8,7 +9,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -179,10 +180,10 @@ func TestVerifyBlockFee(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			blockGasCost := calcBlockGasCost(
-				ApricotPhase4TargetBlockRate,
-				ApricotPhase4MinBlockGasCost,
-				ApricotPhase4MaxBlockGasCost,
-				ApricotPhase4BlockGasCostStep,
+				OdysseyPhase1TargetBlockRate,
+				OdysseyPhase1MinBlockGasCost,
+				OdysseyPhase1MaxBlockGasCost,
+				OdysseyPhase1BlockGasCostStep,
 				test.parentBlockGasCost,
 				test.parentTime, test.currentTime,
 			)

@@ -10,13 +10,13 @@ import (
 	"math/big"
 	"net/http"
 
-	"github.com/dioneprotocol/dionego/api"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/utils/crypto/secp256k1"
-	"github.com/dioneprotocol/dionego/utils/formatting"
-	"github.com/dioneprotocol/dionego/utils/json"
-	"github.com/dioneprotocol/dionego/utils/set"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/odysseygo/api"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/formatting"
+	"github.com/DioneProtocol/odysseygo/utils/json"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/log"
@@ -37,7 +37,7 @@ var (
 	errNilTxID           = errors.New("nil transaction ID")
 	errMissingPrivateKey = errors.New("argument 'privateKey' not given")
 
-	initialBaseFee = big.NewInt(params.ApricotPhase3InitialBaseFee)
+	initialBaseFee = big.NewInt(params.OdysseyPhase1InitialBaseFee)
 )
 
 // SnowmanAPI introduces snowman specific functionality to the evm
@@ -67,7 +67,7 @@ func (api *SnowmanAPI) IssueBlock(ctx context.Context) error {
 	return nil
 }
 
-// DioneAPI offers Dione network related API methods
+// DioneAPI offers Odyssey network related API methods
 type DioneAPI struct{ vm *VM }
 
 // parseAssetID parses an assetID string into an ID

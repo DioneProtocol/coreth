@@ -35,9 +35,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/interfaces"
-	"github.com/dioneprotocol/coreth/rpc"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/interfaces"
+	"github.com/DioneProtocol/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/event"
@@ -65,10 +65,10 @@ type FilterAPI struct {
 }
 
 // NewFilterAPI returns a new FilterAPI instance.
-func NewFilterAPI(system *FilterSystem, lightMode bool) *FilterAPI {
+func NewFilterAPI(system *FilterSystem) *FilterAPI {
 	api := &FilterAPI{
 		sys:     system,
-		events:  NewEventSystem(system, lightMode),
+		events:  NewEventSystem(system),
 		filters: make(map[rpc.ID]*filter),
 		timeout: system.cfg.Timeout,
 	}

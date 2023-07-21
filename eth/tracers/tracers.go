@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/dioneprotocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/core/vm"
 	"github.com/ethereum/go-ethereum/common"
 )
 

@@ -5,7 +5,7 @@ package logger
 import (
 	"encoding/json"
 
-	"github.com/dioneprotocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/core/vm"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"

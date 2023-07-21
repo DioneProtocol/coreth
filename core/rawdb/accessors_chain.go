@@ -31,9 +31,9 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"

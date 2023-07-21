@@ -29,8 +29,8 @@ package memorydb
 import (
 	"testing"
 
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/ethdb/dbtest"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/ethdb/dbtest"
 )
 
 func TestMemoryDB(t *testing.T) {

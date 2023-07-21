@@ -28,11 +28,11 @@
 package miner
 
 import (
-	"github.com/dioneprotocol/dionego/utils/timer/mockable"
-	"github.com/dioneprotocol/coreth/consensus"
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/odysseygo/utils/timer/mockable"
+	"github.com/DioneProtocol/coreth/consensus"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/event"
 )

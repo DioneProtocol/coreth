@@ -29,11 +29,11 @@ package core
 import (
 	"fmt"
 
-	"github.com/dioneprotocol/coreth/consensus"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/consensus"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/trie"
 )
 
 // BlockValidator is responsible for validating block headers, uncles and

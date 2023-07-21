@@ -31,8 +31,8 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/dioneprotocol/dionego/utils/wrappers"
-	"github.com/dioneprotocol/coreth/metrics"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
+	"github.com/DioneProtocol/coreth/metrics"
 	"github.com/ethereum/go-ethereum/common"
 )
 

@@ -35,11 +35,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/metrics"
-	"github.com/dioneprotocol/coreth/trie"
-	"github.com/dioneprotocol/coreth/utils"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 )
@@ -379,11 +379,13 @@ func (t *Tree) verifyIntegrity(base *diskLayer, waitBuild bool) error {
 // Note: a blockHash is used instead of a state root so that the exact state
 // transition between the two states is well defined. This is intended to
 // prevent the following edge case
-//    A
-//   /  \
-//  B    C
-//       |
-//       D
+//
+//	  A
+//	 /  \
+//	B    C
+//	     |
+//	     D
+//
 // In this scenario, it's possible For (A, B) and (A, C, D) to be two
 // different paths to the resulting state. We use block hashes and parent
 // block hashes to ensure that the exact path through which we flatten

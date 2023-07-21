@@ -31,11 +31,11 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
@@ -63,7 +63,7 @@ func BenchmarkFilters(b *testing.B) {
 		gspec = &core.Genesis{
 			Config:  params.TestChainConfig,
 			Alloc:   core.GenesisAlloc{addr1: {Balance: big.NewInt(1000000)}},
-			BaseFee: big.NewInt(params.ApricotPhase3InitialBaseFee),
+			BaseFee: big.NewInt(params.OdysseyPhase1InitialBaseFee),
 		}
 	)
 	defer db.Close()
@@ -127,7 +127,7 @@ func TestFilters(t *testing.T) {
 		gspec = &core.Genesis{
 			Config:  params.TestChainConfig,
 			Alloc:   core.GenesisAlloc{addr: {Balance: big.NewInt(1000000)}},
-			BaseFee: big.NewInt(params.ApricotPhase3InitialBaseFee),
+			BaseFee: big.NewInt(params.OdysseyPhase1InitialBaseFee),
 		}
 	)
 	defer db.Close()

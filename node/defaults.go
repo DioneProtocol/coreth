@@ -27,7 +27,7 @@
 package node
 
 import (
-	"github.com/dioneprotocol/coreth/rpc"
+	"github.com/DioneProtocol/coreth/rpc"
 )
 
 const (

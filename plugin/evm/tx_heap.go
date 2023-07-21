@@ -6,7 +6,7 @@ package evm
 import (
 	"container/heap"
 
-	"github.com/dioneprotocol/dionego/ids"
+	"github.com/DioneProtocol/odysseygo/ids"
 )
 
 // txEntry is used to track the [gasPrice] transactions pay to be included in

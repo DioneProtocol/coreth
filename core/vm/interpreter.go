@@ -29,7 +29,7 @@ package vm
 import (
 	"hash"
 
-	"github.com/dioneprotocol/coreth/vmerrs"
+	"github.com/DioneProtocol/coreth/vmerrs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/log"
@@ -90,14 +90,10 @@ func NewEVMInterpreter(evm *EVM, cfg Config) *EVMInterpreter {
 	// If jump table was not initialised we set the default one.
 	if cfg.JumpTable == nil {
 		switch {
-		case evm.chainRules.IsCortina:
-			cfg.JumpTable = &cortinaInstructionSet
-		case evm.chainRules.IsApricotPhase3:
-			cfg.JumpTable = &apricotPhase3InstructionSet
-		case evm.chainRules.IsApricotPhase2:
-			cfg.JumpTable = &apricotPhase2InstructionSet
-		case evm.chainRules.IsApricotPhase1:
-			cfg.JumpTable = &apricotPhase1InstructionSet
+		case evm.chainRules.IsDUpgrade:
+			cfg.JumpTable = &dUpgradeInstructionSet
+		case evm.chainRules.IsOdysseyPhase1:
+			cfg.JumpTable = &odysseyPhase1InstructionSet
 		case evm.chainRules.IsIstanbul:
 			cfg.JumpTable = &istanbulInstructionSet
 		case evm.chainRules.IsConstantinople:
@@ -140,11 +136,11 @@ func NewEVMInterpreter(evm *EVM, cfg Config) *EVMInterpreter {
 // considered a revert-and-consume-all-gas operation except for
 // ErrExecutionReverted which means revert-and-keep-gas-left.
 func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (ret []byte, err error) {
-	// Deprecate special handling of [BuiltinAddr] as of ApricotPhase2.
-	// In ApricotPhase2, the contract deployed in the genesis is overridden by a deprecated precompiled
+	// Deprecate special handling of [BuiltinAddr] as of OdysseyPhase1.
+	// In OdysseyPhase1, the contract deployed in the genesis is overridden by a deprecated precompiled
 	// contract which will return an error immediately if its ever called. Therefore, this function should
-	// never be called after ApricotPhase2 with [BuiltinAddr] as the contract address.
-	if !in.evm.chainRules.IsApricotPhase2 && contract.Address() == BuiltinAddr {
+	// never be called after OdysseyPhase1 with [BuiltinAddr] as the contract address.
+	if !in.evm.chainRules.IsOdysseyPhase1 && contract.Address() == BuiltinAddr {
 		self := AccountRef(contract.Caller())
 		if _, ok := contract.caller.(*Contract); ok {
 			contract = contract.AsDelegate()

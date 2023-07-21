@@ -25,8 +25,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"

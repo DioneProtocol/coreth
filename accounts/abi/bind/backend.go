@@ -31,8 +31,8 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/interfaces"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/interfaces"
 	"github.com/ethereum/go-ethereum/common"
 )
 

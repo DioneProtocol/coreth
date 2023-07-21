@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dioneprotocol/dionego/database"
-	"github.com/dioneprotocol/dionego/snow/engine/snowman/block"
+	"github.com/DioneProtocol/odysseygo/database"
+	"github.com/DioneProtocol/odysseygo/snow/engine/snowman/block"
 
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 )

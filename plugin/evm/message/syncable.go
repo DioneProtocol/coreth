@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dioneprotocol/dionego/ids"
+	"github.com/DioneProtocol/odysseygo/ids"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/dioneprotocol/dionego/snow/engine/snowman/block"
+	"github.com/DioneProtocol/odysseygo/snow/engine/snowman/block"
 )
 
 var _ block.StateSummary = &SyncSummary{}

@@ -4,9 +4,9 @@
 package evm
 
 import (
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/utils/logging"
-	"github.com/dioneprotocol/dionego/vms"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/logging"
+	"github.com/DioneProtocol/odysseygo/vms"
 )
 
 var (

@@ -11,24 +11,24 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/dioneprotocol/dionego/ids"
+	"github.com/DioneProtocol/odysseygo/ids"
 
-	"github.com/dioneprotocol/coreth/ethdb/memorydb"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/sync/client/stats"
+	"github.com/DioneProtocol/coreth/ethdb/memorydb"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/sync/client/stats"
 
-	"github.com/dioneprotocol/dionego/codec"
-	"github.com/dioneprotocol/dionego/version"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/version"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/peer"
-	"github.com/dioneprotocol/coreth/plugin/evm/message"
-	"github.com/dioneprotocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/peer"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/trie"
 )
 
 const (

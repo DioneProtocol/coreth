@@ -32,12 +32,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 )
@@ -55,12 +55,12 @@ func TestGenesisBlockForTesting(t *testing.T) {
 }
 
 func TestSetupGenesis(t *testing.T) {
-	apricotPhase1Config := *params.TestApricotPhase1Config
-	apricotPhase1Config.ApricotPhase1BlockTimestamp = big.NewInt(100)
+	odysseyPhase1Config := *params.TestOdysseyPhase1Config
+	odysseyPhase1Config.OdysseyPhase1BlockTimestamp = big.NewInt(100)
 	var (
 		customghash = common.HexToHash("0x1099a11e9e454bd3ef31d688cf21936671966407bc330f051d754b5ce401e7ed")
 		customg     = Genesis{
-			Config: &apricotPhase1Config,
+			Config: &odysseyPhase1Config,
 			Alloc: GenesisAlloc{
 				{1}: {Balance: big.NewInt(1), Storage: map[common.Hash]common.Hash{{1}: {1}}},
 			},
@@ -68,9 +68,9 @@ func TestSetupGenesis(t *testing.T) {
 		oldcustomg = customg
 	)
 
-	rollbackApricotPhase1Config := apricotPhase1Config
-	rollbackApricotPhase1Config.ApricotPhase1BlockTimestamp = big.NewInt(90)
-	oldcustomg.Config = &rollbackApricotPhase1Config
+	rollbackOdysseyPhase1Config := odysseyPhase1Config
+	rollbackOdysseyPhase1Config.OdysseyPhase1BlockTimestamp = big.NewInt(90)
+	oldcustomg.Config = &rollbackOdysseyPhase1Config
 	tests := []struct {
 		name       string
 		fn         func(ethdb.Database) (*params.ChainConfig, common.Hash, error)
@@ -113,10 +113,10 @@ func TestSetupGenesis(t *testing.T) {
 			wantConfig: customg.Config,
 		},
 		{
-			name: "incompatible config for dione fork in DB",
+			name: "incompatible config for odyssey fork in DB",
 			fn: func(db ethdb.Database) (*params.ChainConfig, common.Hash, error) {
-				// Commit the 'old' genesis block with ApricotPhase1 transition at 90.
-				// Advance to block #4, past the ApricotPhase1 transition block of customg.
+				// Commit the 'old' genesis block with OdysseyPhase1 transition at 90.
+				// Advance to block #4, past the OdysseyPhase1 transition block of customg.
 				genesis := oldcustomg.MustCommit(db)
 
 				bc, _ := NewBlockChain(db, DefaultCacheConfig, &oldcustomg, dummy.NewFullFaker(), vm.Config{}, genesis.Hash(), false)
@@ -124,6 +124,7 @@ func TestSetupGenesis(t *testing.T) {
 
 				blocks, _, _ := GenerateChain(oldcustomg.Config, genesis, dummy.NewFullFaker(), db, 4, 25, nil)
 				bc.InsertChain(blocks)
+
 				for _, block := range blocks {
 					if err := bc.Accept(block); err != nil {
 						t.Fatal(err)
@@ -136,7 +137,7 @@ func TestSetupGenesis(t *testing.T) {
 			wantHash:   customghash,
 			wantConfig: customg.Config,
 			wantErr: &params.ConfigCompatError{
-				What:         "ApricotPhase1 fork block timestamp",
+				What:         "OdysseyPhase1 fork block timestamp",
 				StoredConfig: big.NewInt(90),
 				NewConfig:    big.NewInt(100),
 				RewindTo:     89,
@@ -174,16 +175,15 @@ func TestNetworkUpgradeBetweenHeadAndAcceptedBlock(t *testing.T) {
 	db := rawdb.NewMemoryDatabase()
 
 	customg := Genesis{
-		Config: params.TestApricotPhase1Config,
+		Config: params.TestOdysseyPhase1Config,
 		Alloc: GenesisAlloc{
 			{1}: {Balance: big.NewInt(1), Storage: map[common.Hash]common.Hash{{1}: {1}}},
 		},
 	}
-	genesis := customg.MustCommit(db)
 	bc, _ := NewBlockChain(db, DefaultCacheConfig, &customg, dummy.NewFullFaker(), vm.Config{}, common.Hash{}, false)
 	defer bc.Stop()
 
-	// Advance header to block #4, past the ApricotPhase2 timestamp.
+	// Advance header to block #4, past the OdysseyPhase2 timestamp.
 	_, blocks, _, _ := GenerateChainWithGenesis(&customg, dummy.NewFullFaker(), 4, 25, nil)
 
 	require := require.New(t)
@@ -201,16 +201,16 @@ func TestNetworkUpgradeBetweenHeadAndAcceptedBlock(t *testing.T) {
 	require.Greater(block.Time(), bc.lastAccepted.Time())
 
 	activatedGenesis := customg
-	apricotPhase2Timestamp := big.NewInt(51)
-	updatedApricotPhase2Config := *params.TestApricotPhase1Config
-	updatedApricotPhase2Config.ApricotPhase2BlockTimestamp = apricotPhase2Timestamp
+	odysseyPhase2Timestamp := big.NewInt(51)
+	updatedOdysseyPhase2Config := *params.TestOdysseyPhase2Config
+	updatedOdysseyPhase2Config.OdysseyPhase2BlockTimestamp = odysseyPhase2Timestamp
 
-	activatedGenesis.Config = &updatedApricotPhase2Config
+	activatedGenesis.Config = &updatedOdysseyPhase1Config
 
 	// assert block is after the activation block
-	require.Greater(block.Time(), apricotPhase2Timestamp.Uint64())
+	require.Greater(block.Time(), odysseyPhase2Timestamp.Uint64())
 	// assert last accepted block is before the activation block
-	require.Less(bc.lastAccepted.Time(), apricotPhase2Timestamp.Uint64())
+	require.Less(bc.lastAccepted.Time(), odysseyPhase2Timestamp.Uint64())
 
 	// This should not return any error since the last accepted block is before the activation block.
 	config, _, err := setupGenesisBlock(db, &activatedGenesis, bc.lastAccepted.Hash())

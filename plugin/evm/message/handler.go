@@ -8,7 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/log"
 
-	"github.com/dioneprotocol/dionego/ids"
+	"github.com/DioneProtocol/odysseygo/ids"
 )
 
 var (

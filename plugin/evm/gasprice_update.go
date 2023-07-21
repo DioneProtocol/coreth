@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/params"
 )
 
 type gasPriceUpdater struct {
@@ -41,19 +41,8 @@ func (gpu *gasPriceUpdater) start() {
 	// Sets the initial gas price to the launch minimum gas price
 	gpu.setter.SetGasPrice(big.NewInt(params.LaunchMinGasPrice))
 
-	// Updates to the minimum gas price as of ApricotPhase1 if it's already in effect or starts a goroutine to enable it at the correct time
-	if disabled := gpu.handleUpdate(gpu.setter.SetGasPrice, gpu.chainConfig.ApricotPhase1BlockTimestamp, big.NewInt(params.ApricotPhase1MinGasPrice)); disabled {
-		return
-	}
-	// Updates to the minimum gas price as of ApricotPhase3 if it's already in effect or starts a goroutine to enable it at the correct time
-	if disabled := gpu.handleUpdate(gpu.setter.SetGasPrice, gpu.chainConfig.ApricotPhase3BlockTimestamp, big.NewInt(0)); disabled {
-		return
-	}
-	if disabled := gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.ApricotPhase3BlockTimestamp, big.NewInt(params.ApricotPhase3MinBaseFee)); disabled {
-		return
-	}
-	// Updates to the minimum gas price as of ApricotPhase4 if it's already in effect or starts a goroutine to enable it at the correct time
-	gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.ApricotPhase4BlockTimestamp, big.NewInt(params.ApricotPhase4MinBaseFee))
+	// Updates to the minimum gas price as of OdysseyPhase1 if it's already in effect or starts a goroutine to enable it at the correct time
+	gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.OdysseyPhase1BlockTimestamp, big.NewInt(params.OdysseyPhase1MinBaseFee))
 }
 
 // handleUpdate handles calling update(price) at the appropriate time based on

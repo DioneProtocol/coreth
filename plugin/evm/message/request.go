@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dioneprotocol/dionego/codec"
-	"github.com/dioneprotocol/dionego/ids"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/ids"
 )
 
 // Request represents a Network request type

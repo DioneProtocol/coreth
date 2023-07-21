@@ -9,12 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -963,14 +963,13 @@ func TestReorgReInsert(t *testing.T, create func(db ethdb.Database, gspec *Genes
 // Once we accept one of the chains, we insert and accept A3 on top of the shared
 // state root
 //
-//	 G   (genesis)
-//	/ \
-//
-// A1  B1
-// |   |
-// A2  B2 (A2 and B2 represent two different paths to the identical state trie)
-// |
-// A3
+//	  G   (genesis)
+//	 / \
+//	A1  B1
+//	|   |
+//	A2  B2 (A2 and B2 represent two different paths to the identical state trie)
+//	|
+//	A3
 //
 //nolint:goimports
 func TestAcceptBlockIdenticalStateRoot(t *testing.T, create func(db ethdb.Database, gspec *Genesis, lastAcceptedHash common.Hash) (*BlockChain, error)) {
@@ -1105,17 +1104,15 @@ func TestAcceptBlockIdenticalStateRoot(t *testing.T, create func(db ethdb.Databa
 // Insert two different chains that result in the identical state root.
 // Once we insert both of the chains, we restart, insert both the chains again,
 // and then we accept one of the chains and accept A3 on top of the shared state
-//
 // root
 //
-//	 G   (genesis)
-//	/ \
-//
-// A1  B1
-// |   |
-// A2  B2 (A2 and B2 represent two different paths to the identical state trie)
-// |
-// A3
+//	  G   (genesis)
+//	 / \
+//	A1  B1
+//	|   |
+//	A2  B2 (A2 and B2 represent two different paths to the identical state trie)
+//	|
+//	A3
 //
 //nolint:goimports
 func TestReprocessAcceptBlockIdenticalStateRoot(t *testing.T, create func(db ethdb.Database, gspec *Genesis, lastAcceptedHash common.Hash) (*BlockChain, error)) {
@@ -1295,8 +1292,6 @@ func TestGenerateChainInvalidBlockFee(t *testing.T, create func(db ethdb.Databas
 
 	// This call generates a chain of 3 blocks.
 	signer := types.LatestSigner(params.TestChainConfig)
-	// Generate chain of blocks using [genDB] instead of [chainDB] to avoid writing
-	// to the BlockChain's database while generating blocks.
 	_, _, _, err = GenerateChainWithGenesis(gspec, blockchain.engine, 3, 0, func(i int, gen *BlockGen) {
 		tx := types.NewTx(&types.DynamicFeeTx{
 			ChainID:   params.TestChainConfig.ChainID,
@@ -1346,8 +1341,6 @@ func TestInsertChainInvalidBlockFee(t *testing.T, create func(db ethdb.Database,
 
 	// This call generates a chain of 3 blocks.
 	signer := types.LatestSigner(params.TestChainConfig)
-	// Generate chain of blocks using [genDB] instead of [chainDB] to avoid writing
-	// to the BlockChain's database while generating blocks.
 	eng := dummy.NewComplexETHFaker(&TestCallbacks)
 	_, chain, _, err := GenerateChainWithGenesis(gspec, eng, 3, 0, func(i int, gen *BlockGen) {
 		tx := types.NewTx(&types.DynamicFeeTx{
@@ -1404,8 +1397,6 @@ func TestInsertChainValidBlockFee(t *testing.T, create func(db ethdb.Database, g
 
 	// This call generates a chain of 3 blocks.
 	signer := types.LatestSigner(params.TestChainConfig)
-	// Generate chain of blocks using [genDB] instead of [chainDB] to avoid writing
-	// to the BlockChain's database while generating blocks.
 	tip := big.NewInt(50000 * params.GWei)
 	transfer := big.NewInt(10000)
 	_, chain, _, err := GenerateChainWithGenesis(gspec, blockchain.engine, 3, 0, func(i int, gen *BlockGen) {

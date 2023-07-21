@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dioneprotocol/dionego/api"
-	"github.com/dioneprotocol/dionego/utils/profiler"
+	"github.com/DioneProtocol/odysseygo/api"
+	"github.com/DioneProtocol/odysseygo/utils/profiler"
 	"github.com/ethereum/go-ethereum/log"
 )
 

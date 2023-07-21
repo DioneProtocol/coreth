@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dioneprotocol/dionego/chains/atomic"
-	"github.com/dioneprotocol/dionego/snow"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/snow"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/stretchr/testify/require"
 )
 
@@ -85,7 +85,7 @@ type atomicTxTest struct {
 	// Whether or not the VM should be considered to still be bootstrapping
 	bootstrapping bool
 	// genesisJSON to use for the VM genesis (also defines the rule set that will be used in verification)
-	// If this is left empty, [genesisJSONApricotPhase0], will be used
+	// If this is left empty, [genesisJSONOdysseyPhase0], will be used
 	genesisJSON string
 
 	// passed directly into GenesisVM
@@ -95,7 +95,7 @@ type atomicTxTest struct {
 func executeTxTest(t *testing.T, test atomicTxTest) {
 	genesisJSON := test.genesisJSON
 	if len(genesisJSON) == 0 {
-		genesisJSON = genesisJSONApricotPhase0
+		genesisJSON = genesisJSONOdysseyPhase0
 	}
 	issuer, vm, _, sharedMemory, _ := GenesisVM(t, !test.bootstrapping, genesisJSON, test.configJSON, test.upgradeJSON)
 	rules := vm.currentRules()
@@ -103,9 +103,9 @@ func executeTxTest(t *testing.T, test atomicTxTest) {
 	tx := test.setup(t, vm, sharedMemory)
 
 	var baseFee *big.Int
-	// If ApricotPhase3 is active, use the initial base fee for the atomic transaction
+	// If OdysseyPhase1 is active, use the initial base fee for the atomic transaction
 	switch {
-	case rules.IsApricotPhase3:
+	case rules.IsOdysseyPhase1:
 		baseFee = initialBaseFee
 	}
 

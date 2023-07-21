@@ -42,8 +42,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dioneprotocol/coreth/accounts"
-	"github.com/dioneprotocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/accounts"
+	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"

@@ -7,8 +7,8 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/dioneprotocol/dionego/utils"
-	"github.com/dioneprotocol/dionego/utils/units"
+	"github.com/DioneProtocol/odysseygo/utils"
+	"github.com/DioneProtocol/odysseygo/utils/units"
 
 	"github.com/stretchr/testify/assert"
 )

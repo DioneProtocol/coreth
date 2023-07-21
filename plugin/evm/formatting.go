@@ -6,10 +6,10 @@ package evm
 import (
 	"fmt"
 
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/utils/constants"
-	"github.com/dioneprotocol/dionego/utils/crypto/secp256k1"
-	"github.com/dioneprotocol/dionego/utils/formatting/address"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/constants"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/formatting/address"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )

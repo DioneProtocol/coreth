@@ -6,7 +6,7 @@ package stats
 import (
 	"time"
 
-	"github.com/dioneprotocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/metrics"
 )
 
 // HandlerStats reports prometheus metrics for the state sync handlers

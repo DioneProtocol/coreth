@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/state/pruner"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/state/pruner"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/fsnotify/fsnotify"
@@ -219,7 +219,6 @@ func TestPruningBlockChainSnapsDisabled(t *testing.T) {
 			},
 			gspec,
 			lastAcceptedHash,
-			false,
 		)
 	}
 	for _, tt := range tests {
@@ -501,6 +500,7 @@ func TestUngracefulAsyncShutdown(t *testing.T) {
 		Config: &params.ChainConfig{HomesteadBlock: new(big.Int)},
 		Alloc:  GenesisAlloc{addr1: {Balance: genesisBalance}},
 	}
+
 	blockchain, err := create(chainDB, gspec, common.Hash{})
 	if err != nil {
 		t.Fatal(err)
@@ -651,7 +651,7 @@ func TestCanonicalHashMarker(t *testing.T) {
 			gspec = &Genesis{
 				Config:  params.TestChainConfig,
 				Alloc:   GenesisAlloc{},
-				BaseFee: big.NewInt(params.ApricotPhase3InitialBaseFee),
+				BaseFee: big.NewInt(params.OdysseyPhase1InitialBaseFee),
 			}
 			engine = dummy.NewFaker()
 		)

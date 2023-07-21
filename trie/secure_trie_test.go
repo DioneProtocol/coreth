@@ -33,7 +33,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/ethdb/memorydb"
+	"github.com/DioneProtocol/coreth/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )

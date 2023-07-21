@@ -12,20 +12,20 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/params"
 
-	"github.com/dioneprotocol/dionego/chains/atomic"
-	"github.com/dioneprotocol/dionego/codec"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/snow"
-	"github.com/dioneprotocol/dionego/utils"
-	"github.com/dioneprotocol/dionego/utils/crypto/secp256k1"
-	"github.com/dioneprotocol/dionego/utils/hashing"
-	"github.com/dioneprotocol/dionego/utils/set"
-	"github.com/dioneprotocol/dionego/utils/wrappers"
-	"github.com/dioneprotocol/dionego/vms/components/verify"
-	"github.com/dioneprotocol/dionego/vms/secp256k1fx"
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/snow"
+	"github.com/DioneProtocol/odysseygo/utils"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/hashing"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
+	"github.com/DioneProtocol/odysseygo/vms/components/verify"
+	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 )
 
 var (

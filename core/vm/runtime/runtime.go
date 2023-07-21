@@ -31,10 +31,10 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -76,10 +76,7 @@ func setDefaults(cfg *Config) {
 			PetersburgBlock:             new(big.Int),
 			IstanbulBlock:               new(big.Int),
 			MuirGlacierBlock:            new(big.Int),
-			ApricotPhase1BlockTimestamp: new(big.Int),
-			ApricotPhase2BlockTimestamp: new(big.Int),
-			ApricotPhase3BlockTimestamp: new(big.Int),
-			ApricotPhase4BlockTimestamp: new(big.Int),
+			OdysseyPhase1BlockTimestamp: new(big.Int),
 		}
 	}
 
@@ -107,7 +104,7 @@ func setDefaults(cfg *Config) {
 		}
 	}
 	if cfg.BaseFee == nil {
-		cfg.BaseFee = big.NewInt(params.ApricotPhase3InitialBaseFee)
+		cfg.BaseFee = big.NewInt(params.OdysseyPhase1InitialBaseFee)
 	}
 }
 
@@ -130,7 +127,7 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 		vmenv   = NewEnv(cfg)
 		sender  = vm.AccountRef(cfg.Origin)
 	)
-	if rules := cfg.ChainConfig.DioneRules(vmenv.Context.BlockNumber, vmenv.Context.Time); rules.IsApricotPhase2 {
+	if rules := cfg.ChainConfig.OdysseyRules(vmenv.Context.BlockNumber, vmenv.Context.Time); rules.IsOdysseyPhase1 {
 		cfg.State.PrepareAccessList(cfg.Origin, &address, vm.ActivePrecompiles(rules), nil)
 	}
 	cfg.State.CreateAccount(address)
@@ -162,7 +159,7 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 		vmenv  = NewEnv(cfg)
 		sender = vm.AccountRef(cfg.Origin)
 	)
-	if rules := cfg.ChainConfig.DioneRules(vmenv.Context.BlockNumber, vmenv.Context.Time); rules.IsApricotPhase2 {
+	if rules := cfg.ChainConfig.OdysseyRules(vmenv.Context.BlockNumber, vmenv.Context.Time); rules.IsOdysseyPhase1 {
 		cfg.State.PrepareAccessList(cfg.Origin, nil, vm.ActivePrecompiles(rules), nil)
 	}
 	// Call the code with the given configuration.
@@ -188,7 +185,7 @@ func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, er
 	sender := cfg.State.GetOrNewStateObject(cfg.Origin)
 	statedb := cfg.State
 
-	if rules := cfg.ChainConfig.DioneRules(vmenv.Context.BlockNumber, vmenv.Context.Time); rules.IsApricotPhase2 {
+	if rules := cfg.ChainConfig.OdysseyRules(vmenv.Context.BlockNumber, vmenv.Context.Time); rules.IsOdysseyPhase1 {
 		statedb.PrepareAccessList(cfg.Origin, &address, vm.ActivePrecompiles(rules), nil)
 	}
 	// Call the code with the given configuration.

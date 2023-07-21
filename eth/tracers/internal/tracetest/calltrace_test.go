@@ -36,13 +36,13 @@ import (
 	"testing"
 	"unicode"
 
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/eth/tracers"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/tests"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/eth/tracers"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/tests"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -50,8 +50,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 
 	// Force-load native and js packages to trigger registration
-	_ "github.com/dioneprotocol/coreth/eth/tracers/js"
-	_ "github.com/dioneprotocol/coreth/eth/tracers/native"
+	_ "github.com/DioneProtocol/coreth/eth/tracers/js"
+	_ "github.com/DioneProtocol/coreth/eth/tracers/native"
 )
 
 // To generate a new callTracer test, copy paste the makeTest method below into
@@ -375,7 +375,7 @@ func TestZeroValueToNotExitCall(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create call tracer: %v", err)
 	}
-	evm := vm.NewEVM(context, txContext, statedb, params.DioneMainnetChainConfig, vm.Config{Debug: true, Tracer: tracer})
+	evm := vm.NewEVM(context, txContext, statedb, params.OdysseyMainnetChainConfig, vm.Config{Debug: true, Tracer: tracer})
 	msg, err := tx.AsMessage(signer, nil)
 	if err != nil {
 		t.Fatalf("failed to prepare transaction for tracing: %v", err)

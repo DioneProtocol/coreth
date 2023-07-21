@@ -34,23 +34,23 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dioneprotocol/coreth/eth"
-	"github.com/dioneprotocol/coreth/vmerrs"
+	"github.com/DioneProtocol/coreth/eth"
+	"github.com/DioneProtocol/coreth/vmerrs"
 
-	"github.com/dioneprotocol/coreth/accounts/abi"
-	"github.com/dioneprotocol/coreth/accounts/abi/bind"
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/bloombits"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/eth/filters"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/interfaces"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/rpc"
+	"github.com/DioneProtocol/coreth/accounts/abi"
+	"github.com/DioneProtocol/coreth/accounts/abi/bind"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/bloombits"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/eth/filters"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/interfaces"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -125,7 +125,7 @@ func NewSimulatedBackendWithDatabase(database ethdb.Database, alloc core.Genesis
 
 	filterBackend := &filterBackend{database, blockchain, backend}
 	backend.filterSystem = filters.NewFilterSystem(filterBackend, filters.Config{})
-	backend.events = filters.NewEventSystem(backend.filterSystem, false)
+	backend.events = filters.NewEventSystem(backend.filterSystem)
 
 	backend.rollback(blockchain.CurrentBlock())
 	return backend
@@ -643,7 +643,7 @@ func (b *SimulatedBackend) callContract(ctx context.Context, call interfaces.Cal
 		return nil, errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
 	}
 	head := b.blockchain.CurrentHeader()
-	if !b.blockchain.Config().IsApricotPhase3(new(big.Int).SetUint64(head.Time)) {
+	if !b.blockchain.Config().IsOdysseyPhase1(new(big.Int).SetUint64(head.Time)) {
 		// If there's no basefee, then it must be a non-1559 execution
 		if call.GasPrice == nil {
 			call.GasPrice = new(big.Int)

@@ -33,10 +33,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dioneprotocol/coreth/accounts/abi/bind"
-	"github.com/dioneprotocol/coreth/accounts/abi/bind/backends"
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/accounts/abi/bind"
+	"github.com/DioneProtocol/coreth/accounts/abi/bind/backends"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )

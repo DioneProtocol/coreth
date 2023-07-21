@@ -31,10 +31,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/dioneprotocol/coreth/constants"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/precompile"
-	"github.com/dioneprotocol/coreth/vmerrs"
+	"github.com/DioneProtocol/coreth/constants"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/precompile"
+	"github.com/DioneProtocol/coreth/vmerrs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
@@ -80,12 +80,8 @@ func (evm *EVM) precompile(addr common.Address) (precompile.StatefulPrecompiledC
 	switch {
 	case evm.chainRules.IsBanff:
 		precompiles = PrecompiledContractsBanff
-	case evm.chainRules.IsApricotPhase6:
-		precompiles = PrecompiledContractsApricotPhase6
-	case evm.chainRules.IsApricotPhasePre6:
-		precompiles = PrecompiledContractsApricotPhasePre6
-	case evm.chainRules.IsApricotPhase2:
-		precompiles = PrecompiledContractsApricotPhase2
+	case evm.chainRules.IsOdysseyPhase1:
+		precompiles = PrecompiledContractsOdysseyPhase1
 	case evm.chainRules.IsIstanbul:
 		precompiles = PrecompiledContractsIstanbul
 	case evm.chainRules.IsByzantium:
@@ -192,7 +188,7 @@ func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainConfig
 		StateDB:     statedb,
 		Config:      config,
 		chainConfig: chainConfig,
-		chainRules:  chainConfig.DioneRules(blockCtx.BlockNumber, blockCtx.Time),
+		chainRules:  chainConfig.OdysseyRules(blockCtx.BlockNumber, blockCtx.Time),
 	}
 	evm.interpreter = NewEVMInterpreter(evm, config)
 	return evm
@@ -580,7 +576,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	evm.StateDB.SetNonce(caller.Address(), nonce+1)
 	// We add this to the access list _before_ taking a snapshot. Even if the creation fails,
 	// the access-list change should not be rolled back
-	if evm.chainRules.IsApricotPhase2 {
+	if evm.chainRules.IsOdysseyPhase1 {
 		evm.StateDB.AddAddressToAccessList(address)
 	}
 	// Ensure there's no existing contract already at the designated address
@@ -619,7 +615,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	}
 
 	// Reject code starting with 0xEF if EIP-3541 is enabled.
-	if err == nil && len(ret) >= 1 && ret[0] == 0xEF && evm.chainRules.IsApricotPhase3 {
+	if err == nil && len(ret) >= 1 && ret[0] == 0xEF && evm.chainRules.IsOdysseyPhase1 {
 		err = vmerrs.ErrInvalidCode
 	}
 

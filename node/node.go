@@ -27,8 +27,8 @@
 package node
 
 import (
-	"github.com/dioneprotocol/coreth/accounts"
-	"github.com/dioneprotocol/coreth/rpc"
+	"github.com/DioneProtocol/coreth/accounts"
+	"github.com/DioneProtocol/coreth/rpc"
 )
 
 // Node is a container on which services can be registered.

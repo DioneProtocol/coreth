@@ -6,7 +6,7 @@ package message
 import (
 	"testing"
 
-	"github.com/dioneprotocol/dionego/ids"
+	"github.com/DioneProtocol/odysseygo/ids"
 
 	"github.com/stretchr/testify/assert"
 )

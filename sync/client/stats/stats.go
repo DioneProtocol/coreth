@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dioneprotocol/coreth/metrics"
-	"github.com/dioneprotocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
 )
 
 var (

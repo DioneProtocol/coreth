@@ -13,16 +13,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/state/snapshot"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/ethdb/memorydb"
-	"github.com/dioneprotocol/coreth/plugin/evm/message"
-	statesyncclient "github.com/dioneprotocol/coreth/sync/client"
-	"github.com/dioneprotocol/coreth/sync/handlers"
-	handlerstats "github.com/dioneprotocol/coreth/sync/handlers/stats"
-	"github.com/dioneprotocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/state/snapshot"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/ethdb/memorydb"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	statesyncclient "github.com/DioneProtocol/coreth/sync/client"
+	"github.com/DioneProtocol/coreth/sync/handlers"
+	handlerstats "github.com/DioneProtocol/coreth/sync/handlers/stats"
+	"github.com/DioneProtocol/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -62,6 +62,7 @@ func testSync(t *testing.T, test syncTest) {
 		BatchSize:                1000, // Use a lower batch size in order to get test coverage of batches being written early.
 		NumCodeFetchingWorkers:   DefaultNumCodeFetchingWorkers,
 		MaxOutstandingCodeHashes: DefaultMaxOutstandingCodeHashes,
+		RequestSize:              1024,
 	})
 	if err != nil {
 		t.Fatal(err)

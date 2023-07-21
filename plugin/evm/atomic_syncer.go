@@ -9,13 +9,14 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/dioneprotocol/dionego/database/versiondb"
-	"github.com/dioneprotocol/dionego/utils/wrappers"
+	"github.com/DioneProtocol/odysseygo/database/versiondb"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
 
-	"github.com/dioneprotocol/coreth/plugin/evm/message"
-	syncclient "github.com/dioneprotocol/coreth/sync/client"
-	"github.com/dioneprotocol/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
+
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	syncclient "github.com/DioneProtocol/coreth/sync/client"
+	"github.com/DioneProtocol/coreth/trie"
 )
 
 var (
@@ -49,7 +50,7 @@ func addZeroes(height uint64) []byte {
 	return packer.Bytes
 }
 
-func newAtomicSyncer(client syncclient.LeafClient, atomicBackend *atomicBackend, targetRoot common.Hash, targetHeight uint64) (*atomicSyncer, error) {
+func newAtomicSyncer(client syncclient.LeafClient, atomicBackend *atomicBackend, targetRoot common.Hash, targetHeight uint64, requestSize uint16) (*atomicSyncer, error) {
 	atomicTrie := atomicBackend.AtomicTrie()
 	lastCommittedRoot, lastCommit := atomicTrie.LastCommitted()
 	trie, err := atomicTrie.OpenTrie(lastCommittedRoot)
@@ -68,7 +69,7 @@ func newAtomicSyncer(client syncclient.LeafClient, atomicBackend *atomicBackend,
 	tasks := make(chan syncclient.LeafSyncTask, 1)
 	tasks <- &atomicSyncerLeafTask{atomicSyncer: atomicSyncer}
 	close(tasks)
-	atomicSyncer.syncer = syncclient.NewCallbackLeafSyncer(client, tasks)
+	atomicSyncer.syncer = syncclient.NewCallbackLeafSyncer(client, tasks, requestSize)
 	return atomicSyncer, nil
 }
 

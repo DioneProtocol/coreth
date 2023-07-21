@@ -9,20 +9,20 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/dioneprotocol/dionego/chains/atomic"
-	"github.com/dioneprotocol/dionego/database"
-	"github.com/dioneprotocol/dionego/database/prefixdb"
-	"github.com/dioneprotocol/dionego/database/versiondb"
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/database"
+	"github.com/DioneProtocol/odysseygo/database/prefixdb"
+	"github.com/DioneProtocol/odysseygo/database/versiondb"
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/dioneprotocol/dionego/codec"
-	"github.com/dioneprotocol/dionego/utils/set"
-	"github.com/dioneprotocol/dionego/utils/wrappers"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/dioneprotocol/dionego/database/memdb"
-	"github.com/dioneprotocol/dionego/ids"
+	"github.com/DioneProtocol/odysseygo/database/memdb"
+	"github.com/DioneProtocol/odysseygo/ids"
 )
 
 // addTxs writes [txsPerHeight] txs for heights ranging in [fromHeight, toHeight) directly to [acceptedAtomicTxDB],
@@ -212,32 +212,7 @@ func TestAtomicRepositoryReadWriteMultipleTxs(t *testing.T) {
 	verifyTxs(t, repo, txMap)
 }
 
-func TestAtomicRepositoryPreAP5Migration(t *testing.T) {
-	db := versiondb.New(memdb.New())
-	codec := testTxCodec()
-
-	acceptedAtomicTxDB := prefixdb.New(atomicTxIDDBPrefix, db)
-	txMap := make(map[uint64][]*Tx)
-	addTxs(t, codec, acceptedAtomicTxDB, 1, 100, 1, txMap, nil)
-	if err := db.Commit(); err != nil {
-		t.Fatal(err)
-	}
-
-	// Ensure the atomic repository can correctly migrate the transactions
-	// from the old accepted atomic tx DB to add the height index.
-	repo, err := NewAtomicTxRepository(db, codec, 100, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.NoError(t, err)
-	verifyTxs(t, repo, txMap)
-
-	writeTxs(t, repo, 100, 150, constTxsPerHeight(1), txMap, nil)
-	writeTxs(t, repo, 150, 200, constTxsPerHeight(10), txMap, nil)
-	verifyTxs(t, repo, txMap)
-}
-
-func TestAtomicRepositoryPostAP5Migration(t *testing.T) {
+func TestAtomicRepositoryPostOP1(t *testing.T) {
 	db := versiondb.New(memdb.New())
 	codec := testTxCodec()
 

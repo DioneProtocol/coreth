@@ -31,8 +31,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/eth/tracers"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/eth/tracers"
 	"github.com/ethereum/go-ethereum/common"
 )
 

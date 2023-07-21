@@ -33,20 +33,20 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/coreth/accounts"
+	"github.com/DioneProtocol/coreth/accounts/abi"
+	"github.com/DioneProtocol/coreth/accounts/keystore"
+	"github.com/DioneProtocol/coreth/accounts/scwallet"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/eth/tracers/logger"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/rpc"
+	"github.com/DioneProtocol/coreth/vmerrs"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/dioneprotocol/coreth/accounts"
-	"github.com/dioneprotocol/coreth/accounts/abi"
-	"github.com/dioneprotocol/coreth/accounts/keystore"
-	"github.com/dioneprotocol/coreth/accounts/scwallet"
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/eth/tracers/logger"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/rpc"
-	"github.com/dioneprotocol/coreth/vmerrs"
-	"github.com/dioneprotocol/dionego/ids"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -132,7 +132,7 @@ func (s *EthereumAPI) FeeHistory(ctx context.Context, blockCount rpc.DecimalOrHe
 // Syncing allows the caller to determine whether the chain is syncing or not.
 // In geth, the response is either a map representing an ethereum.SyncProgress
 // struct or "false" (indicating the chain is not syncing).
-// In coreth, dionego prevents API calls unless bootstrapping is complete,
+// In coreth, odysseygo prevents API calls unless bootstrapping is complete,
 // so we always return false here for API compatibility.
 func (s *EthereumAPI) Syncing() (interface{}, error) {
 	return false, nil
@@ -1478,7 +1478,7 @@ func AccessList(ctx context.Context, b Backend, blockNrOrHash rpc.BlockNumberOrH
 		to = crypto.CreateAddress(args.from(), uint64(*args.Nonce))
 	}
 	// Retrieve the precompiles since they don't need to be added to the access list
-	precompiles := vm.ActivePrecompiles(b.ChainConfig().DioneRules(header.Number, new(big.Int).SetUint64(header.Time)))
+	precompiles := vm.ActivePrecompiles(b.ChainConfig().OdysseyRules(header.Number, new(big.Int).SetUint64(header.Time)))
 
 	// Create an initial tracer
 	prevTracer := logger.NewAccessListTracer(nil, args.from(), to, precompiles)
@@ -1728,7 +1728,7 @@ func (s *TransactionAPI) GetTransactionReceipt(ctx context.Context, hash common.
 		"type":              hexutil.Uint(tx.Type()),
 	}
 	// Assign the effective gas price paid
-	if !s.b.ChainConfig().IsApricotPhase3(timestamp) {
+	if !s.b.ChainConfig().IsOdysseyPhase1(timestamp) {
 		fields["effectiveGasPrice"] = hexutil.Uint64(tx.GasPrice().Uint64())
 	} else {
 		gasPrice := new(big.Int).Add(header.BaseFee, tx.EffectiveGasTipValue(header.BaseFee))

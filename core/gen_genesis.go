@@ -7,7 +7,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"

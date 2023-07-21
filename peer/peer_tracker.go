@@ -8,14 +8,14 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/dioneprotocol/dionego/ids"
-	utils_math "github.com/dioneprotocol/dionego/utils/math"
-	"github.com/dioneprotocol/dionego/utils/set"
-	"github.com/dioneprotocol/dionego/version"
+	"github.com/DioneProtocol/odysseygo/ids"
+	utils_math "github.com/DioneProtocol/odysseygo/utils/math"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/version"
 
 	"github.com/ethereum/go-ethereum/log"
 
-	"github.com/dioneprotocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/metrics"
 )
 
 const (

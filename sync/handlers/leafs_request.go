@@ -10,19 +10,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dioneprotocol/dionego/codec"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/utils/math"
-	"github.com/dioneprotocol/dionego/utils/wrappers"
-	"github.com/dioneprotocol/coreth/core/state/snapshot"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/ethdb/memorydb"
-	"github.com/dioneprotocol/coreth/plugin/evm/message"
-	"github.com/dioneprotocol/coreth/sync/handlers/stats"
-	"github.com/dioneprotocol/coreth/sync/syncutils"
-	"github.com/dioneprotocol/coreth/trie"
-	"github.com/dioneprotocol/coreth/utils"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/math"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
+	"github.com/DioneProtocol/coreth/core/state/snapshot"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/ethdb/memorydb"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/sync/handlers/stats"
+	"github.com/DioneProtocol/coreth/sync/syncutils"
+	"github.com/DioneProtocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 )
@@ -32,6 +32,10 @@ const (
 	// This parameter overrides any other Limit specified
 	// in message.LeafsRequest if it is greater than this value
 	maxLeavesLimit = uint16(1024)
+
+	// Maximum percent of the time left to deadline to spend on optimistically
+	// reading the snapshot to find the response
+	maxSnapshotReadTimePercent = 75
 
 	segmentLen = 64 // divide data from snapshot to segments of this size
 )
@@ -229,7 +233,19 @@ func (rb *responseBuilder) fillFromSnapshot(ctx context.Context) (bool, error) {
 	// modified since the requested root. If this assumption can be verified with
 	// range proofs and data from the trie, we can skip iterating the trie as
 	// an optimization.
-	snapKeys, snapVals, err := rb.readLeafsFromSnapshot(ctx)
+	// Since we are performing this read optimistically, we use a separate context
+	// with reduced timeout so there is enough time to read the trie if the snapshot
+	// read does not contain up-to-date data.
+	snapCtx := ctx
+	if deadline, ok := ctx.Deadline(); ok {
+		timeTillDeadline := time.Until(deadline)
+		bufferedDeadline := time.Now().Add(timeTillDeadline * maxSnapshotReadTimePercent / 100)
+
+		var cancel context.CancelFunc
+		snapCtx, cancel = context.WithDeadline(ctx, bufferedDeadline)
+		defer cancel()
+	}
+	snapKeys, snapVals, err := rb.readLeafsFromSnapshot(snapCtx)
 	// Update read snapshot time here, so that we include the case that an error occurred.
 	rb.stats.UpdateSnapshotReadTime(time.Since(snapshotReadStart))
 	if err != nil {

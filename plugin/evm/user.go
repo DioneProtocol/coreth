@@ -6,9 +6,9 @@ package evm
 import (
 	"errors"
 
-	"github.com/dioneprotocol/dionego/database/encdb"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/database/encdb"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
 	"github.com/ethereum/go-ethereum/common"
 )
 

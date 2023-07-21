@@ -11,14 +11,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/dioneprotocol/dionego/chains/atomic"
-	"github.com/dioneprotocol/dionego/database"
-	"github.com/dioneprotocol/dionego/database/leveldb"
-	"github.com/dioneprotocol/dionego/database/memdb"
-	"github.com/dioneprotocol/dionego/database/versiondb"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/utils/logging"
-	"github.com/dioneprotocol/dionego/utils/wrappers"
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/database"
+	"github.com/DioneProtocol/odysseygo/database/leveldb"
+	"github.com/DioneProtocol/odysseygo/database/memdb"
+	"github.com/DioneProtocol/odysseygo/database/versiondb"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/logging"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
 
 	"github.com/ethereum/go-ethereum/common"
 )

@@ -20,8 +20,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
 	"github.com/ethereum/go-ethereum/common"
 )
 

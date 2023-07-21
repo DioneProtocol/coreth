@@ -11,15 +11,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/dioneprotocol/dionego/database/memdb"
-	"github.com/dioneprotocol/dionego/database/versiondb"
+	"github.com/DioneProtocol/odysseygo/database/memdb"
+	"github.com/DioneProtocol/odysseygo/database/versiondb"
 
-	"github.com/dioneprotocol/coreth/ethdb/memorydb"
-	"github.com/dioneprotocol/coreth/plugin/evm/message"
-	syncclient "github.com/dioneprotocol/coreth/sync/client"
-	"github.com/dioneprotocol/coreth/sync/handlers"
-	handlerstats "github.com/dioneprotocol/coreth/sync/handlers/stats"
-	"github.com/dioneprotocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/ethdb/memorydb"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	syncclient "github.com/DioneProtocol/coreth/sync/client"
+	"github.com/DioneProtocol/coreth/sync/handlers"
+	handlerstats "github.com/DioneProtocol/coreth/sync/handlers/stats"
+	"github.com/DioneProtocol/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -61,7 +61,7 @@ func testAtomicSyncer(t *testing.T, serverTrieDB *trie.Database, targetHeight ui
 	// next trie.
 	for i, checkpoint := range checkpoints {
 		// Create syncer targeting the current [syncTrie].
-		syncer, err := atomicBackend.Syncer(mockClient, targetRoot, targetHeight)
+		syncer, err := atomicBackend.Syncer(mockClient, targetRoot, targetHeight, defaultStateSyncRequestSize)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -88,7 +88,7 @@ func testAtomicSyncer(t *testing.T, serverTrieDB *trie.Database, targetHeight ui
 	}
 
 	// Create syncer targeting the current [targetRoot].
-	syncer, err := atomicBackend.Syncer(mockClient, targetRoot, targetHeight)
+	syncer, err := atomicBackend.Syncer(mockClient, targetRoot, targetHeight, defaultStateSyncRequestSize)
 	if err != nil {
 		t.Fatal(err)
 	}

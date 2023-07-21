@@ -31,9 +31,9 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -54,7 +54,6 @@ func getBlock(transactions int, uncles int, dataSize int) *types.Block {
 			Alloc:  GenesisAlloc{address: {Balance: funds}},
 		}
 	)
-
 	// We need to generate as many blocks +1 as uncles
 	_, blocks, _, _ := GenerateChainWithGenesis(gspec, engine, uncles+1, 10,
 		func(n int, b *BlockGen) {

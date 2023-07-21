@@ -39,16 +39,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dioneprotocol/coreth/consensus"
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/eth/tracers/logger"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/internal/ethapi"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/rpc"
+	"github.com/DioneProtocol/coreth/consensus"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/eth/tracers/logger"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/internal/ethapi"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/log"
@@ -378,8 +378,8 @@ func (api *API) traceChain(start, end *types.Block, config *TraceConfig, closed 
 			number  uint64
 			traced  uint64
 			failed  error
-			parent  common.Hash
 			statedb *state.StateDB
+			release StateReleaseFunc
 		)
 		// Ensure everything is properly cleaned up on any exit path
 		defer func() {
@@ -1016,33 +1016,8 @@ func overrideConfig(original *params.ChainConfig, override *params.ChainConfig) 
 	canon := true
 
 	// Apply network upgrades (after Berlin) to the copy.
-	// Note in coreth, ApricotPhase2 is the "equivalent" to Berlin.
-	if timestamp := override.ApricotPhase2BlockTimestamp; timestamp != nil {
-		copy.ApricotPhase2BlockTimestamp = timestamp
-		canon = false
-	}
-	if timestamp := override.ApricotPhase3BlockTimestamp; timestamp != nil {
-		copy.ApricotPhase3BlockTimestamp = timestamp
-		canon = false
-	}
-	if timestamp := override.ApricotPhase4BlockTimestamp; timestamp != nil {
-		copy.ApricotPhase4BlockTimestamp = timestamp
-		canon = false
-	}
-	if timestamp := override.ApricotPhase5BlockTimestamp; timestamp != nil {
-		copy.ApricotPhase5BlockTimestamp = timestamp
-		canon = false
-	}
-	if timestamp := override.ApricotPhasePre6BlockTimestamp; timestamp != nil {
-		copy.ApricotPhasePre6BlockTimestamp = timestamp
-		canon = false
-	}
-	if timestamp := override.ApricotPhase6BlockTimestamp; timestamp != nil {
-		copy.ApricotPhase6BlockTimestamp = timestamp
-		canon = false
-	}
-	if timestamp := override.ApricotPhasePost6BlockTimestamp; timestamp != nil {
-		copy.ApricotPhasePost6BlockTimestamp = timestamp
+	if timestamp := override.OdysseyPhase1BlockTimestamp; timestamp != nil {
+		copy.OdysseyPhase1BlockTimestamp = timestamp
 		canon = false
 	}
 	if timestamp := override.BanffBlockTimestamp; timestamp != nil {
@@ -1051,6 +1026,10 @@ func overrideConfig(original *params.ChainConfig, override *params.ChainConfig) 
 	}
 	if timestamp := override.CortinaBlockTimestamp; timestamp != nil {
 		copy.CortinaBlockTimestamp = timestamp
+		canon = false
+	}
+	if timestamp := override.DUpgradeBlockTimestamp; timestamp != nil {
+		copy.DUpgradeBlockTimestamp = timestamp
 		canon = false
 	}
 

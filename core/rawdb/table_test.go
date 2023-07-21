@@ -30,7 +30,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/ethdb"
 )
 
 func TestTableDatabase(t *testing.T)            { testTableDatabase(t, "prefix") }

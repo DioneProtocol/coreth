@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/dioneprotocol/dionego/cache"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/coreth/metrics"
+	"github.com/DioneProtocol/odysseygo/cache"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/coreth/metrics"
 	"github.com/ethereum/go-ethereum/log"
 )
 

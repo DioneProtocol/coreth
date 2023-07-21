@@ -36,12 +36,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/metrics"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/vmerrs"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/vmerrs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/prque"
 	"github.com/ethereum/go-ethereum/event"
@@ -104,7 +104,7 @@ var (
 var (
 	evictionInterval      = time.Minute      // Time interval to check for evictable transactions
 	statsReportInterval   = 8 * time.Second  // Time interval to report transaction pool stats
-	baseFeeUpdateInterval = 10 * time.Second // Time interval at which to schedule a base fee update for the tx pool after Apricot Phase 3 is enabled
+	baseFeeUpdateInterval = 10 * time.Second // Time interval at which to schedule a base fee update for the tx pool after Odyssey Phase 1 is enabled
 )
 
 var (
@@ -261,7 +261,7 @@ type TxPool struct {
 	istanbul bool // Fork indicator whether we are in the istanbul stage.
 	eip2718  bool // Fork indicator whether we are using EIP-2718 type transactions.
 	eip1559  bool // Fork indicator whether we are using EIP-1559 type transactions.
-	cortina  bool // Fork indicator whether cortina is activated. (equivalent to Shanghai in go-ethereum)
+	eip3860  bool // Fork indicator whether EIP-3860 is activated. (activated in Shanghai Upgrade in Ethereum)
 
 	currentHead *types.Header
 	// [currentState] is the state of the blockchain head. It is reset whenever
@@ -678,7 +678,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		return fmt.Errorf("%w tx size %d > max size %d", ErrOversizedData, txSize, txMaxSize)
 	}
 	// Check whether the init code size has been exceeded.
-	if pool.cortina && tx.To() == nil && len(tx.Data()) > params.MaxInitCodeSize {
+	if pool.eip3860 && tx.To() == nil && len(tx.Data()) > params.MaxInitCodeSize {
 		return fmt.Errorf("%w: code size %v limit %v", vmerrs.ErrMaxInitCodeSizeExceeded, len(tx.Data()), params.MaxInitCodeSize)
 	}
 	// Transactions can't be negative. This may never happen using RLP decoded
@@ -722,7 +722,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	// Transactor should have enough funds to cover the costs
 
 	// Ensure the transaction has more gas than the basic tx fee.
-	intrGas, err := IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, pool.istanbul, pool.cortina)
+	intrGas, err := IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, pool.istanbul, pool.eip3860)
 	if err != nil {
 		return err
 	}
@@ -1278,7 +1278,7 @@ func (pool *TxPool) runReorg(done chan struct{}, reset *txpoolResetRequest, dirt
 	// because of another transaction (e.g. higher gas price).
 	if reset != nil {
 		pool.demoteUnexecutables()
-		if reset.newHead != nil && pool.chainconfig.IsApricotPhase3(new(big.Int).SetUint64(reset.newHead.Time)) {
+		if reset.newHead != nil && pool.chainconfig.IsOdysseyPhase1(new(big.Int).SetUint64(reset.newHead.Time)) {
 			_, baseFeeEstimate, err := dummy.EstimateNextBaseFee(pool.chainconfig, reset.newHead, uint64(time.Now().Unix()))
 			if err == nil {
 				pool.priced.SetBaseFee(baseFeeEstimate)
@@ -1414,9 +1414,9 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 	pool.istanbul = pool.chainconfig.IsIstanbul(next)
 
 	timestamp := new(big.Int).SetUint64(newHead.Time)
-	pool.eip2718 = pool.chainconfig.IsApricotPhase2(timestamp)
-	pool.eip1559 = pool.chainconfig.IsApricotPhase3(timestamp)
-	pool.cortina = pool.chainconfig.IsCortina(timestamp)
+	pool.eip2718 = pool.chainconfig.IsOdysseyPhase1(timestamp)
+	pool.eip1559 = pool.chainconfig.IsOdysseyPhase1(timestamp)
+	pool.eip3860 = pool.chainconfig.IsDUpgrade(timestamp)
 }
 
 // promoteExecutables moves transactions that have become processable from the
@@ -1683,13 +1683,13 @@ func (pool *TxPool) demoteUnexecutables() {
 }
 
 func (pool *TxPool) startPeriodicFeeUpdate() {
-	if pool.chainconfig.ApricotPhase3BlockTimestamp == nil {
+	if pool.chainconfig.OdysseyPhase1BlockTimestamp == nil {
 		return
 	}
 
 	// Call updateBaseFee here to ensure that there is not a [baseFeeUpdateInterval] delay
-	// when starting up in ApricotPhase3 before the base fee is updated.
-	if time.Now().After(time.Unix(pool.chainconfig.ApricotPhase3BlockTimestamp.Int64(), 0)) {
+	// when starting up in OdysseyPhase1 before the base fee is updated.
+	if time.Now().After(time.Unix(pool.chainconfig.OdysseyPhase1BlockTimestamp.Int64(), 0)) {
 		pool.updateBaseFee()
 	}
 
@@ -1702,7 +1702,7 @@ func (pool *TxPool) periodicBaseFeeUpdate() {
 
 	// Sleep until its time to start the periodic base fee update or the tx pool is shutting down
 	select {
-	case <-time.After(time.Until(time.Unix(pool.chainconfig.ApricotPhase3BlockTimestamp.Int64(), 0))):
+	case <-time.After(time.Until(time.Unix(pool.chainconfig.OdysseyPhase1BlockTimestamp.Int64(), 0))):
 	case <-pool.generalShutdownChan:
 		return // Return early if shutting down
 	}

@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/dioneprotocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/metrics"
 
 	"github.com/prometheus/client_golang/prometheus"
 

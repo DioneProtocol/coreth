@@ -15,33 +15,33 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/dioneprotocol/dionego/chains/atomic"
-	"github.com/dioneprotocol/dionego/database/manager"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/snow"
-	"github.com/dioneprotocol/dionego/snow/choices"
-	commonEng "github.com/dioneprotocol/dionego/snow/engine/common"
-	"github.com/dioneprotocol/dionego/snow/engine/snowman/block"
-	"github.com/dioneprotocol/dionego/utils/crypto/secp256k1"
-	"github.com/dioneprotocol/dionego/utils/set"
-	"github.com/dioneprotocol/dionego/utils/units"
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/database/manager"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/snow"
+	"github.com/DioneProtocol/odysseygo/snow/choices"
+	commonEng "github.com/DioneProtocol/odysseygo/snow/engine/common"
+	"github.com/DioneProtocol/odysseygo/snow/engine/snowman/block"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/utils/units"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/dioneprotocol/coreth/accounts/keystore"
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/constants"
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/metrics"
-	"github.com/dioneprotocol/coreth/params"
-	statesyncclient "github.com/dioneprotocol/coreth/sync/client"
-	"github.com/dioneprotocol/coreth/sync/statesync"
-	"github.com/dioneprotocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/accounts/keystore"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/constants"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/params"
+	statesyncclient "github.com/DioneProtocol/coreth/sync/client"
+	"github.com/DioneProtocol/coreth/sync/statesync"
+	"github.com/DioneProtocol/coreth/trie"
 )
 
 func TestSkipStateSync(t *testing.T) {
@@ -229,6 +229,40 @@ func TestStateSyncToggleEnabledToDisabled(t *testing.T) {
 	assert.True(t, enabled, "sync should be enabled")
 
 	vmSetup.syncerVM = syncReEnabledVM
+	testSyncerVM(t, vmSetup, test)
+}
+
+func TestVMShutdownWhileSyncing(t *testing.T) {
+	var (
+		lock    sync.Mutex
+		vmSetup *syncVMSetup
+	)
+	reqCount := 0
+	test := syncTest{
+		syncableInterval:   256,
+		stateSyncMinBlocks: 50, // must be less than [syncableInterval] to perform sync
+		syncMode:           block.StateSyncStatic,
+		responseIntercept: func(syncerVM *VM, nodeID ids.NodeID, requestID uint32, response []byte) {
+			lock.Lock()
+			defer lock.Unlock()
+
+			reqCount++
+			// Shutdown the VM after 50 requests to interrupt the sync
+			if reqCount == 50 {
+				// Note this verifies the VM shutdown does not time out while syncing.
+				require.NoError(t, vmSetup.syncerVM.Shutdown(context.Background()))
+			} else if reqCount < 50 {
+				syncerVM.AppResponse(context.Background(), nodeID, requestID, response)
+			}
+		},
+		expectedErr: context.Canceled,
+	}
+	vmSetup = createSyncServerAndClientVMs(t, test)
+	defer func() {
+		require.NoError(t, vmSetup.serverVM.Shutdown(context.Background()))
+	}()
+
+	// Perform sync resulting in early termination.
 	testSyncerVM(t, vmSetup, test)
 }
 

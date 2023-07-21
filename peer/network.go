@@ -14,15 +14,16 @@ import (
 
 	"github.com/ethereum/go-ethereum/log"
 
-	"github.com/dioneprotocol/dionego/codec"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/snow/engine/common"
-	"github.com/dioneprotocol/dionego/snow/validators"
-	"github.com/dioneprotocol/dionego/utils/set"
-	"github.com/dioneprotocol/dionego/version"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/snow/engine/common"
+	"github.com/DioneProtocol/odysseygo/snow/validators"
+	"github.com/DioneProtocol/odysseygo/utils"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/version"
 
-	"github.com/dioneprotocol/coreth/peer/stats"
-	"github.com/dioneprotocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/peer/stats"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
 )
 
 // Minimum amount of time to handle a request
@@ -83,10 +84,10 @@ type network struct {
 	lock                       sync.RWMutex                       // lock for mutating state of this Network struct
 	self                       ids.NodeID                         // NodeID of this node
 	requestIDGen               uint32                             // requestID counter used to track outbound requests
-	outstandingRequestHandlers map[uint32]message.ResponseHandler // maps dionego requestID => message.ResponseHandler
+	outstandingRequestHandlers map[uint32]message.ResponseHandler // maps odysseygo requestID => message.ResponseHandler
 	activeAppRequests          *semaphore.Weighted                // controls maximum number of active outbound requests
 	activeCrossChainRequests   *semaphore.Weighted                // controls maximum number of active outbound cross chain requests
-	appSender                  common.AppSender                   // dionego AppSender for sending messages
+	appSender                  common.AppSender                   // odysseygo AppSender for sending messages
 	codec                      codec.Manager                      // Codec used for parsing messages
 	crossChainCodec            codec.Manager                      // Codec used for parsing cross chain messages
 	appRequestHandler          message.RequestHandler             // maps request type => handler
@@ -95,6 +96,10 @@ type network struct {
 	peers                      *peerTracker                       // tracking of peers & bandwidth
 	appStats                   stats.RequestHandlerStats          // Provide request handler metrics
 	crossChainStats            stats.RequestHandlerStats          // Provide cross chain request handler metrics
+
+	// Set to true when Shutdown is called, after which all operations on this
+	// struct are no-ops.
+	closed utils.Atomic[bool]
 }
 
 func NewNetwork(appSender common.AppSender, codec codec.Manager, crossChainCodec codec.Manager, self ids.NodeID, maxActiveAppRequests int64, maxActiveCrossChainRequests int64) Network {
@@ -160,6 +165,10 @@ func (n *network) SendAppRequest(nodeID ids.NodeID, request []byte, responseHand
 // Returns an error if [appSender] is unable to make the request.
 // Assumes write lock is held
 func (n *network) sendAppRequest(nodeID ids.NodeID, request []byte, responseHandler message.ResponseHandler) error {
+	if n.closed.Get() {
+		return nil
+	}
+
 	log.Debug("sending request to peer", "nodeID", nodeID, "requestLen", len(request))
 	n.peers.TrackPeer(nodeID)
 
@@ -196,6 +205,10 @@ func (n *network) SendCrossChainRequest(chainID ids.ID, request []byte, handler 
 	n.lock.Lock()
 	defer n.lock.Unlock()
 
+	if n.closed.Get() {
+		return nil
+	}
+
 	// generate requestID
 	requestID := n.requestIDGen
 	n.requestIDGen++
@@ -218,6 +231,10 @@ func (n *network) SendCrossChainRequest(chainID ids.ID, request []byte, handler 
 // Send a CrossChainAppResponse to [chainID] in response to a valid message using the same
 // [requestID] before the deadline.
 func (n *network) CrossChainAppRequest(ctx context.Context, requestingChainID ids.ID, requestID uint32, deadline time.Time, request []byte) error {
+	if n.closed.Get() {
+		return nil
+	}
+
 	log.Debug("received CrossChainAppRequest from chain", "requestingChainID", requestingChainID, "requestID", requestID, "requestLen", len(request))
 
 	var req message.CrossChainRequest
@@ -247,7 +264,7 @@ func (n *network) CrossChainAppRequest(ctx context.Context, requestingChainID id
 	}
 }
 
-// CrossChainAppRequestFailed can be called by the dionego -> VM in following cases:
+// CrossChainAppRequestFailed can be called by the odysseygo -> VM in following cases:
 // - respondingChain doesn't exist
 // - invalid CrossChainAppResponse from respondingChain
 // - invalid CrossChainRequest was sent to respondingChain
@@ -257,6 +274,10 @@ func (n *network) CrossChainAppRequest(ctx context.Context, requestingChainID id
 func (n *network) CrossChainAppRequestFailed(ctx context.Context, respondingChainID ids.ID, requestID uint32) error {
 	n.lock.Lock()
 	defer n.lock.Unlock()
+
+	if n.closed.Get() {
+		return nil
+	}
 
 	log.Debug("received CrossChainAppRequestFailed from chain", "respondingChainID", respondingChainID, "requestID", requestID)
 
@@ -281,6 +302,10 @@ func (n *network) CrossChainAppResponse(ctx context.Context, respondingChainID i
 	n.lock.Lock()
 	defer n.lock.Unlock()
 
+	if n.closed.Get() {
+		return nil
+	}
+
 	log.Debug("received CrossChainAppResponse from responding chain", "respondingChainID", respondingChainID, "requestID", requestID)
 
 	handler, exists := n.markRequestFulfilled(requestID)
@@ -296,12 +321,16 @@ func (n *network) CrossChainAppResponse(ctx context.Context, respondingChainID i
 	return handler.OnResponse(response)
 }
 
-// AppRequest is called by dionego -> VM when there is an incoming AppRequest from a peer
+// AppRequest is called by odysseygo -> VM when there is an incoming AppRequest from a peer
 // error returned by this function is expected to be treated as fatal by the engine
 // returns error if the requestHandler returns an error
 // sends a response back to the sender if length of response returned by the handler is >0
 // expects the deadline to not have been passed
 func (n *network) AppRequest(ctx context.Context, nodeID ids.NodeID, requestID uint32, deadline time.Time, request []byte) error {
+	if n.closed.Get() {
+		return nil
+	}
+
 	log.Debug("received AppRequest from node", "nodeID", nodeID, "requestID", requestID, "requestLen", len(request))
 
 	var req message.Request
@@ -341,6 +370,10 @@ func (n *network) AppResponse(_ context.Context, nodeID ids.NodeID, requestID ui
 	n.lock.Lock()
 	defer n.lock.Unlock()
 
+	if n.closed.Get() {
+		return nil
+	}
+
 	log.Debug("received AppResponse from peer", "nodeID", nodeID, "requestID", requestID)
 
 	handler, exists := n.markRequestFulfilled(requestID)
@@ -356,7 +389,7 @@ func (n *network) AppResponse(_ context.Context, nodeID ids.NodeID, requestID ui
 	return handler.OnResponse(response)
 }
 
-// AppRequestFailed can be called by the dionego -> VM in following cases:
+// AppRequestFailed can be called by the odysseygo -> VM in following cases:
 // - node is benched
 // - failed to send message to [nodeID] due to a network issue
 // - request times out before a response is provided
@@ -365,6 +398,10 @@ func (n *network) AppResponse(_ context.Context, nodeID ids.NodeID, requestID ui
 func (n *network) AppRequestFailed(_ context.Context, nodeID ids.NodeID, requestID uint32) error {
 	n.lock.Lock()
 	defer n.lock.Unlock()
+
+	if n.closed.Get() {
+		return nil
+	}
 
 	log.Debug("received AppRequestFailed from peer", "nodeID", nodeID, "requestID", requestID)
 
@@ -419,13 +456,21 @@ func (n *network) markRequestFulfilled(requestID uint32) (message.ResponseHandle
 
 // Gossip sends given gossip message to peers
 func (n *network) Gossip(gossip []byte) error {
+	if n.closed.Get() {
+		return nil
+	}
+
 	return n.appSender.SendAppGossip(context.TODO(), gossip)
 }
 
-// AppGossip is called by dionego -> VM when there is an incoming AppGossip from a peer
+// AppGossip is called by odysseygo -> VM when there is an incoming AppGossip from a peer
 // error returned by this function is expected to be treated as fatal by the engine
 // returns error if request could not be parsed as message.Request or when the requestHandler returns an error
 func (n *network) AppGossip(_ context.Context, nodeID ids.NodeID, gossipBytes []byte) error {
+	if n.closed.Get() {
+		return nil
+	}
+
 	var gossipMsg message.GossipMessage
 	if _, err := n.codec.Unmarshal(gossipBytes, &gossipMsg); err != nil {
 		log.Debug("could not parse app gossip", "nodeID", nodeID, "gossipLen", len(gossipBytes), "err", err)
@@ -443,6 +488,10 @@ func (n *network) Connected(_ context.Context, nodeID ids.NodeID, nodeVersion *v
 	n.lock.Lock()
 	defer n.lock.Unlock()
 
+	if n.closed.Get() {
+		return nil
+	}
+
 	if nodeID == n.self {
 		log.Debug("skipping registering self as peer")
 		return nil
@@ -458,6 +507,10 @@ func (n *network) Disconnected(_ context.Context, nodeID ids.NodeID) error {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 
+	if n.closed.Get() {
+		return nil
+	}
+
 	n.peers.Disconnected(nodeID)
 	return nil
 }
@@ -468,12 +521,13 @@ func (n *network) Shutdown() {
 	defer n.lock.Unlock()
 
 	// clean up any pending requests
-	for requestID := range n.outstandingRequestHandlers {
+	for requestID, handler := range n.outstandingRequestHandlers {
+		_ = handler.OnFailure() // make sure all waiting threads are unblocked
 		delete(n.outstandingRequestHandlers, requestID)
 	}
 
-	// reset peers
-	n.peers = NewPeerTracker()
+	n.peers = NewPeerTracker() // reset peers
+	n.closed.Set(true)         // mark network as closed
 }
 
 func (n *network) SetGossipHandler(handler message.GossipHandler) {

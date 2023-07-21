@@ -26,7 +26,7 @@
 
 package state
 
-import "github.com/dioneprotocol/coreth/metrics"
+import "github.com/DioneProtocol/coreth/metrics"
 
 var (
 	accountUpdatedMeter        = metrics.NewRegisteredMeter("state/update/account", nil)

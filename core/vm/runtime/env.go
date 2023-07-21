@@ -27,8 +27,8 @@
 package runtime
 
 import (
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/vm"
 )
 
 func NewEnv(cfg *Config) *vm.EVM {

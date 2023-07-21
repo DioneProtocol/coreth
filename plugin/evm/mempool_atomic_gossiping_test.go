@@ -7,14 +7,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/params"
 
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/utils"
-	"github.com/dioneprotocol/dionego/utils/crypto/secp256k1"
-	"github.com/dioneprotocol/dionego/vms/components/dione"
-	"github.com/dioneprotocol/dionego/vms/components/chain"
-	"github.com/dioneprotocol/dionego/vms/secp256k1fx"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/vms/components/chain"
+	"github.com/DioneProtocol/odysseygo/vms/components/dione"
+	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -26,8 +26,8 @@ func TestMempoolAddLocallyCreateAtomicTx(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			assert := assert.New(t)
 
-			// we use AP3 genesis here to not trip any block fees
-			issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONApricotPhase3, "", "")
+			// we use OP1 genesis here to not trip any block fees
+			issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
 			defer func() {
 				err := vm.Shutdown(context.Background())
 				assert.NoError(err)
@@ -183,8 +183,8 @@ func createImportTx(t *testing.T, vm *VM, txID ids.ID, feeAmount uint64) *Tx {
 func TestMempoolPriorityDrop(t *testing.T) {
 	assert := assert.New(t)
 
-	// we use AP3 genesis here to not trip any block fees
-	_, vm, _, _, _ := GenesisVM(t, true, genesisJSONApricotPhase3, "", "")
+	// we use OP1 genesis here to not trip any block fees
+	_, vm, _, _, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
 	defer func() {
 		err := vm.Shutdown(context.Background())
 		assert.NoError(err)
@@ -192,14 +192,14 @@ func TestMempoolPriorityDrop(t *testing.T) {
 	mempool := vm.mempool
 	mempool.maxSize = 1
 
-	tx1 := createImportTx(t, vm, ids.ID{1}, params.DioneAtomicTxFee)
+	tx1 := createImportTx(t, vm, ids.ID{1}, params.OdysseyAtomicTxFee)
 	assert.NoError(mempool.AddTx(tx1))
 	assert.True(mempool.has(tx1.ID()))
-	tx2 := createImportTx(t, vm, ids.ID{2}, params.DioneAtomicTxFee)
+	tx2 := createImportTx(t, vm, ids.ID{2}, params.OdysseyAtomicTxFee)
 	assert.ErrorIs(mempool.AddTx(tx2), errInsufficientAtomicTxFee)
 	assert.True(mempool.has(tx1.ID()))
 	assert.False(mempool.has(tx2.ID()))
-	tx3 := createImportTx(t, vm, ids.ID{3}, 2*params.DioneAtomicTxFee)
+	tx3 := createImportTx(t, vm, ids.ID{3}, 2*params.OdysseyAtomicTxFee)
 	assert.NoError(mempool.AddTx(tx3))
 	assert.False(mempool.has(tx1.ID()))
 	assert.False(mempool.has(tx2.ID()))

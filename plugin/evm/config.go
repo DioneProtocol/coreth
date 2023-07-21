@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/eth"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/eth"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cast"
 )
@@ -19,7 +19,7 @@ const (
 	defaultPruningEnabled                             = true
 	defaultCommitInterval                             = 4096
 	defaultTrieCleanCache                             = 512
-	defaultTrieDirtyCache                             = 256
+	defaultTrieDirtyCache                             = 512
 	defaultTrieDirtyCommitTarget                      = 20
 	defaultSnapshotCache                              = 256
 	defaultSyncableCommitInterval                     = defaultCommitInterval * 4
@@ -51,7 +51,8 @@ const (
 	// time assumptions:
 	// - normal bootstrap processing time: ~14 blocks / second
 	// - state sync time: ~6 hrs.
-	defaultStateSyncMinBlocks = 300_000
+	defaultStateSyncMinBlocks   = 300_000
+	defaultStateSyncRequestSize = 1024 // the number of key/values to ask peers for per request
 )
 
 var (
@@ -167,6 +168,7 @@ type Config struct {
 	StateSyncIDs             string `json:"state-sync-ids"`
 	StateSyncCommitInterval  uint64 `json:"state-sync-commit-interval"`
 	StateSyncMinBlocks       uint64 `json:"state-sync-min-blocks"`
+	StateSyncRequestSize     uint16 `json:"state-sync-request-size"`
 
 	// Database Settings
 	InspectDatabase bool `json:"inspect-database"` // Inspects the database on startup if enabled.
@@ -240,6 +242,7 @@ func (c *Config) SetDefaults() {
 	c.CommitInterval = defaultCommitInterval
 	c.StateSyncCommitInterval = defaultSyncableCommitInterval
 	c.StateSyncMinBlocks = defaultStateSyncMinBlocks
+	c.StateSyncRequestSize = defaultStateSyncRequestSize
 	c.AllowUnprotectedTxHashes = defaultAllowUnprotectedTxHashes
 	c.AcceptedCacheSize = defaultAcceptedCacheSize
 }

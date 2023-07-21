@@ -31,8 +31,8 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/ethdb/memorydb"
-	"github.com/dioneprotocol/coreth/utils"
+	"github.com/DioneProtocol/coreth/ethdb/memorydb"
+	"github.com/DioneProtocol/coreth/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )

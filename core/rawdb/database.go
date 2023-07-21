@@ -32,9 +32,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/ethdb/leveldb"
-	"github.com/dioneprotocol/coreth/ethdb/memorydb"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/ethdb/leveldb"
+	"github.com/DioneProtocol/coreth/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/olekukonko/tablewriter"

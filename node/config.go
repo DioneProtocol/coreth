@@ -31,10 +31,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/dioneprotocol/coreth/accounts"
-	"github.com/dioneprotocol/coreth/accounts/external"
-	"github.com/dioneprotocol/coreth/accounts/keystore"
-	"github.com/dioneprotocol/coreth/rpc"
+	"github.com/DioneProtocol/coreth/accounts"
+	"github.com/DioneProtocol/coreth/accounts/external"
+	"github.com/DioneProtocol/coreth/accounts/keystore"
+	"github.com/DioneProtocol/coreth/rpc"
 	"github.com/ethereum/go-ethereum/log"
 )
 

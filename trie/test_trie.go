@@ -10,9 +10,9 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/accounts/keystore"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/dionego/utils/wrappers"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
+	"github.com/DioneProtocol/coreth/accounts/keystore"
+	"github.com/DioneProtocol/coreth/core/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"

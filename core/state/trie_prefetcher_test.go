@@ -31,7 +31,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dioneprotocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/rawdb"
 	"github.com/ethereum/go-ethereum/common"
 )
 

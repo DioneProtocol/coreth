@@ -6,8 +6,8 @@ package core
 import (
 	"math/big"
 
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/precompile"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/precompile"
 	"github.com/ethereum/go-ethereum/common"
 )
 

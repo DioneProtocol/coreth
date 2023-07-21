@@ -7,10 +7,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/dioneprotocol/dionego/codec"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/coreth/internal/ethapi"
-	"github.com/dioneprotocol/coreth/rpc"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/coreth/internal/ethapi"
+	"github.com/DioneProtocol/coreth/rpc"
 	"github.com/ethereum/go-ethereum/log"
 )
 

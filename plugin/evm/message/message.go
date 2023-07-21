@@ -7,12 +7,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/dioneprotocol/dionego/codec"
+	"github.com/DioneProtocol/odysseygo/codec"
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/utils/units"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/units"
 )
 
 const (

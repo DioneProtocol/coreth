@@ -7,8 +7,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/dioneprotocol/dionego/utils/formatting"
-	"github.com/dioneprotocol/coreth/core"
+	"github.com/DioneProtocol/odysseygo/utils/formatting"
+	"github.com/DioneProtocol/coreth/core"
 )
 
 // StaticService defines the static API services exposed by the evm

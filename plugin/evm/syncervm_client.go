@@ -8,21 +8,21 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/dioneprotocol/dionego/database"
-	"github.com/dioneprotocol/dionego/database/versiondb"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/snow/choices"
-	commonEng "github.com/dioneprotocol/dionego/snow/engine/common"
-	"github.com/dioneprotocol/dionego/snow/engine/snowman/block"
-	"github.com/dioneprotocol/dionego/vms/components/chain"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/state/snapshot"
-	"github.com/dioneprotocol/coreth/eth"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/plugin/evm/message"
-	syncclient "github.com/dioneprotocol/coreth/sync/client"
-	"github.com/dioneprotocol/coreth/sync/statesync"
+	"github.com/DioneProtocol/odysseygo/database"
+	"github.com/DioneProtocol/odysseygo/database/versiondb"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/snow/choices"
+	commonEng "github.com/DioneProtocol/odysseygo/snow/engine/common"
+	"github.com/DioneProtocol/odysseygo/snow/engine/snowman/block"
+	"github.com/DioneProtocol/odysseygo/vms/components/chain"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/state/snapshot"
+	"github.com/DioneProtocol/coreth/eth"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	syncclient "github.com/DioneProtocol/coreth/sync/client"
+	"github.com/DioneProtocol/coreth/sync/statesync"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 )
@@ -42,7 +42,8 @@ type stateSyncClientConfig struct {
 	// Specifies the number of blocks behind the latest state summary that the chain must be
 	// in order to prefer performing state sync over falling back to the normal bootstrapping
 	// algorithm.
-	stateSyncMinBlocks uint64
+	stateSyncMinBlocks   uint64
+	stateSyncRequestSize uint16 // number of key/value pairs to ask peers for per request
 
 	lastAcceptedHeight uint64
 
@@ -282,7 +283,7 @@ func (client *stateSyncerClient) syncBlocks(ctx context.Context, fromHash common
 
 func (client *stateSyncerClient) syncAtomicTrie(ctx context.Context) error {
 	log.Info("atomic tx: sync starting", "root", client.syncSummary.AtomicRoot)
-	atomicSyncer, err := client.atomicBackend.Syncer(client.client, client.syncSummary.AtomicRoot, client.syncSummary.BlockNumber)
+	atomicSyncer, err := client.atomicBackend.Syncer(client.client, client.syncSummary.AtomicRoot, client.syncSummary.BlockNumber, client.stateSyncRequestSize)
 	if err != nil {
 		return err
 	}
@@ -303,6 +304,7 @@ func (client *stateSyncerClient) syncStateTrie(ctx context.Context) error {
 		DB:                       client.chaindb,
 		MaxOutstandingCodeHashes: statesync.DefaultMaxOutstandingCodeHashes,
 		NumCodeFetchingWorkers:   statesync.DefaultNumCodeFetchingWorkers,
+		RequestSize:              client.stateSyncRequestSize,
 	})
 	if err != nil {
 		return err

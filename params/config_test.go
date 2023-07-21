@@ -105,11 +105,11 @@ func TestCheckCompatible(t *testing.T) {
 		},
 		{
 			stored:         TestChainConfig,
-			new:            TestApricotPhase4Config,
+			new:            TestOdysseyPhase1Config,
 			blockHeight:    0,
 			blockTimestamp: 0,
 			wantErr: &ConfigCompatError{
-				What:         "ApricotPhase5 fork block timestamp",
+				What:         "OdysseyPhase2 fork block timestamp",
 				StoredConfig: big.NewInt(0),
 				NewConfig:    nil,
 				RewindTo:     0,
@@ -117,11 +117,11 @@ func TestCheckCompatible(t *testing.T) {
 		},
 		{
 			stored:         TestChainConfig,
-			new:            TestApricotPhase4Config,
+			new:            TestOdysseyPhase1Config,
 			blockHeight:    10,
 			blockTimestamp: 100,
 			wantErr: &ConfigCompatError{
-				What:         "ApricotPhase5 fork block timestamp",
+				What:         "OdysseyPhase2 fork block timestamp",
 				StoredConfig: big.NewInt(0),
 				NewConfig:    nil,
 				RewindTo:     0,

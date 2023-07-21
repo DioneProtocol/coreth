@@ -30,7 +30,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dioneprotocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/metrics"
 )
 
 var (

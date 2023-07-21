@@ -10,12 +10,12 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/dioneprotocol/coreth/consensus"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/rpc"
-	"github.com/dioneprotocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/consensus"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/rpc"
+	"github.com/DioneProtocol/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -100,9 +100,9 @@ func (self *DummyEngine) verifyHeaderGasFields(config *params.ChainConfig, heade
 		if header.GasLimit != params.CortinaGasLimit {
 			return fmt.Errorf("expected gas limit to be %d in Cortina, but found %d", params.CortinaGasLimit, header.GasLimit)
 		}
-	} else if config.IsApricotPhase1(timestamp) {
-		if header.GasLimit != params.ApricotPhase1GasLimit {
-			return fmt.Errorf("expected gas limit to be %d in ApricotPhase1, but found %d", params.ApricotPhase1GasLimit, header.GasLimit)
+	} else if config.IsOdysseyPhase1(timestamp) {
+		if header.GasLimit != params.OdysseyPhase1GasLimit {
+			return fmt.Errorf("expected gas limit to be %d in OdysseyPhase1, but found %d", params.OdysseyPhase1GasLimit, header.GasLimit)
 		}
 	} else {
 		// Verify that the gas limit remains within allowed bounds
@@ -117,14 +117,14 @@ func (self *DummyEngine) verifyHeaderGasFields(config *params.ChainConfig, heade
 		}
 	}
 
-	if !config.IsApricotPhase3(timestamp) {
-		// Verify BaseFee is not present before AP3
+	if !config.IsOdysseyPhase1(timestamp) {
+		// Verify BaseFee is not present before OP1
 		if header.BaseFee != nil {
 			return fmt.Errorf("invalid baseFee before fork: have %d, want <nil>", header.BaseFee)
 		}
 	} else {
 		// Verify baseFee and rollupWindow encoding as part of header verification
-		// starting in AP3
+		// starting in OP1
 		expectedRollupWindowBytes, expectedBaseFee, err := CalcBaseFee(config, parent, header.Time)
 		if err != nil {
 			return fmt.Errorf("failed to calculate base fee: %w", err)
@@ -143,8 +143,8 @@ func (self *DummyEngine) verifyHeaderGasFields(config *params.ChainConfig, heade
 		}
 	}
 
-	// Verify BlockGasCost, ExtDataGasUsed not present before AP4
-	if !config.IsApricotPhase4(timestamp) {
+	// Verify BlockGasCost, ExtDataGasUsed not present before OP1
+	if !config.IsOdysseyPhase1(timestamp) {
 		if header.BlockGasCost != nil {
 			return fmt.Errorf("invalid blockGasCost before fork: have %d, want <nil>", header.BlockGasCost)
 		}
@@ -155,14 +155,11 @@ func (self *DummyEngine) verifyHeaderGasFields(config *params.ChainConfig, heade
 	}
 
 	// Enforce BlockGasCost constraints
-	blockGasCostStep := ApricotPhase4BlockGasCostStep
-	if config.IsApricotPhase5(timestamp) {
-		blockGasCostStep = ApricotPhase5BlockGasCostStep
-	}
+	blockGasCostStep := OdysseyPhase1BlockGasCostStep
 	expectedBlockGasCost := calcBlockGasCost(
-		ApricotPhase4TargetBlockRate,
-		ApricotPhase4MinBlockGasCost,
-		ApricotPhase4MaxBlockGasCost,
+		OdysseyPhase1TargetBlockRate,
+		OdysseyPhase1MinBlockGasCost,
+		OdysseyPhase1MaxBlockGasCost,
 		blockGasCostStep,
 		parent.BlockGasCost,
 		parent.Time, header.Time,
@@ -198,13 +195,13 @@ func (self *DummyEngine) verifyHeader(chain consensus.ChainHeaderReader, header 
 		return errUnclesUnsupported
 	}
 	// Ensure that the header's extra-data section is of a reasonable size
-	if !config.IsApricotPhase3(timestamp) {
+	if !config.IsOdysseyPhase1(timestamp) {
 		if uint64(len(header.Extra)) > params.MaximumExtraDataSize {
 			return fmt.Errorf("extra-data too long: %d > %d", len(header.Extra), params.MaximumExtraDataSize)
 		}
 	} else {
-		if uint64(len(header.Extra)) != params.ApricotPhase3ExtraDataSize {
-			return fmt.Errorf("expected extra-data field to be: %d, but found %d", params.ApricotPhase3ExtraDataSize, len(header.Extra))
+		if uint64(len(header.Extra)) != params.OdysseyPhase1ExtraDataSize {
+			return fmt.Errorf("expected extra-data field to be: %d, but found %d", params.OdysseyPhase1ExtraDataSize, len(header.Extra))
 		}
 	}
 	// Ensure gas-related header fields are correct
@@ -271,10 +268,10 @@ func (self *DummyEngine) verifyBlockFee(
 		return nil
 	}
 	if baseFee == nil || baseFee.Sign() <= 0 {
-		return fmt.Errorf("invalid base fee (%d) in apricot phase 4", baseFee)
+		return fmt.Errorf("invalid base fee (%d) in odyssey phase 1", baseFee)
 	}
 	if requiredBlockGasCost == nil || !requiredBlockGasCost.IsUint64() {
-		return fmt.Errorf("invalid block gas cost (%d) in apricot phase 4", requiredBlockGasCost)
+		return fmt.Errorf("invalid block gas cost (%d) in odyssey phase 1", requiredBlockGasCost)
 	}
 
 	var (
@@ -340,7 +337,7 @@ func (self *DummyEngine) Finalize(chain consensus.ChainHeaderReader, block *type
 			return err
 		}
 	}
-	if chain.Config().IsApricotPhase4(new(big.Int).SetUint64(block.Time())) {
+	if chain.Config().IsOdysseyPhase1(new(big.Int).SetUint64(block.Time())) {
 		// Validate extDataGasUsed and BlockGasCost match expectations
 		//
 		// NOTE: This is a duplicate check of what is already performed in
@@ -351,16 +348,13 @@ func (self *DummyEngine) Finalize(chain consensus.ChainHeaderReader, block *type
 		if blockExtDataGasUsed := block.ExtDataGasUsed(); blockExtDataGasUsed == nil || !blockExtDataGasUsed.IsUint64() || blockExtDataGasUsed.Cmp(extDataGasUsed) != 0 {
 			return fmt.Errorf("invalid extDataGasUsed: have %d, want %d", blockExtDataGasUsed, extDataGasUsed)
 		}
-		blockGasCostStep := ApricotPhase4BlockGasCostStep
-		if chain.Config().IsApricotPhase5(new(big.Int).SetUint64(block.Time())) {
-			blockGasCostStep = ApricotPhase5BlockGasCostStep
-		}
+		blockGasCostStep := OdysseyPhase1BlockGasCostStep
 		// Calculate the expected blockGasCost for this block.
 		// Note: this is a deterministic transtion that defines an exact block fee for this block.
 		blockGasCost := calcBlockGasCost(
-			ApricotPhase4TargetBlockRate,
-			ApricotPhase4MinBlockGasCost,
-			ApricotPhase4MaxBlockGasCost,
+			OdysseyPhase1TargetBlockRate,
+			OdysseyPhase1MinBlockGasCost,
+			OdysseyPhase1MaxBlockGasCost,
 			blockGasCostStep,
 			parent.BlockGasCost,
 			parent.Time, block.Time(),
@@ -397,20 +391,17 @@ func (self *DummyEngine) FinalizeAndAssemble(chain consensus.ChainHeaderReader, 
 			return nil, err
 		}
 	}
-	if chain.Config().IsApricotPhase4(new(big.Int).SetUint64(header.Time)) {
+	if chain.Config().IsOdysseyPhase1(new(big.Int).SetUint64(header.Time)) {
 		header.ExtDataGasUsed = extDataGasUsed
 		if header.ExtDataGasUsed == nil {
 			header.ExtDataGasUsed = new(big.Int).Set(common.Big0)
 		}
-		blockGasCostStep := ApricotPhase4BlockGasCostStep
-		if chain.Config().IsApricotPhase5(new(big.Int).SetUint64(header.Time)) {
-			blockGasCostStep = ApricotPhase5BlockGasCostStep
-		}
+		blockGasCostStep := OdysseyPhase1BlockGasCostStep
 		// Calculate the required block gas cost for this block.
 		header.BlockGasCost = calcBlockGasCost(
-			ApricotPhase4TargetBlockRate,
-			ApricotPhase4MinBlockGasCost,
-			ApricotPhase4MaxBlockGasCost,
+			OdysseyPhase1TargetBlockRate,
+			OdysseyPhase1MinBlockGasCost,
+			OdysseyPhase1MaxBlockGasCost,
 			blockGasCostStep,
 			parent.BlockGasCost,
 			parent.Time, header.Time,
@@ -432,7 +423,7 @@ func (self *DummyEngine) FinalizeAndAssemble(chain consensus.ChainHeaderReader, 
 	// Header seems complete, assemble into a block and return
 	return types.NewBlock(
 		header, txs, uncles, receipts, new(trie.Trie), extraData,
-		chain.Config().IsApricotPhase1(new(big.Int).SetUint64(header.Time)),
+		chain.Config().IsOdysseyPhase1(new(big.Int).SetUint64(header.Time)),
 	), nil
 }
 

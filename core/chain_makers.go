@@ -30,15 +30,14 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/dioneprotocol/coreth/consensus"
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/consensus/misc"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/ethdb"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/consensus"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -223,22 +222,6 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		b := &BlockGen{i: i, chain: blocks, parent: parent, statedb: statedb, config: config, engine: engine}
 		b.header = makeHeader(chainreader, config, parent, gap, statedb, b.engine)
 
-		// Mutate the state and block according to any hard-fork specs
-		timestamp := new(big.Int).SetUint64(b.header.Time)
-		if !config.IsApricotPhase3(timestamp) {
-			// avoid dynamic fee extra data override
-			if daoBlock := config.DAOForkBlock; daoBlock != nil {
-				limit := new(big.Int).Add(daoBlock, params.DAOForkExtraRange)
-				if b.header.Number.Cmp(daoBlock) >= 0 && b.header.Number.Cmp(limit) < 0 {
-					if config.DAOForkSupport {
-						b.header.Extra = common.CopyBytes(params.DAOForkBlockExtra)
-					}
-				}
-			}
-		}
-		if config.DAOForkSupport && config.DAOForkBlock != nil && config.DAOForkBlock.Cmp(b.header.Number) == 0 {
-			misc.ApplyDAOHardFork(statedb)
-		}
 		// Execute any user modifications to the block
 		if gen != nil {
 			gen(i, b)
@@ -306,8 +289,8 @@ func makeHeader(chain consensus.ChainReader, config *params.ChainConfig, parent 
 	var gasLimit uint64
 	if config.IsCortina(timestamp) {
 		gasLimit = params.CortinaGasLimit
-	} else if config.IsApricotPhase1(timestamp) {
-		gasLimit = params.ApricotPhase1GasLimit
+	} else if config.IsOdysseyPhase1(timestamp) {
+		gasLimit = params.OdysseyPhase1GasLimit
 	} else {
 		gasLimit = CalcGasLimit(parent.GasUsed(), parent.GasLimit(), parent.GasLimit(), parent.GasLimit())
 	}
@@ -326,7 +309,7 @@ func makeHeader(chain consensus.ChainReader, config *params.ChainConfig, parent 
 		Number:   new(big.Int).Add(parent.Number(), common.Big1),
 		Time:     time,
 	}
-	if chain.Config().IsApricotPhase3(timestamp) {
+	if chain.Config().IsOdysseyPhase1(timestamp) {
 		var err error
 		header.Extra, header.BaseFee, err = dummy.CalcBaseFee(chain.Config(), parent.Header(), time)
 		if err != nil {

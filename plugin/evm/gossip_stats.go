@@ -3,7 +3,7 @@
 
 package evm
 
-import "github.com/dioneprotocol/coreth/metrics"
+import "github.com/DioneProtocol/coreth/metrics"
 
 var _ GossipStats = &gossipStats{}
 

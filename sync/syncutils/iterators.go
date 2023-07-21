@@ -4,8 +4,8 @@
 package syncutils
 
 import (
-	"github.com/dioneprotocol/coreth/core/state/snapshot"
-	"github.com/dioneprotocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/core/state/snapshot"
+	"github.com/DioneProtocol/coreth/ethdb"
 )
 
 var (

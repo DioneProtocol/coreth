@@ -31,7 +31,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/types"
 )
 
 // Tests that batched bloom bits are correctly rotated from the input bloom

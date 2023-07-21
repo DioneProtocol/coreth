@@ -27,8 +27,8 @@
 package node
 
 import (
-	"github.com/dioneprotocol/coreth/internal/debug"
-	"github.com/dioneprotocol/coreth/rpc"
+	"github.com/DioneProtocol/coreth/internal/debug"
+	"github.com/DioneProtocol/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )

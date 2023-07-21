@@ -31,8 +31,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/ethereum/go-ethereum/common"
 )
 

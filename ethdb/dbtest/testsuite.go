@@ -32,7 +32,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/ethdb"
 )
 
 // TestDatabaseSuite runs a suite of tests against a KeyValueStore database

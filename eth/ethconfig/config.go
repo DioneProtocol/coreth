@@ -29,9 +29,9 @@ package ethconfig
 import (
 	"time"
 
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/eth/gasprice"
-	"github.com/dioneprotocol/coreth/miner"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/eth/gasprice"
+	"github.com/DioneProtocol/coreth/miner"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -47,7 +47,7 @@ var DefaultFullGPOConfig = gasprice.Config{
 	MinGasUsed:          gasprice.DefaultMinGasUsed,
 }
 
-// DefaultConfig contains default settings for use on the Dione main net.
+// DefaultConfig contains default settings for use on the Odyssey main net.
 var DefaultConfig = NewDefaultConfig()
 
 func NewDefaultConfig() Config {

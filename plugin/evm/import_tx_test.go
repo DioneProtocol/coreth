@@ -7,17 +7,17 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/dioneprotocol/dionego/chains/atomic"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/utils"
-	"github.com/dioneprotocol/dionego/utils/constants"
-	"github.com/dioneprotocol/dionego/utils/crypto/secp256k1"
-	"github.com/dioneprotocol/dionego/utils/set"
-	"github.com/dioneprotocol/dionego/vms/components/dione"
-	"github.com/dioneprotocol/dionego/vms/secp256k1fx"
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils"
+	"github.com/DioneProtocol/odysseygo/utils/constants"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/vms/components/dione"
+	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 )
 
 // createImportTxOptions adds a UTXO to shared memory and generates a list of import transactions sending this UTXO
@@ -103,7 +103,7 @@ func TestImportTxVerify(t *testing.T) {
 		Outs: []EVMOutput{
 			{
 				Address: testEthAddrs[0],
-				Amount:  importAmount - params.DioneAtomicTxFee,
+				Amount:  importAmount - params.OdysseyAtomicTxFee,
 				AssetID: ctx.DIONEAssetID,
 			},
 			{
@@ -125,7 +125,7 @@ func TestImportTxVerify(t *testing.T) {
 				return importTx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: errNilTx.Error(),
 		},
 		"valid import tx": {
@@ -133,8 +133,8 @@ func TestImportTxVerify(t *testing.T) {
 				return importTx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
-			expectedErr: "", // Expect this transaction to be valid in Apricot Phase 0
+			rules:       odysseyRulesPhase0,
+			expectedErr: "", // Expect this transaction to be valid in Odyssey Phase 0
 		},
 		"valid import tx banff": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
@@ -151,7 +151,7 @@ func TestImportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: errWrongNetworkID.Error(),
 		},
 		"invalid blockchain ID": {
@@ -161,27 +161,27 @@ func TestImportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: errWrongBlockchainID.Error(),
 		},
-		"P-chain source before AP5": {
+		"P-chain source before OP1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *importTx
 				tx.SourceChain = constants.PlatformChainID
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: errWrongChainID.Error(),
 		},
-		"P-chain source after AP5": {
+		"P-chain source after OP1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *importTx
 				tx.SourceChain = constants.PlatformChainID
 				return &tx
 			},
 			ctx:   ctx,
-			rules: apricotRulesPhase5,
+			rules: odysseyRulesPhase1,
 		},
 		"invalid source chain ID": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
@@ -190,7 +190,7 @@ func TestImportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase5,
+			rules:       odysseyRulesPhase1,
 			expectedErr: errWrongChainID.Error(),
 		},
 		"no inputs": {
@@ -200,7 +200,7 @@ func TestImportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: errNoImportInputs.Error(),
 		},
 		"inputs sorted incorrectly": {
@@ -213,7 +213,7 @@ func TestImportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: errInputsNotSortedUnique.Error(),
 		},
 		"invalid input": {
@@ -226,7 +226,7 @@ func TestImportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: "atomic input failed verification",
 		},
 		"unsorted outputs phase 0 passes verification": {
@@ -239,7 +239,7 @@ func TestImportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: "",
 		},
 		"non-unique outputs phase 0 passes verification": {
@@ -252,33 +252,7 @@ func TestImportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
-			expectedErr: "",
-		},
-		"unsorted outputs phase 1 fails verification": {
-			generate: func(t *testing.T) UnsignedAtomicTx {
-				tx := *importTx
-				tx.Outs = []EVMOutput{
-					tx.Outs[1],
-					tx.Outs[0],
-				}
-				return &tx
-			},
-			ctx:         ctx,
-			rules:       apricotRulesPhase1,
-			expectedErr: errOutputsNotSorted.Error(),
-		},
-		"non-unique outputs phase 1 passes verification": {
-			generate: func(t *testing.T) UnsignedAtomicTx {
-				tx := *importTx
-				tx.Outs = []EVMOutput{
-					tx.Outs[0],
-					tx.Outs[0],
-				}
-				return &tx
-			},
-			ctx:         ctx,
-			rules:       apricotRulesPhase1,
+			rules:       odysseyRulesPhase0,
 			expectedErr: "",
 		},
 		"outputs not sorted and unique phase 2 fails verification": {
@@ -291,7 +265,7 @@ func TestImportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase2,
+			rules:       odysseyRulesPhase1,
 			expectedErr: errOutputsNotSortedUnique.Error(),
 		},
 		"outputs not sorted phase 2 fails verification": {
@@ -304,7 +278,7 @@ func TestImportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase2,
+			rules:       odysseyRulesPhase1,
 			expectedErr: errOutputsNotSortedUnique.Error(),
 		},
 		"invalid EVMOutput fails verification": {
@@ -320,20 +294,20 @@ func TestImportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase0,
+			rules:       odysseyRulesPhase0,
 			expectedErr: "EVM Output failed verification",
 		},
-		"no outputs apricot phase 3": {
+		"no outputs odyssey phase 1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *importTx
 				tx.Outs = nil
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase3,
+			rules:       odysseyRulesPhase1,
 			expectedErr: errNoEVMOutputs.Error(),
 		},
-		"non-DIONE input Apricot Phase 6": {
+		"non-DIONE input odyssey phase 1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *importTx
 				tx.ImportedInputs = []*dione.TransferableInput{
@@ -354,10 +328,10 @@ func TestImportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase6,
+			rules:       odysseyRulesPhase1,
 			expectedErr: "",
 		},
-		"non-DIONE output Apricot Phase 6": {
+		"non-DIONE output odyssey phase 1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *importTx
 				tx.Outs = []EVMOutput{
@@ -370,7 +344,7 @@ func TestImportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       apricotRulesPhase6,
+			rules:       odysseyRulesPhase1,
 			expectedErr: "",
 		},
 		"non-DIONE input Banff": {
@@ -444,8 +418,8 @@ func TestNewImportTx(t *testing.T) {
 		}
 		rules := vm.currentRules()
 		switch {
-		case rules.IsApricotPhase3:
-			actualCost, err := importTx.GasUsed(rules.IsApricotPhase5)
+		case rules.IsOdysseyPhase1:
+			actualCost, err := importTx.GasUsed(rules.IsOdysseyPhase1)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -453,8 +427,6 @@ func TestNewImportTx(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-		case rules.IsApricotPhase2:
-			actualFee = 1000000
 		default:
 			actualFee = 0
 		}
@@ -501,25 +473,10 @@ func TestNewImportTx(t *testing.T) {
 		}
 	}
 	tests2 := map[string]atomicTxTest{
-		"apricot phase 0": {
+		"odyssey phase 1": {
 			setup:       createNewImportDIONETx,
 			checkState:  checkState,
-			genesisJSON: genesisJSONApricotPhase0,
-		},
-		"apricot phase 1": {
-			setup:       createNewImportDIONETx,
-			checkState:  checkState,
-			genesisJSON: genesisJSONApricotPhase1,
-		},
-		"apricot phase 2": {
-			setup:       createNewImportDIONETx,
-			checkState:  checkState,
-			genesisJSON: genesisJSONApricotPhase2,
-		},
-		"apricot phase 3": {
-			setup:       createNewImportDIONETx,
-			checkState:  checkState,
-			genesisJSON: genesisJSONApricotPhase3,
+			genesisJSON: genesisJSONOdysseyPhase1,
 		},
 	}
 
@@ -1170,7 +1127,7 @@ func TestImportTxSemanticVerify(t *testing.T) {
 				}
 				return tx
 			},
-			genesisJSON:       genesisJSONApricotPhase3,
+			genesisJSON:       genesisJSONOdysseyPhase1,
 			semanticVerifyErr: errOutputsNotSortedUnique.Error(),
 		},
 	}

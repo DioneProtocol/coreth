@@ -13,18 +13,18 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/dioneprotocol/dionego/ids"
+	"github.com/DioneProtocol/odysseygo/ids"
 
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/ethdb/memorydb"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/plugin/evm/message"
-	clientstats "github.com/dioneprotocol/coreth/sync/client/stats"
-	"github.com/dioneprotocol/coreth/sync/handlers"
-	handlerstats "github.com/dioneprotocol/coreth/sync/handlers/stats"
-	"github.com/dioneprotocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/ethdb/memorydb"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	clientstats "github.com/DioneProtocol/coreth/sync/client/stats"
+	"github.com/DioneProtocol/coreth/sync/handlers"
+	handlerstats "github.com/DioneProtocol/coreth/sync/handlers/stats"
+	"github.com/DioneProtocol/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -811,7 +811,7 @@ func TestGetLeafsRetries(t *testing.T) {
 		Root:     root,
 		Start:    bytes.Repeat([]byte{0x00}, common.HashLength),
 		End:      bytes.Repeat([]byte{0xff}, common.HashLength),
-		Limit:    defaultLeafRequestLimit,
+		Limit:    1024,
 		NodeType: message.StateTrieNode,
 	}
 

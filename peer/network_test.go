@@ -12,18 +12,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dioneprotocol/dionego/snow/engine/common"
-	"github.com/dioneprotocol/dionego/utils/set"
+	"github.com/DioneProtocol/odysseygo/snow/engine/common"
+	"github.com/DioneProtocol/odysseygo/utils/set"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
-	"github.com/dioneprotocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
-	"github.com/dioneprotocol/dionego/codec"
-	"github.com/dioneprotocol/dionego/codec/linearcodec"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/version"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/codec/linearcodec"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/version"
 )
 
 var (
@@ -222,6 +223,48 @@ func TestRequestRequestsRoutingAndResponse(t *testing.T) {
 	assert.Contains(t, err.Error(), "cannot send request to empty nodeID")
 }
 
+func TestAppRequestOnShutdown(t *testing.T) {
+	var (
+		net    Network
+		wg     sync.WaitGroup
+		called bool
+	)
+	sender := testAppSender{
+		sendAppRequestFn: func(nodes set.Set[ids.NodeID], requestID uint32, requestBytes []byte) error {
+			wg.Add(1)
+			go func() {
+				called = true
+				// shutdown the network here to ensure any outstanding requests are handled as failed
+				net.Shutdown()
+				wg.Done()
+			}() // this is on a goroutine to avoid a deadlock since calling Shutdown takes the lock.
+			return nil
+		},
+	}
+
+	codecManager := buildCodec(t, HelloRequest{}, HelloResponse{})
+	crossChainCodecManager := buildCodec(t, ExampleCrossChainRequest{}, ExampleCrossChainResponse{})
+	net = NewNetwork(sender, codecManager, crossChainCodecManager, ids.EmptyNodeID, 1, 1)
+	client := NewNetworkClient(net)
+	nodeID := ids.GenerateTestNodeID()
+	require.NoError(t, net.Connected(context.Background(), nodeID, defaultPeerVersion))
+
+	requestMessage := HelloRequest{Message: "this is a request"}
+	require.NoError(t, net.Connected(context.Background(), nodeID, defaultPeerVersion))
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		requestBytes, err := message.RequestToBytes(codecManager, requestMessage)
+		require.NoError(t, err)
+		responseBytes, _, err := client.SendAppRequestAny(defaultPeerVersion, requestBytes)
+		require.Error(t, err, ErrRequestFailed)
+		require.Nil(t, responseBytes)
+	}()
+	wg.Wait()
+	require.True(t, called)
+}
+
 func TestRequestMinVersion(t *testing.T) {
 	callNum := uint32(0)
 	nodeID := ids.GenerateTestNodeID()
@@ -276,7 +319,7 @@ func TestRequestMinVersion(t *testing.T) {
 		},
 		requestBytes,
 	)
-	assert.Equal(t, err.Error(), "no peers found matching version dione/2.0.0 out of 1 peers")
+	assert.Equal(t, err.Error(), "no peers found matching version odyssey/2.0.0 out of 1 peers")
 	assert.Nil(t, responseBytes)
 
 	// ensure version matches and the request goes through
@@ -563,6 +606,47 @@ func TestCrossChainRequestRequestsRoutingAndResponse(t *testing.T) {
 	requestWg.Wait()
 	senderWg.Wait()
 	assert.Equal(t, totalCalls, int(atomic.LoadUint32(&callNum)))
+}
+
+func TestCrossChainRequestOnShutdown(t *testing.T) {
+	var (
+		net    Network
+		wg     sync.WaitGroup
+		called bool
+	)
+	sender := testAppSender{
+		sendCrossChainAppRequestFn: func(requestingChainID ids.ID, requestID uint32, requestBytes []byte) error {
+			wg.Add(1)
+			go func() {
+				called = true
+				// shutdown the network here to ensure any outstanding requests are handled as failed
+				net.Shutdown()
+				wg.Done()
+			}() // this is on a goroutine to avoid a deadlock since calling Shutdown takes the lock.
+			return nil
+		},
+	}
+	codecManager := buildCodec(t, TestMessage{})
+	crossChainCodecManager := buildCodec(t, ExampleCrossChainRequest{}, ExampleCrossChainResponse{})
+	net = NewNetwork(sender, codecManager, crossChainCodecManager, ids.EmptyNodeID, 1, 1)
+	client := NewNetworkClient(net)
+
+	exampleCrossChainRequest := ExampleCrossChainRequest{
+		Message: "hello this is an example request",
+	}
+	chainID := ids.ID(ethcommon.BytesToHash([]byte{1, 2, 3, 4, 5}))
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		crossChainRequest, err := buildCrossChainRequest(crossChainCodecManager, exampleCrossChainRequest)
+		require.NoError(t, err)
+		responseBytes, err := client.SendCrossChainRequest(chainID, crossChainRequest)
+		require.ErrorIs(t, err, ErrRequestFailed)
+		require.Nil(t, responseBytes)
+	}()
+	wg.Wait()
+	require.True(t, called)
 }
 
 func buildCodec(t *testing.T, types ...interface{}) codec.Manager {

@@ -4,10 +4,10 @@
 package message
 
 import (
-	"github.com/dioneprotocol/dionego/codec"
-	"github.com/dioneprotocol/dionego/codec/linearcodec"
-	"github.com/dioneprotocol/dionego/utils/units"
-	"github.com/dioneprotocol/dionego/utils/wrappers"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/codec/linearcodec"
+	"github.com/DioneProtocol/odysseygo/utils/units"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
 )
 
 const (

@@ -29,8 +29,8 @@ package vm
 import (
 	"errors"
 
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/vmerrs"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/vmerrs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 )
@@ -45,7 +45,7 @@ import (
 // SLOAD_GAS 	800 	= WARM_STORAGE_READ_COST
 // SSTORE_RESET_GAS 	5000 	5000 - COLD_SLOAD_COST
 //
-//The other parameters defined in EIP 2200 are unchanged.
+// The other parameters defined in EIP 2200 are unchanged.
 // see gasSStoreEIP2200(...) in core/vm/gas_table.go for more info about how EIP 2200 is specified
 func gasSStoreEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	// If we fail the minimum gas availability invariant, fail (0)
@@ -78,7 +78,7 @@ func gasSStoreEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, m
 		//		return params.SloadGasEIP2200, nil
 		return cost + params.WarmStorageReadCostEIP2929, nil // SLOAD_GAS
 	}
-	original := evm.StateDB.GetCommittedStateAP1(contract.Address(), x.Bytes32())
+	original := evm.StateDB.GetCommittedStateOP1(contract.Address(), x.Bytes32())
 	if original == current {
 		if original == (common.Hash{}) { // create slot (2.1.1)
 			return cost + params.SstoreSetGasEIP2200, nil

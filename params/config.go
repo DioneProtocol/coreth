@@ -32,27 +32,27 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/dioneprotocol/coreth/precompile"
-	"github.com/dioneprotocol/coreth/utils"
+	"github.com/DioneProtocol/coreth/precompile"
+	"github.com/DioneProtocol/coreth/utils"
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// Dione ChainIDs
+// Odyssey ChainIDs
 var (
-	// DioneMainnetChainID ...
-	DioneMainnetChainID = big.NewInt(990099)
-	// DioneFujiChainID ...
-	DioneFujiChainID = big.NewInt(990088)
-	// DioneLocalChainID ...
-	DioneLocalChainID = big.NewInt(990077)
+	// OdysseyMainnetChainID ...
+	OdysseyMainnetChainID = big.NewInt(153)
+	// OdysseyTestnetChainID ...
+	OdysseyTestnetChainID = big.NewInt(13)
+	// OdysseyLocalChainID ...
+	OdysseyLocalChainID = big.NewInt(1530)
 
 	errNonGenesisForkByHeight = errors.New("coreth only supports forking by height at the genesis block")
 )
 
 var (
-	// DioneMainnetChainConfig is the configuration for Dione Main Network
-	DioneMainnetChainConfig = &ChainConfig{
-		ChainID:                         DioneMainnetChainID,
+	// OdysseyMainnetChainConfig is the configuration for Odyssey Main Network
+	OdysseyMainnetChainConfig = &ChainConfig{
+		ChainID:                         OdysseyMainnetChainID,
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    big.NewInt(0),
 		DAOForkSupport:                  true,
@@ -65,21 +65,15 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		ApricotPhase1BlockTimestamp:     big.NewInt(time.Date(2021, time.March, 31, 14, 0, 0, 0, time.UTC).Unix()),
-		ApricotPhase2BlockTimestamp:     big.NewInt(time.Date(2021, time.May, 10, 11, 0, 0, 0, time.UTC).Unix()),
-		ApricotPhase3BlockTimestamp:     big.NewInt(time.Date(2021, time.August, 24, 14, 0, 0, 0, time.UTC).Unix()),
-		ApricotPhase4BlockTimestamp:     big.NewInt(time.Date(2021, time.September, 22, 21, 0, 0, 0, time.UTC).Unix()),
-		ApricotPhase5BlockTimestamp:     big.NewInt(time.Date(2021, time.December, 2, 18, 0, 0, 0, time.UTC).Unix()),
-		ApricotPhasePre6BlockTimestamp:  big.NewInt(time.Date(2022, time.September, 5, 1, 30, 0, 0, time.UTC).Unix()),
-		ApricotPhase6BlockTimestamp:     big.NewInt(time.Date(2022, time.September, 6, 20, 0, 0, 0, time.UTC).Unix()),
-		ApricotPhasePost6BlockTimestamp: big.NewInt(time.Date(2022, time.September, 7, 3, 0, 0, 0, time.UTC).Unix()),
+		OdysseyPhase1BlockTimestamp:     big.NewInt(time.Date(2022, time.September, 6, 20, 0, 0, 0, time.UTC).Unix()),
 		BanffBlockTimestamp:             big.NewInt(time.Date(2022, time.October, 18, 16, 0, 0, 0, time.UTC).Unix()),
-		// TODO Add Cortina timestamp
+		CortinaBlockTimestamp:           big.NewInt(time.Date(2023, time.April, 25, 15, 0, 0, 0, time.UTC).Unix()),
+		// TODO Add DUpgrade timestamp
 	}
 
-	// DioneFujiChainConfig is the configuration for the Fuji Test Network
-	DioneFujiChainConfig = &ChainConfig{
-		ChainID:                         DioneFujiChainID,
+	// OdysseyTestnetChainConfig is the configuration for the Odyssey Test Network
+	OdysseyTestnetChainConfig = &ChainConfig{
+		ChainID:                         OdysseyTestnetChainID,
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    big.NewInt(0),
 		DAOForkSupport:                  true,
@@ -92,21 +86,15 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		ApricotPhase1BlockTimestamp:     big.NewInt(time.Date(2021, time.March, 26, 14, 0, 0, 0, time.UTC).Unix()),
-		ApricotPhase2BlockTimestamp:     big.NewInt(time.Date(2021, time.May, 5, 14, 0, 0, 0, time.UTC).Unix()),
-		ApricotPhase3BlockTimestamp:     big.NewInt(time.Date(2021, time.August, 16, 19, 0, 0, 0, time.UTC).Unix()),
-		ApricotPhase4BlockTimestamp:     big.NewInt(time.Date(2021, time.September, 16, 21, 0, 0, 0, time.UTC).Unix()),
-		ApricotPhase5BlockTimestamp:     big.NewInt(time.Date(2021, time.November, 24, 15, 0, 0, 0, time.UTC).Unix()),
-		ApricotPhasePre6BlockTimestamp:  big.NewInt(time.Date(2022, time.September, 6, 20, 0, 0, 0, time.UTC).Unix()),
-		ApricotPhase6BlockTimestamp:     big.NewInt(time.Date(2022, time.September, 6, 20, 0, 0, 0, time.UTC).Unix()),
-		ApricotPhasePost6BlockTimestamp: big.NewInt(time.Date(2022, time.September, 7, 6, 0, 0, 0, time.UTC).Unix()),
+		OdysseyPhase1BlockTimestamp:     big.NewInt(time.Date(2022, time.September, 6, 20, 0, 0, 0, time.UTC).Unix()),
 		BanffBlockTimestamp:             big.NewInt(time.Date(2022, time.October, 3, 14, 0, 0, 0, time.UTC).Unix()),
-		// TODO add Cortina timestamp
+		CortinaBlockTimestamp:           big.NewInt(time.Date(2023, time.April, 6, 15, 0, 0, 0, time.UTC).Unix()),
+		// TODO Add DUpgrade timestamp
 	}
 
-	// DioneLocalChainConfig is the configuration for the Dione Local Network
-	DioneLocalChainConfig = &ChainConfig{
-		ChainID:                         DioneLocalChainID,
+	// OdysseyLocalChainConfig is the configuration for the Odyssey Local Network
+	OdysseyLocalChainConfig = &ChainConfig{
+		ChainID:                         OdysseyLocalChainID,
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    big.NewInt(0),
 		DAOForkSupport:                  true,
@@ -119,30 +107,18 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		ApricotPhase1BlockTimestamp:     big.NewInt(0),
-		ApricotPhase2BlockTimestamp:     big.NewInt(0),
-		ApricotPhase3BlockTimestamp:     big.NewInt(0),
-		ApricotPhase4BlockTimestamp:     big.NewInt(0),
-		ApricotPhase5BlockTimestamp:     big.NewInt(0),
-		ApricotPhasePre6BlockTimestamp:  big.NewInt(0),
-		ApricotPhase6BlockTimestamp:     big.NewInt(0),
-		ApricotPhasePost6BlockTimestamp: big.NewInt(0),
+		OdysseyPhase1BlockTimestamp:     big.NewInt(0),
 		BanffBlockTimestamp:             big.NewInt(0),
+		CortinaBlockTimestamp:           big.NewInt(0),
 	}
 
-	TestChainConfig             = &ChainConfig{DioneContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0)}
-	TestLaunchConfig            = &ChainConfig{DioneContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
-	TestApricotPhase1Config     = &ChainConfig{DioneContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, nil, nil, nil, nil, nil, nil}
-	TestApricotPhase2Config     = &ChainConfig{DioneContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, nil, nil, nil, nil, nil}
-	TestApricotPhase3Config     = &ChainConfig{DioneContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, nil, nil, nil, nil}
-	TestApricotPhase4Config     = &ChainConfig{DioneContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, nil, nil, nil}
-	TestApricotPhase5Config     = &ChainConfig{DioneContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, nil, nil}
-	TestApricotPhasePre6Config  = &ChainConfig{DioneContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, nil}
-	TestApricotPhase6Config     = &ChainConfig{DioneContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil}
-	TestApricotPhasePost6Config = &ChainConfig{DioneContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil}
-	TestBanffChainConfig        = &ChainConfig{DioneContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil}
-	TestCortinaChainConfig      = &ChainConfig{DioneContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0)}
-	TestRules                   = TestChainConfig.DioneRules(new(big.Int), new(big.Int))
+	TestChainConfig             = &ChainConfig{OdysseyContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0)}
+	TestLaunchConfig            = &ChainConfig{OdysseyContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil, nil}
+    TestOdysseyPhase1Config     = &ChainConfig{OdysseyContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil, nil}
+	TestBanffChainConfig        = &ChainConfig{OdysseyContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil, nil}
+	TestCortinaChainConfig      = &ChainConfig{OdysseyContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), nil}
+	TestDUpgradeChainConfig     = &ChainConfig{OdysseyContext{common.Hash{1}}, big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0)}
+	TestRules                   = TestChainConfig.OdysseyRules(new(big.Int), new(big.Int))
 )
 
 // ChainConfig is the core config which determines the blockchain settings.
@@ -151,7 +127,7 @@ var (
 // that any network, identified by its genesis block, can have its own
 // set of configuration options.
 type ChainConfig struct {
-	DioneContext `json:"-"` // Dione specific context set during VM initialization. Not serialized.
+	OdysseyContext `json:"-"` // Odyssey specific context set during VM initialization. Not serialized.
 
 	ChainID *big.Int `json:"chainId"` // chainId identifies the current chain and is used for replay protection
 
@@ -173,31 +149,19 @@ type ChainConfig struct {
 	IstanbulBlock       *big.Int `json:"istanbulBlock,omitempty"`       // Istanbul switch block (nil = no fork, 0 = already on istanbul)
 	MuirGlacierBlock    *big.Int `json:"muirGlacierBlock,omitempty"`    // Eip-2384 (bomb delay) switch block (nil = no fork, 0 = already activated)
 
-	// Dione Network Upgrades
-	ApricotPhase1BlockTimestamp *big.Int `json:"apricotPhase1BlockTimestamp,omitempty"` // Apricot Phase 1 Block Timestamp (nil = no fork, 0 = already activated)
-	// Apricot Phase 2 Block Timestamp (nil = no fork, 0 = already activated)
-	// Apricot Phase 2 includes a modified version of the Berlin Hard Fork from Ethereum
-	ApricotPhase2BlockTimestamp *big.Int `json:"apricotPhase2BlockTimestamp,omitempty"`
-	// Apricot Phase 3 introduces dynamic fees and a modified version of the London Hard Fork from Ethereum (nil = no fork, 0 = already activated)
-	ApricotPhase3BlockTimestamp *big.Int `json:"apricotPhase3BlockTimestamp,omitempty"`
-	// Apricot Phase 4 introduces the notion of a block fee to the dynamic fee algorithm (nil = no fork, 0 = already activated)
-	ApricotPhase4BlockTimestamp *big.Int `json:"apricotPhase4BlockTimestamp,omitempty"`
-	// Apricot Phase 5 introduces a batch of atomic transactions with a maximum atomic gas limit per block. (nil = no fork, 0 = already activated)
-	ApricotPhase5BlockTimestamp *big.Int `json:"apricotPhase5BlockTimestamp,omitempty"`
-	// Apricot Phase Pre-6 deprecates the NativeAssetCall precompile (soft). (nil = no fork, 0 = already activated)
-	ApricotPhasePre6BlockTimestamp *big.Int `json:"apricotPhasePre6BlockTimestamp,omitempty"`
-	// Apricot Phase 6 deprecates the NativeAssetBalance and NativeAssetCall precompiles. (nil = no fork, 0 = already activated)
-	ApricotPhase6BlockTimestamp *big.Int `json:"apricotPhase6BlockTimestamp,omitempty"`
-	// Apricot Phase Post-6 deprecates the NativeAssetCall precompile (soft). (nil = no fork, 0 = already activated)
-	ApricotPhasePost6BlockTimestamp *big.Int `json:"apricotPhasePost6BlockTimestamp,omitempty"`
-	// Banff TODO comment. (nil = no fork, 0 = already activated)
+	// Odyssey Network Upgrades
+	// Odyssey Phase 1 deprecates the NativeAssetBalance and NativeAssetCall precompiles. (nil = no fork, 0 = already activated)
+	OdysseyPhase1BlockTimestamp *big.Int `json:"odysseyPhase1BlockTimestamp,omitempty"`
+	// Banff restricts import/export transactions to DIONE. (nil = no fork, 0 = already activated)
 	BanffBlockTimestamp *big.Int `json:"banffBlockTimestamp,omitempty"`
-	// Cortina TODO comment. (nil = no fork, 0 = already activated)
+	// Cortina increases the block gas limit to 15M. (nil = no fork, 0 = already activated)
 	CortinaBlockTimestamp *big.Int `json:"cortinaBlockTimestamp,omitempty"`
+	// DUpgrade activates the Shanghai upgrade from Ethereum. (nil = no fork, 0 = already activated)
+	DUpgradeBlockTimestamp *big.Int `json:"dUpgradeBlockTimestamp,omitempty"`
 }
 
-// DioneContext provides Dione specific context directly into the EVM.
-type DioneContext struct {
+// OdysseyContext provides Odyssey specific context directly into the EVM.
+type OdysseyContext struct {
 	BlockchainID common.Hash
 }
 
@@ -226,16 +190,10 @@ func (c *ChainConfig) String() string {
 	if c.MuirGlacierBlock != nil {
 		banner += fmt.Sprintf(" - Muir Glacier:                %-8v (https://github.com/ethereum/execution-specs/blob/master/network-upgrades/mainnet-upgrades/muir-glacier.md)\n", c.MuirGlacierBlock)
 	}
-	banner += fmt.Sprintf(" - Apricot Phase 1 Timestamp:        %-8v (https://github.com/dioneprotocol/dionego/releases/tag/v1.3.0)\n", c.ApricotPhase1BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase 2 Timestamp:        %-8v (https://github.com/dioneprotocol/dionego/releases/tag/v1.4.0)\n", c.ApricotPhase2BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase 3 Timestamp:        %-8v (https://github.com/dioneprotocol/dionego/releases/tag/v1.5.0)\n", c.ApricotPhase3BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase 4 Timestamp:        %-8v (https://github.com/dioneprotocol/dionego/releases/tag/v1.6.0)\n", c.ApricotPhase4BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase 5 Timestamp:        %-8v (https://github.com/dioneprotocol/dionego/releases/tag/v1.7.0)\n", c.ApricotPhase5BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase P6 Timestamp        %-8v (https://github.com/dioneprotocol/dionego/releases/tag/v1.8.0)\n", c.ApricotPhasePre6BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase 6 Timestamp:        %-8v (https://github.com/dioneprotocol/dionego/releases/tag/v1.8.0)\n", c.ApricotPhase6BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase Post-6 Timestamp:   %-8v (https://github.com/dioneprotocol/dionego/releases/tag/v1.8.0\n", c.ApricotPhasePost6BlockTimestamp)
-	banner += fmt.Sprintf(" - Banff Timestamp:                  %-8v (https://github.com/dioneprotocol/dionego/releases/tag/v1.9.0)\n", c.BanffBlockTimestamp)
-	banner += fmt.Sprintf(" - Cortina Timestamp:                %-8v (https://github.com/dioneprotocol/dionego/releases/tag/v1.10.0)\n", c.CortinaBlockTimestamp)
+	banner += fmt.Sprintf(" - Odyssey Phase 1 Timestamp:        %-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.8.0)\n", c.OdysseyPhase1BlockTimestamp)
+	banner += fmt.Sprintf(" - Banff Timestamp:                  %-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.9.0)\n", c.BanffBlockTimestamp)
+	banner += fmt.Sprintf(" - Cortina Timestamp:                %-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.10.0)\n", c.CortinaBlockTimestamp)
+	banner += fmt.Sprintf(" - DUpgrade Timestamp               %-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.11.0)\n", c.DUpgradeBlockTimestamp)
 	banner += "\n"
 	return banner
 }
@@ -292,54 +250,12 @@ func (c *ChainConfig) IsIstanbul(num *big.Int) bool {
 	return utils.IsForked(c.IstanbulBlock, num)
 }
 
-// Dione Upgrades:
+// Odyssey Upgrades:
 
-// IsApricotPhase1 returns whether [blockTimestamp] represents a block
-// with a timestamp after the Apricot Phase 1 upgrade time.
-func (c *ChainConfig) IsApricotPhase1(blockTimestamp *big.Int) bool {
-	return utils.IsForked(c.ApricotPhase1BlockTimestamp, blockTimestamp)
-}
-
-// IsApricotPhase2 returns whether [blockTimestamp] represents a block
-// with a timestamp after the Apricot Phase 2 upgrade time.
-func (c *ChainConfig) IsApricotPhase2(blockTimestamp *big.Int) bool {
-	return utils.IsForked(c.ApricotPhase2BlockTimestamp, blockTimestamp)
-}
-
-// IsApricotPhase3 returns whether [blockTimestamp] represents a block
-// with a timestamp after the Apricot Phase 3 upgrade time.
-func (c *ChainConfig) IsApricotPhase3(blockTimestamp *big.Int) bool {
-	return utils.IsForked(c.ApricotPhase3BlockTimestamp, blockTimestamp)
-}
-
-// IsApricotPhase4 returns whether [blockTimestamp] represents a block
-// with a timestamp after the Apricot Phase 4 upgrade time.
-func (c *ChainConfig) IsApricotPhase4(blockTimestamp *big.Int) bool {
-	return utils.IsForked(c.ApricotPhase4BlockTimestamp, blockTimestamp)
-}
-
-// IsApricotPhase5 returns whether [blockTimestamp] represents a block
-// with a timestamp after the Apricot Phase 5 upgrade time.
-func (c *ChainConfig) IsApricotPhase5(blockTimestamp *big.Int) bool {
-	return utils.IsForked(c.ApricotPhase5BlockTimestamp, blockTimestamp)
-}
-
-// IsApricotPhasePre6 returns whether [blockTimestamp] represents a block
-// with a timestamp after the Apricot Phase Pre 6 upgrade time.
-func (c *ChainConfig) IsApricotPhasePre6(blockTimestamp *big.Int) bool {
-	return utils.IsForked(c.ApricotPhasePre6BlockTimestamp, blockTimestamp)
-}
-
-// IsApricotPhase6 returns whether [blockTimestamp] represents a block
-// with a timestamp after the Apricot Phase 6 upgrade time.
-func (c *ChainConfig) IsApricotPhase6(blockTimestamp *big.Int) bool {
-	return utils.IsForked(c.ApricotPhase6BlockTimestamp, blockTimestamp)
-}
-
-// IsApricotPhasePost6 returns whether [blockTimestamp] represents a block
-// with a timestamp after the Apricot Phase 6 Post upgrade time.
-func (c *ChainConfig) IsApricotPhasePost6(blockTimestamp *big.Int) bool {
-	return utils.IsForked(c.ApricotPhasePost6BlockTimestamp, blockTimestamp)
+// IsOdysseyPhase1 returns whether [blockTimestamp] represents a block
+// with a timestamp after the Odyssey Phase 1 upgrade time.
+func (c *ChainConfig) IsOdysseyPhase1(blockTimestamp *big.Int) bool {
+	return utils.IsForked(c.OdysseyPhase1BlockTimestamp, blockTimestamp)
 }
 
 // IsBanff returns whether [blockTimestamp] represents a block
@@ -352,6 +268,12 @@ func (c *ChainConfig) IsBanff(blockTimestamp *big.Int) bool {
 // with a timestamp after the Cortina upgrade time.
 func (c *ChainConfig) IsCortina(blockTimestamp *big.Int) bool {
 	return utils.IsForked(c.CortinaBlockTimestamp, blockTimestamp)
+}
+
+// IsDUpgrade returns whether [blockTimestamp] represents a block
+// with a timestamp after the DUpgrade upgrade time.
+func (c *ChainConfig) IsDUpgrade(blockTimestamp *big.Int) bool {
+	return utils.IsForked(c.DUpgradeBlockTimestamp, blockTimestamp)
 }
 
 // CheckCompatible checks whether scheduled fork transitions have been imported
@@ -416,24 +338,18 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 		}
 	}
 
-	// Note: ApricotPhase1 and ApricotPhase2 override the rules set by block number
-	// hard forks. In Dione, hard forks must take place via block timestamps instead
+	// Note: OdysseyPhase1 override the rules set by block number
+	// hard forks. In Odyssey, hard forks must take place via block timestamps instead
 	// of block numbers since blocks are produced asynchronously. Therefore, we do not
-	// check that the block timestamps for Apricot Phase1 and Phase2 in the same way as for
+	// check that the block timestamps for OdysseyPhase1 in the same way as for
 	// the block number forks since it would not be a meaningful comparison.
-	// Instead, we check only that Apricot Phases are enabled in order.
+	// Instead, we check only that Odyssey Phases are enabled in order.
 	lastFork = fork{}
 	for _, cur := range []fork{
-		{name: "apricotPhase1BlockTimestamp", block: c.ApricotPhase1BlockTimestamp},
-		{name: "apricotPhase2BlockTimestamp", block: c.ApricotPhase2BlockTimestamp},
-		{name: "apricotPhase3BlockTimestamp", block: c.ApricotPhase3BlockTimestamp},
-		{name: "apricotPhase4BlockTimestamp", block: c.ApricotPhase4BlockTimestamp},
-		{name: "apricotPhase5BlockTimestamp", block: c.ApricotPhase5BlockTimestamp},
-		{name: "apricotPhasePre6BlockTimestamp", block: c.ApricotPhasePre6BlockTimestamp},
-		{name: "apricotPhase6BlockTimestamp", block: c.ApricotPhase6BlockTimestamp},
-		{name: "apricotPhasePost6BlockTimestamp", block: c.ApricotPhasePost6BlockTimestamp},
+		{name: "odysseyPhase1BlockTimestamp", block: c.OdysseyPhase1BlockTimestamp},
 		{name: "banffBlockTimestamp", block: c.BanffBlockTimestamp},
 		{name: "cortinaBlockTimestamp", block: c.CortinaBlockTimestamp},
+		{name: "dUpgradeBlockTimestamp", block: c.DUpgradeBlockTimestamp},
 	} {
 		if lastFork.name != "" {
 			// Next one must be higher number
@@ -453,9 +369,6 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 			lastFork = cur
 		}
 	}
-	// TODO(aaronbuchwald) check that dione block timestamps are at least possible with the other rule set changes
-	// additional change: require that block number hard forks are either 0 or nil since they should not
-	// be enabled at a specific block number.
 
 	return nil
 }
@@ -501,35 +414,17 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, lastHeight *big.Int, 
 	if isForkIncompatible(c.MuirGlacierBlock, newcfg.MuirGlacierBlock, lastHeight) {
 		return newCompatError("Muir Glacier fork block", c.MuirGlacierBlock, newcfg.MuirGlacierBlock)
 	}
-	if isForkIncompatible(c.ApricotPhase1BlockTimestamp, newcfg.ApricotPhase1BlockTimestamp, lastTimestamp) {
-		return newCompatError("ApricotPhase1 fork block timestamp", c.ApricotPhase1BlockTimestamp, newcfg.ApricotPhase1BlockTimestamp)
-	}
-	if isForkIncompatible(c.ApricotPhase2BlockTimestamp, newcfg.ApricotPhase2BlockTimestamp, lastTimestamp) {
-		return newCompatError("ApricotPhase2 fork block timestamp", c.ApricotPhase2BlockTimestamp, newcfg.ApricotPhase2BlockTimestamp)
-	}
-	if isForkIncompatible(c.ApricotPhase3BlockTimestamp, newcfg.ApricotPhase3BlockTimestamp, lastTimestamp) {
-		return newCompatError("ApricotPhase3 fork block timestamp", c.ApricotPhase3BlockTimestamp, newcfg.ApricotPhase3BlockTimestamp)
-	}
-	if isForkIncompatible(c.ApricotPhase4BlockTimestamp, newcfg.ApricotPhase4BlockTimestamp, lastTimestamp) {
-		return newCompatError("ApricotPhase4 fork block timestamp", c.ApricotPhase4BlockTimestamp, newcfg.ApricotPhase4BlockTimestamp)
-	}
-	if isForkIncompatible(c.ApricotPhase5BlockTimestamp, newcfg.ApricotPhase5BlockTimestamp, lastTimestamp) {
-		return newCompatError("ApricotPhase5 fork block timestamp", c.ApricotPhase5BlockTimestamp, newcfg.ApricotPhase5BlockTimestamp)
-	}
-	if isForkIncompatible(c.ApricotPhasePre6BlockTimestamp, newcfg.ApricotPhasePre6BlockTimestamp, lastTimestamp) {
-		return newCompatError("ApricotPhasePre6 fork block timestamp", c.ApricotPhasePre6BlockTimestamp, newcfg.ApricotPhasePre6BlockTimestamp)
-	}
-	if isForkIncompatible(c.ApricotPhase6BlockTimestamp, newcfg.ApricotPhase6BlockTimestamp, lastTimestamp) {
-		return newCompatError("ApricotPhase6 fork block timestamp", c.ApricotPhase6BlockTimestamp, newcfg.ApricotPhase6BlockTimestamp)
-	}
-	if isForkIncompatible(c.ApricotPhasePost6BlockTimestamp, newcfg.ApricotPhasePost6BlockTimestamp, lastTimestamp) {
-		return newCompatError("ApricotPhasePost6 fork block timestamp", c.ApricotPhasePost6BlockTimestamp, newcfg.ApricotPhasePost6BlockTimestamp)
+	if isForkIncompatible(c.OdysseyPhase1BlockTimestamp, newcfg.OdysseyPhase1BlockTimestamp, lastTimestamp) {
+		return newCompatError("OdysseyPhase1 fork block timestamp", c.OdysseyPhase1BlockTimestamp, newcfg.OdysseyPhase1BlockTimestamp)
 	}
 	if isForkIncompatible(c.BanffBlockTimestamp, newcfg.BanffBlockTimestamp, lastTimestamp) {
 		return newCompatError("Banff fork block timestamp", c.BanffBlockTimestamp, newcfg.BanffBlockTimestamp)
 	}
 	if isForkIncompatible(c.CortinaBlockTimestamp, newcfg.CortinaBlockTimestamp, lastTimestamp) {
 		return newCompatError("Cortina fork block timestamp", c.CortinaBlockTimestamp, newcfg.CortinaBlockTimestamp)
+	}
+	if isForkIncompatible(c.DUpgradeBlockTimestamp, newcfg.DUpgradeBlockTimestamp, lastTimestamp) {
+		return newCompatError("DUpgrade fork block timestamp", c.DUpgradeBlockTimestamp, newcfg.DUpgradeBlockTimestamp)
 	}
 	return nil
 }
@@ -591,11 +486,11 @@ type Rules struct {
 	IsHomestead, IsEIP150, IsEIP155, IsEIP158               bool
 	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul bool
 
-	// Rules for Dione releases
-	IsApricotPhase1, IsApricotPhase2, IsApricotPhase3, IsApricotPhase4, IsApricotPhase5 bool
-	IsApricotPhasePre6, IsApricotPhase6, IsApricotPhasePost6                            bool
+	// Rules for Odyssey releases
+	IsOdysseyPhase1                                                                     bool
 	IsBanff                                                                             bool
 	IsCortina                                                                           bool
+	IsDUpgrade                                                                          bool
 
 	// Precompiles maps addresses to stateful precompiled contracts that are enabled
 	// for this rule set.
@@ -623,21 +518,15 @@ func (c *ChainConfig) rules(num *big.Int) Rules {
 	}
 }
 
-// DioneRules returns the Dione modified rules to support Dione
+// OdysseyRules returns the Odyssey modified rules to support Odyssey
 // network upgrades
-func (c *ChainConfig) DioneRules(blockNum, blockTimestamp *big.Int) Rules {
+func (c *ChainConfig) OdysseyRules(blockNum, blockTimestamp *big.Int) Rules {
 	rules := c.rules(blockNum)
 
-	rules.IsApricotPhase1 = c.IsApricotPhase1(blockTimestamp)
-	rules.IsApricotPhase2 = c.IsApricotPhase2(blockTimestamp)
-	rules.IsApricotPhase3 = c.IsApricotPhase3(blockTimestamp)
-	rules.IsApricotPhase4 = c.IsApricotPhase4(blockTimestamp)
-	rules.IsApricotPhase5 = c.IsApricotPhase5(blockTimestamp)
-	rules.IsApricotPhasePre6 = c.IsApricotPhasePre6(blockTimestamp)
-	rules.IsApricotPhase6 = c.IsApricotPhase6(blockTimestamp)
-	rules.IsApricotPhasePost6 = c.IsApricotPhasePost6(blockTimestamp)
+	rules.IsOdysseyPhase1 = c.IsOdysseyPhase1(blockTimestamp)
 	rules.IsBanff = c.IsBanff(blockTimestamp)
 	rules.IsCortina = c.IsCortina(blockTimestamp)
+	rules.IsDUpgrade = c.IsDUpgrade(blockTimestamp)
 
 	// Initialize the stateful precompiles that should be enabled at [blockTimestamp].
 	rules.Precompiles = make(map[common.Address]precompile.StatefulPrecompiledContract)

@@ -9,13 +9,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/log"
 
-	"github.com/dioneprotocol/dionego/api"
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/utils/crypto/secp256k1"
-	"github.com/dioneprotocol/dionego/utils/formatting"
-	"github.com/dioneprotocol/dionego/utils/rpc"
+	"github.com/DioneProtocol/odysseygo/api"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/formatting"
+	"github.com/DioneProtocol/odysseygo/utils/rpc"
 
-	cjson "github.com/dioneprotocol/dionego/utils/json"
+	cjson "github.com/DioneProtocol/odysseygo/utils/json"
 )
 
 // Interface compliance
@@ -134,7 +134,7 @@ func (c *client) ListAddresses(ctx context.Context, user api.UserPass) ([]string
 }
 
 // ExportKey returns the private key corresponding to [addr] controlled by [user]
-// in both Dione standard format and hex format
+// in both Odyssey standard format and hex format
 func (c *client) ExportKey(ctx context.Context, user api.UserPass, addr string) (*secp256k1.PrivateKey, string, error) {
 	res := &ExportKeyReply{}
 	err := c.requester.SendRequest(ctx, "dione.exportKey", &ExportKeyArgs{

@@ -35,9 +35,9 @@ import (
 
 	"github.com/dop251/goja"
 
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/eth/tracers"
-	jsassets "github.com/dioneprotocol/coreth/eth/tracers/js/internal/tracers"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/eth/tracers"
+	jsassets "github.com/DioneProtocol/coreth/eth/tracers/js/internal/tracers"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -247,7 +247,7 @@ func (t *jsTracer) CaptureStart(env *vm.EVM, from common.Address, to common.Addr
 	t.ctx["value"] = valueBig
 	t.ctx["block"] = t.vm.ToValue(env.Context.BlockNumber.Uint64())
 	// Update list of precompiles based on current block
-	rules := env.ChainConfig().DioneRules(env.Context.BlockNumber, env.Context.Time)
+	rules := env.ChainConfig().OdysseyRules(env.Context.BlockNumber, env.Context.Time)
 	t.activePrecompiles = vm.ActivePrecompiles(rules)
 	t.ctx["intrinsicGas"] = t.vm.ToValue(t.gasLimit - gas)
 }
@@ -931,6 +931,7 @@ func (l *steplog) GetGas() uint64    { return l.gas }
 func (l *steplog) GetCost() uint64   { return l.cost }
 func (l *steplog) GetDepth() int     { return l.depth }
 func (l *steplog) GetRefund() uint64 { return l.refund }
+
 func (l *steplog) GetError() goja.Value {
 	if l.err != nil {
 		return l.vm.ToValue(l.err.Error())

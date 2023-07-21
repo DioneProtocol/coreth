@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/utils/set"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/set"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -23,10 +23,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/params"
-	"github.com/dioneprotocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
 )
 
 func fundAddressByGenesis(addrs []common.Address) (string, error) {
@@ -44,11 +44,8 @@ func fundAddressByGenesis(addrs []common.Address) (string, error) {
 	genesis.Alloc = funds
 
 	genesis.Config = &params.ChainConfig{
-		ChainID:                     params.DioneLocalChainID,
-		ApricotPhase1BlockTimestamp: big.NewInt(0),
-		ApricotPhase2BlockTimestamp: big.NewInt(0),
-		ApricotPhase3BlockTimestamp: big.NewInt(0),
-		ApricotPhase4BlockTimestamp: big.NewInt(0),
+		ChainID:                     params.OdysseyLocalChainID,
+		OdysseyPhase1BlockTimestamp: big.NewInt(0),
 	}
 
 	bytes, err := json.Marshal(genesis)

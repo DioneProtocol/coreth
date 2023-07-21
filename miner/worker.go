@@ -36,15 +36,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dioneprotocol/dionego/utils/timer/mockable"
-	"github.com/dioneprotocol/dionego/utils/units"
-	"github.com/dioneprotocol/coreth/consensus"
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/consensus/misc"
-	"github.com/dioneprotocol/coreth/core"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/odysseygo/utils/timer/mockable"
+	"github.com/DioneProtocol/odysseygo/utils/units"
+	"github.com/DioneProtocol/coreth/consensus"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
@@ -132,12 +131,12 @@ func (w *worker) commitNewWork() (*types.Block, error) {
 	var gasLimit uint64
 	if w.chainConfig.IsCortina(big.NewInt(timestamp)) {
 		gasLimit = params.CortinaGasLimit
-	} else if w.chainConfig.IsApricotPhase1(big.NewInt(timestamp)) {
-		gasLimit = params.ApricotPhase1GasLimit
+	} else if w.chainConfig.IsOdysseyPhase1(big.NewInt(timestamp)) {
+		gasLimit = params.OdysseyPhase1GasLimit
 	} else {
-		// The gas limit is set in phase1 to ApricotPhase1GasLimit because the ceiling and floor were set to the same value
+		// The gas limit is set in phase1 to OdysseyPhase1GasLimit because the ceiling and floor were set to the same value
 		// such that the gas limit converged to it. Since this is hardbaked now, we remove the ability to configure it.
-		gasLimit = core.CalcGasLimit(parent.GasUsed(), parent.GasLimit(), params.ApricotPhase1GasLimit, params.ApricotPhase1GasLimit)
+		gasLimit = core.CalcGasLimit(parent.GasUsed(), parent.GasLimit(), params.OdysseyPhase1GasLimit, params.OdysseyPhase1GasLimit)
 	}
 	num := parent.Number()
 	header := &types.Header{
@@ -147,9 +146,9 @@ func (w *worker) commitNewWork() (*types.Block, error) {
 		Extra:      nil,
 		Time:       uint64(timestamp),
 	}
-	// Set BaseFee and Extra data field if we are post ApricotPhase3
+	// Set BaseFee and Extra data field if we are post OdysseyPhase1
 	bigTimestamp := big.NewInt(timestamp)
-	if w.chainConfig.IsApricotPhase3(bigTimestamp) {
+	if w.chainConfig.IsOdysseyPhase1(bigTimestamp) {
 		var err error
 		header.Extra, header.BaseFee, err = dummy.CalcBaseFee(w.chainConfig, parent.Header(), uint64(timestamp))
 		if err != nil {
@@ -167,9 +166,6 @@ func (w *worker) commitNewWork() (*types.Block, error) {
 	env, err := w.createCurrentEnvironment(parent, header, tstart)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new current environment: %w", err)
-	}
-	if w.chainConfig.DAOForkSupport && w.chainConfig.DAOForkBlock != nil && w.chainConfig.DAOForkBlock.Cmp(header.Number) == 0 {
-		misc.ApplyDAOHardFork(env.state)
 	}
 	// Configure any stateful precompiles that should go into effect during this block.
 	w.chainConfig.CheckConfigurePrecompiles(new(big.Int).SetUint64(parent.Time()), types.NewBlockWithHeader(header), env.state)

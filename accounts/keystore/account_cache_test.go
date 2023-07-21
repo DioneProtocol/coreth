@@ -36,9 +36,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DioneProtocol/coreth/accounts"
 	"github.com/cespare/cp"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/dioneprotocol/coreth/accounts"
 	"github.com/ethereum/go-ethereum/common"
 )
 

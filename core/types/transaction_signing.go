@@ -32,7 +32,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -49,10 +49,8 @@ type sigCache struct {
 // MakeSigner returns a Signer based on the given chain config and block number or time.
 func MakeSigner(config *params.ChainConfig, blockNumber *big.Int, blockTime *big.Int) Signer {
 	switch {
-	case config.IsApricotPhase3(blockTime):
+	case config.IsOdysseyPhase1(blockTime):
 		return NewLondonSigner(config.ChainID)
-	case config.IsApricotPhase2(blockTime):
-		return NewEIP2930Signer(config.ChainID)
 	case config.IsEIP155(blockNumber):
 		return NewEIP155Signer(config.ChainID)
 	case config.IsHomestead(blockNumber):
@@ -71,11 +69,8 @@ func MakeSigner(config *params.ChainConfig, blockNumber *big.Int, blockTime *big
 // have the current block number available, use MakeSigner instead.
 func LatestSigner(config *params.ChainConfig) Signer {
 	if config.ChainID != nil {
-		if config.ApricotPhase3BlockTimestamp != nil {
+		if config.OdysseyPhase1BlockTimestamp != nil {
 			return NewLondonSigner(config.ChainID)
-		}
-		if config.ApricotPhase2BlockTimestamp != nil {
-			return NewEIP2930Signer(config.ChainID)
 		}
 		if config.EIP155Block != nil {
 			return NewEIP155Signer(config.ChainID)

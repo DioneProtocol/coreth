@@ -34,8 +34,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/dioneprotocol/coreth/accounts/abi/bind"
-	"github.com/dioneprotocol/coreth/internal/flags"
+	"github.com/DioneProtocol/coreth/accounts/abi/bind"
+	"github.com/DioneProtocol/coreth/internal/flags"
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/common/compiler"
 	"github.com/ethereum/go-ethereum/crypto"

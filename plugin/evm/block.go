@@ -14,10 +14,10 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/dioneprotocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/types"
 
-	"github.com/dioneprotocol/dionego/ids"
-	"github.com/dioneprotocol/dionego/snow/choices"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/snow/choices"
 )
 
 var (
@@ -116,8 +116,8 @@ type Block struct {
 
 // newBlock returns a new Block wrapping the ethBlock type and implementing the snowman.Block interface
 func (vm *VM) newBlock(ethBlock *types.Block) (*Block, error) {
-	isApricotPhase5 := vm.chainConfig.IsApricotPhase5(new(big.Int).SetUint64(ethBlock.Time()))
-	atomicTxs, err := ExtractAtomicTxs(ethBlock.ExtData(), isApricotPhase5, vm.codec)
+	isOdysseyPhase1 := vm.chainConfig.IsOdysseyPhase1(new(big.Int).SetUint64(ethBlock.Time()))
+	atomicTxs, err := ExtractAtomicTxs(ethBlock.ExtData(), isOdysseyPhase1, vm.codec)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +222,7 @@ func (b *Block) syntacticVerify() error {
 	}
 
 	header := b.ethBlock.Header()
-	rules := b.vm.chainConfig.DioneRules(header.Number, new(big.Int).SetUint64(header.Time))
+	rules := b.vm.chainConfig.OdysseyRules(header.Number, new(big.Int).SetUint64(header.Time))
 	return b.vm.syntacticBlockValidator.SyntacticVerify(b, rules)
 }
 

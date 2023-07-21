@@ -31,12 +31,12 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/dioneprotocol/coreth/consensus/dummy"
-	"github.com/dioneprotocol/coreth/core/rawdb"
-	"github.com/dioneprotocol/coreth/core/state"
-	"github.com/dioneprotocol/coreth/core/types"
-	"github.com/dioneprotocol/coreth/core/vm"
-	"github.com/dioneprotocol/coreth/params"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
@@ -87,7 +87,7 @@ func executeStateTransitionTest(t *testing.T, st stateTransitionTest) {
 					Nonce:   0,
 				},
 			},
-			GasLimit: params.ApricotPhase1GasLimit,
+			GasLimit: params.OdysseyPhase1GasLimit,
 		}
 		genesis       = gspec.ToBlock(nil)
 		engine        = dummy.NewFaker()
@@ -125,21 +125,9 @@ func TestNativeAssetContractCall(t *testing.T) {
 		makeTx(1, contractAddr, common.Big0, 100_000, big.NewInt(params.LaunchMinGasPrice), nil), // No input data is necessary, since this will hit the contract's fallback function.
 	}
 
-	phase6Tests := map[string]stateTransitionTest{
-		"phase5": {
-			config:  params.TestApricotPhase5Config,
-			txs:     txs,
-			gasUsed: []uint64{132091, 41618},
-			want:    "",
-		},
-		"prePhase6": {
-			config:  params.TestApricotPhasePre6Config,
-			txs:     txs,
-			gasUsed: []uint64{132091, 21618},
-			want:    "",
-		},
-		"phase6": {
-			config:  params.TestApricotPhase6Config,
+	phase1Tests := map[string]stateTransitionTest{
+		"phase1": {
+			config:  params.TestOdysseyPhase1Config,
 			txs:     txs,
 			gasUsed: []uint64{132091, 41618},
 			want:    "",
@@ -152,7 +140,7 @@ func TestNativeAssetContractCall(t *testing.T) {
 		},
 	}
 
-	for name, stTest := range phase6Tests {
+	for name, stTest := range phase1Tests {
 		t.Run(name, func(t *testing.T) {
 			executeStateTransitionTest(t, stTest)
 		})
@@ -169,21 +157,9 @@ func TestNativeAssetContractConstructor(t *testing.T) {
 		makeContractTx(0, common.Big0, 100_000, big.NewInt(params.LaunchMinGasPrice), data),
 	}
 
-	phase6Tests := map[string]stateTransitionTest{
-		"phase5": {
-			config:  params.TestApricotPhase5Config,
-			txs:     txs,
-			gasUsed: []uint64{92046},
-			want:    "",
-		},
-		"prePhase6": {
-			config:  params.TestApricotPhasePre6Config,
-			txs:     txs,
-			gasUsed: []uint64{72046},
-			want:    "",
-		},
-		"phase6": {
-			config:  params.TestApricotPhase6Config,
+	phase1Tests := map[string]stateTransitionTest{
+		"phase1": {
+			config:  params.TestOdysseyPhase1Config,
 			txs:     txs,
 			gasUsed: []uint64{92046},
 			want:    "",
@@ -196,7 +172,7 @@ func TestNativeAssetContractConstructor(t *testing.T) {
 		},
 	}
 
-	for name, stTest := range phase6Tests {
+	for name, stTest := range phase1Tests {
 		t.Run(name, func(t *testing.T) {
 			executeStateTransitionTest(t, stTest)
 		})
@@ -208,26 +184,9 @@ func TestNativeAssetDirectEOACall(t *testing.T) {
 		makeTx(0, vm.NativeAssetCallAddr, common.Big0, 100_000, big.NewInt(params.LaunchMinGasPrice), nil),
 	}
 
-	phase6Tests := map[string]stateTransitionTest{
-		"phase5": {
-			config:  params.TestApricotPhase5Config,
-			txs:     txs,
-			gasUsed: []uint64{41000},
-			want:    "",
-		},
-		// Note: PrePhase6 used a soft error to ensure the Native Asset Call precompile was not used from an EOA, however,
-		// after PrePhase6 was over, this soft error was no longer needed since it would never be included in the chain, so
-		// it has been removed.
-		// Therefore, there is no need for an error to be returned in this test case even though a soft error would have been
-		// returned during PrePhase6.
-		"prePhase6": {
-			config:  params.TestApricotPhasePre6Config,
-			txs:     txs,
-			gasUsed: []uint64{21000},
-			want:    "",
-		},
-		"phase6": {
-			config:  params.TestApricotPhase6Config,
+	phase1Tests := map[string]stateTransitionTest{
+		"phase1": {
+			config:  params.TestOdysseyPhase1Config,
 			txs:     txs,
 			gasUsed: []uint64{41000},
 			want:    "",
@@ -240,7 +199,7 @@ func TestNativeAssetDirectEOACall(t *testing.T) {
 		},
 	}
 
-	for name, stTest := range phase6Tests {
+	for name, stTest := range phase1Tests {
 		t.Run(name, func(t *testing.T) {
 			executeStateTransitionTest(t, stTest)
 		})
