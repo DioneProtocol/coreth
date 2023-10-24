@@ -37,7 +37,7 @@ var (
 	errNilTxID           = errors.New("nil transaction ID")
 	errMissingPrivateKey = errors.New("argument 'privateKey' not given")
 
-	initialBaseFee = big.NewInt(params.OdysseyPhase1InitialBaseFee)
+	initialBaseFee = big.NewInt(params.OdyPhase3InitialBaseFee)
 )
 
 // SnowmanAPI introduces snowman specific functionality to the evm
@@ -174,7 +174,7 @@ type ImportArgs struct {
 	SourceChain string `json:"sourceChain"`
 
 	// The address that will receive the imported funds
-	To string `json:"to"`
+	To common.Address `json:"to"`
 }
 
 // ImportDIONE is a deprecated name for Import.
@@ -190,11 +190,6 @@ func (service *DioneAPI) Import(_ *http.Request, args *ImportArgs, response *api
 	chainID, err := service.vm.ctx.BCLookup.Lookup(args.SourceChain)
 	if err != nil {
 		return fmt.Errorf("problem parsing chainID %q: %w", args.SourceChain, err)
-	}
-
-	to, err := ParseEthAddress(args.To)
-	if err != nil { // Parse address
-		return fmt.Errorf("couldn't parse argument 'to' to an address: %w", err)
 	}
 
 	// Get the user's info
@@ -224,7 +219,7 @@ func (service *DioneAPI) Import(_ *http.Request, args *ImportArgs, response *api
 		baseFee = args.BaseFee.ToInt()
 	}
 
-	tx, err := service.vm.newImportTx(chainID, to, baseFee, privKeys)
+	tx, err := service.vm.newImportTx(chainID, args.To, baseFee, privKeys)
 	if err != nil {
 		return err
 	}
@@ -243,8 +238,12 @@ type ExportDIONEArgs struct {
 	// Amount of asset to send
 	Amount json.Uint64 `json:"amount"`
 
-	// ID of the address that will receive the DIONE. This address includes the
-	// chainID, which is used to determine what the destination chain is.
+	// Chain the funds are going to. Optional. Used if To address does not
+	// include the chainID.
+	TargetChain string `json:"targetChain"`
+
+	// ID of the address that will receive the DIONE. This address may include
+	// the chainID, which is used to determine what the destination chain is.
 	To string `json:"to"`
 }
 
@@ -278,9 +277,17 @@ func (service *DioneAPI) Export(_ *http.Request, args *ExportArgs, response *api
 		return errors.New("argument 'amount' must be > 0")
 	}
 
+	// Get the chainID and parse the to address
 	chainID, to, err := service.vm.ParseAddress(args.To)
 	if err != nil {
-		return err
+		chainID, err = service.vm.ctx.BCLookup.Lookup(args.TargetChain)
+		if err != nil {
+			return err
+		}
+		to, err = ids.ShortFromString(args.To)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Get this user's data
@@ -350,7 +357,7 @@ func (service *DioneAPI) GetUTXOs(r *http.Request, args *api.GetUTXOsArgs, reply
 
 	addrSet := set.Set[ids.ShortID]{}
 	for _, addrStr := range args.Addresses {
-		addr, err := service.vm.ParseLocalAddress(addrStr)
+		addr, err := service.vm.ParseServiceAddress(addrStr)
 		if err != nil {
 			return fmt.Errorf("couldn't parse address %q: %w", addrStr, err)
 		}
@@ -360,7 +367,7 @@ func (service *DioneAPI) GetUTXOs(r *http.Request, args *api.GetUTXOsArgs, reply
 	startAddr := ids.ShortEmpty
 	startUTXO := ids.Empty
 	if args.StartIndex.Address != "" || args.StartIndex.UTXO != "" {
-		startAddr, err = service.vm.ParseLocalAddress(args.StartIndex.Address)
+		startAddr, err = service.vm.ParseServiceAddress(args.StartIndex.Address)
 		if err != nil {
 			return fmt.Errorf("couldn't parse start index address %q: %w", args.StartIndex.Address, err)
 		}

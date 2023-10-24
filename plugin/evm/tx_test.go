@@ -9,10 +9,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DioneProtocol/odysseygo/chains/atomic"
-	"github.com/DioneProtocol/odysseygo/snow"
-	"github.com/DioneProtocol/coreth/params"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ethereum/go-ethereum/common"
+
+	"github.com/DioneProtocol/coreth/params"
+
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/snow"
 )
 
 func TestCalculateDynamicFee(t *testing.T) {
@@ -36,7 +41,7 @@ func TestCalculateDynamicFee(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		cost, err := calculateDynamicFee(test.gas, test.baseFee)
+		cost, err := CalculateDynamicFee(test.gas, test.baseFee)
 		if test.expectedErr == nil {
 			if err != nil {
 				t.Fatalf("Unexpectedly failed to calculate dynamic fee: %s", err)
@@ -85,7 +90,7 @@ type atomicTxTest struct {
 	// Whether or not the VM should be considered to still be bootstrapping
 	bootstrapping bool
 	// genesisJSON to use for the VM genesis (also defines the rule set that will be used in verification)
-	// If this is left empty, [genesisJSONOdysseyPhase0], will be used
+	// If this is left empty, [genesisJSONOdyPhase0], will be used
 	genesisJSON string
 
 	// passed directly into GenesisVM
@@ -95,7 +100,7 @@ type atomicTxTest struct {
 func executeTxTest(t *testing.T, test atomicTxTest) {
 	genesisJSON := test.genesisJSON
 	if len(genesisJSON) == 0 {
-		genesisJSON = genesisJSONOdysseyPhase0
+		genesisJSON = genesisJSONOdyPhase0
 	}
 	issuer, vm, _, sharedMemory, _ := GenesisVM(t, !test.bootstrapping, genesisJSON, test.configJSON, test.upgradeJSON)
 	rules := vm.currentRules()
@@ -103,9 +108,9 @@ func executeTxTest(t *testing.T, test atomicTxTest) {
 	tx := test.setup(t, vm, sharedMemory)
 
 	var baseFee *big.Int
-	// If OdysseyPhase1 is active, use the initial base fee for the atomic transaction
+	// If OdyPhase3 is active, use the initial base fee for the atomic transaction
 	switch {
-	case rules.IsOdysseyPhase1:
+	case rules.IsOdyPhase3:
 		baseFee = initialBaseFee
 	}
 
@@ -145,7 +150,9 @@ func executeTxTest(t *testing.T, test atomicTxTest) {
 		// If this test simulates processing txs during bootstrapping (where some verification is skipped),
 		// initialize the block building goroutines normally initialized in SetState(snow.NormalOps).
 		// This ensures that the VM can build a block correctly during the test.
-		vm.initBlockBuilding()
+		if err := vm.initBlockBuilding(); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	if err := vm.issueTx(tx, true /*=local*/); err != nil {
@@ -178,5 +185,159 @@ func executeTxTest(t *testing.T, test atomicTxTest) {
 
 	if test.checkState != nil {
 		test.checkState(t, vm)
+	}
+}
+
+func TestEVMOutputLess(t *testing.T) {
+	type test struct {
+		name     string
+		a, b     EVMOutput
+		expected bool
+	}
+
+	tests := []test{
+		{
+			name: "first address less",
+			a: EVMOutput{
+				Address: common.BytesToAddress([]byte{0x01}),
+				AssetID: ids.ID{1},
+			},
+			b: EVMOutput{
+				Address: common.BytesToAddress([]byte{0x02}),
+				AssetID: ids.ID{0},
+			},
+			expected: true,
+		},
+		{
+			name: "first address greater",
+			a: EVMOutput{
+				Address: common.BytesToAddress([]byte{0x02}),
+				AssetID: ids.ID{0},
+			},
+			b: EVMOutput{
+				Address: common.BytesToAddress([]byte{0x01}),
+				AssetID: ids.ID{1},
+			},
+			expected: false,
+		},
+		{
+			name: "first address greater; assetIDs equal",
+			a: EVMOutput{
+				Address: common.BytesToAddress([]byte{0x02}),
+				AssetID: ids.ID{},
+			},
+			b: EVMOutput{
+				Address: common.BytesToAddress([]byte{0x01}),
+				AssetID: ids.ID{},
+			},
+			expected: false,
+		},
+		{
+			name: "addresses equal; first assetID less",
+			a: EVMOutput{
+				Address: common.BytesToAddress([]byte{0x01}),
+				AssetID: ids.ID{0},
+			},
+			b: EVMOutput{
+				Address: common.BytesToAddress([]byte{0x01}),
+				AssetID: ids.ID{1},
+			},
+			expected: true,
+		},
+		{
+			name:     "equal",
+			a:        EVMOutput{},
+			b:        EVMOutput{},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.expected, tt.a.Less(tt.b))
+		})
+	}
+}
+
+func TestEVMInputLess(t *testing.T) {
+	type test struct {
+		name     string
+		a, b     EVMInput
+		expected bool
+	}
+
+	tests := []test{
+		{
+			name: "first address less",
+			a: EVMInput{
+				Address: common.BytesToAddress([]byte{0x01}),
+				AssetID: ids.ID{1},
+			},
+			b: EVMInput{
+				Address: common.BytesToAddress([]byte{0x02}),
+				AssetID: ids.ID{0},
+			},
+			expected: true,
+		},
+		{
+			name: "first address greater",
+			a: EVMInput{
+				Address: common.BytesToAddress([]byte{0x02}),
+				AssetID: ids.ID{0},
+			},
+			b: EVMInput{
+				Address: common.BytesToAddress([]byte{0x01}),
+				AssetID: ids.ID{1},
+			},
+			expected: false,
+		},
+		{
+			name: "first address greater; assetIDs equal",
+			a: EVMInput{
+				Address: common.BytesToAddress([]byte{0x02}),
+				AssetID: ids.ID{},
+			},
+			b: EVMInput{
+				Address: common.BytesToAddress([]byte{0x01}),
+				AssetID: ids.ID{},
+			},
+			expected: false,
+		},
+		{
+			name: "addresses equal; first assetID less",
+			a: EVMInput{
+				Address: common.BytesToAddress([]byte{0x01}),
+				AssetID: ids.ID{0},
+			},
+			b: EVMInput{
+				Address: common.BytesToAddress([]byte{0x01}),
+				AssetID: ids.ID{1},
+			},
+			expected: true,
+		},
+		{
+			name: "addresses equal; first assetID greater",
+			a: EVMInput{
+				Address: common.BytesToAddress([]byte{0x01}),
+				AssetID: ids.ID{1},
+			},
+			b: EVMInput{
+				Address: common.BytesToAddress([]byte{0x01}),
+				AssetID: ids.ID{0},
+			},
+			expected: false,
+		},
+		{
+			name:     "equal",
+			a:        EVMInput{},
+			b:        EVMInput{},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.expected, tt.a.Less(tt.b))
+		})
 	}
 }

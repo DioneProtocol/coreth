@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/utils"
 )
 
 type gasPriceUpdater struct {
@@ -41,8 +42,19 @@ func (gpu *gasPriceUpdater) start() {
 	// Sets the initial gas price to the launch minimum gas price
 	gpu.setter.SetGasPrice(big.NewInt(params.LaunchMinGasPrice))
 
-	// Updates to the minimum gas price as of OdysseyPhase1 if it's already in effect or starts a goroutine to enable it at the correct time
-	gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.OdysseyPhase1BlockTimestamp, big.NewInt(params.OdysseyPhase1MinBaseFee))
+	// Updates to the minimum gas price as of OdyPhase1 if it's already in effect or starts a goroutine to enable it at the correct time
+	if disabled := gpu.handleUpdate(gpu.setter.SetGasPrice, gpu.chainConfig.OdyPhase1BlockTimestamp, big.NewInt(params.OdyPhase1MinGasPrice)); disabled {
+		return
+	}
+	// Updates to the minimum gas price as of OdyPhase3 if it's already in effect or starts a goroutine to enable it at the correct time
+	if disabled := gpu.handleUpdate(gpu.setter.SetGasPrice, gpu.chainConfig.OdyPhase3BlockTimestamp, big.NewInt(0)); disabled {
+		return
+	}
+	if disabled := gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.OdyPhase3BlockTimestamp, big.NewInt(params.OdyPhase3MinBaseFee)); disabled {
+		return
+	}
+	// Updates to the minimum gas price as of OdyPhase4 if it's already in effect or starts a goroutine to enable it at the correct time
+	gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.OdyPhase4BlockTimestamp, big.NewInt(params.OdyPhase4MinBaseFee))
 }
 
 // handleUpdate handles calling update(price) at the appropriate time based on
@@ -51,13 +63,13 @@ func (gpu *gasPriceUpdater) start() {
 // 2) If [timestamp] has already passed, update is called immediately
 // 3) [timestamp] is some time in the future, starts a goroutine that will call update(price) at the time
 // given by [timestamp].
-func (gpu *gasPriceUpdater) handleUpdate(update func(price *big.Int), timestamp *big.Int, price *big.Int) bool {
+func (gpu *gasPriceUpdater) handleUpdate(update func(price *big.Int), timestamp *uint64, price *big.Int) bool {
 	if timestamp == nil {
 		return true
 	}
 
 	currentTime := time.Now()
-	upgradeTime := time.Unix(timestamp.Int64(), 0)
+	upgradeTime := utils.Uint64ToTime(timestamp)
 	if currentTime.After(upgradeTime) {
 		update(price)
 	} else {

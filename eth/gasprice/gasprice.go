@@ -39,32 +39,32 @@ import (
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/DioneProtocol/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/lru"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
-	lru "github.com/hashicorp/golang-lru"
 )
 
 const (
 	// DefaultMaxCallBlockHistory is the number of blocks that can be fetched in
 	// a single call to eth_feeHistory.
-	DefaultMaxCallBlockHistory int = 2048
+	DefaultMaxCallBlockHistory = 2048
 	// DefaultMaxBlockHistory is the number of blocks from the last accepted
 	// block that can be fetched in eth_feeHistory.
 	//
 	// DefaultMaxBlockHistory is chosen to be a value larger than the required
 	// fee lookback window that MetaMask uses (20k blocks).
-	DefaultMaxBlockHistory int = 25_000
+	DefaultMaxBlockHistory = 25_000
 	// DefaultFeeHistoryCacheSize is chosen to be some value larger than
 	// [DefaultMaxBlockHistory] to ensure all block lookups can be cached when
 	// serving a fee history query.
-	DefaultFeeHistoryCacheSize int = 30_000
+	DefaultFeeHistoryCacheSize = 30_000
 )
 
 var (
 	DefaultMaxPrice           = big.NewInt(150 * params.GWei)
 	DefaultMinPrice           = big.NewInt(0 * params.GWei)
-	DefaultMinBaseFee         = big.NewInt(params.OdysseyPhase1InitialBaseFee)
+	DefaultMinBaseFee         = big.NewInt(params.OdyPhase3InitialBaseFee)
 	DefaultMinGasUsed         = big.NewInt(6_000_000) // block gas limit is 8,000,000
 	DefaultMaxLookbackSeconds = uint64(80)
 )
@@ -80,10 +80,10 @@ type Config struct {
 	MaxLookbackSeconds uint64
 	// MaxCallBlockHistory specifies the maximum number of blocks that can be
 	// fetched in a single eth_feeHistory call.
-	MaxCallBlockHistory int
+	MaxCallBlockHistory uint64
 	// MaxBlockHistory specifies the furthest back behind the last accepted block that can
 	// be requested by fee history.
-	MaxBlockHistory int
+	MaxBlockHistory uint64
 	MaxPrice        *big.Int `toml:",omitempty"`
 	MinPrice        *big.Int `toml:",omitempty"`
 	MinGasUsed      *big.Int `toml:",omitempty"`
@@ -122,9 +122,9 @@ type Oracle struct {
 
 	checkBlocks, percentile int
 	maxLookbackSeconds      uint64
-	maxCallBlockHistory     int
-	maxBlockHistory         int
-	historyCache            *lru.Cache
+	maxCallBlockHistory     uint64
+	maxBlockHistory         uint64
+	historyCache            *lru.Cache[uint64, *slimBlock]
 	feeInfoProvider         *feeInfoProvider
 }
 
@@ -175,7 +175,7 @@ func NewOracle(backend OracleBackend, config Config) (*Oracle, error) {
 		log.Warn("Sanitizing invalid gasprice oracle max block history", "provided", config.MaxBlockHistory, "updated", maxBlockHistory)
 	}
 
-	cache, _ := lru.New(DefaultFeeHistoryCacheSize)
+	cache := lru.NewCache[uint64, *slimBlock](DefaultFeeHistoryCacheSize)
 	headEvent := make(chan core.ChainHeadEvent, 1)
 	backend.SubscribeChainHeadEvent(headEvent)
 	go func() {
@@ -208,7 +208,7 @@ func NewOracle(backend OracleBackend, config Config) (*Oracle, error) {
 }
 
 // EstimateBaseFee returns an estimate of what the base fee will be on a block
-// produced at the current time. If OdysseyPhase1 has not been activated, it may
+// produced at the current time. If OdyPhase3 has not been activated, it may
 // return a nil value and a nil error.
 func (oracle *Oracle) EstimateBaseFee(ctx context.Context) (*big.Int, error) {
 	_, baseFee, err := oracle.suggestDynamicFees(ctx)

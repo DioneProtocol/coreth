@@ -15,6 +15,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/chains/atomic"
 	"github.com/DioneProtocol/odysseygo/ids"
 	"github.com/DioneProtocol/odysseygo/snow"
+	"github.com/DioneProtocol/odysseygo/utils"
 	"github.com/DioneProtocol/odysseygo/utils/constants"
 	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
 	"github.com/DioneProtocol/odysseygo/utils/math"
@@ -28,8 +29,8 @@ import (
 )
 
 var (
-	_                            UnsignedAtomicTx       = &UnsignedExportTx{}
-	_                            secp256k1fx.UnsignedTx = &UnsignedExportTx{}
+	_                           UnsignedAtomicTx       = &UnsignedExportTx{}
+	_                           secp256k1fx.UnsignedTx = &UnsignedExportTx{}
 	errExportNonDIONEInputBanff                         = errors.New("export input cannot contain non-DIONE in Banff")
 	errExportNonDIONEOutputBanff                        = errors.New("export output cannot contain non-DIONE in Banff")
 )
@@ -81,7 +82,7 @@ func (utx *UnsignedExportTx) Verify(
 	}
 
 	// Make sure that the tx has a valid peer chain ID
-	if rules.IsOdysseyPhase1 {
+	if rules.IsOdyPhase5 {
 		// Note that SameSubnet verifies that [tx.DestinationChain] isn't this
 		// chain's ID
 		if err := verify.SameSubnet(context.TODO(), ctx, utx.DestinationChain); err != nil {
@@ -117,7 +118,7 @@ func (utx *UnsignedExportTx) Verify(
 	if !dione.IsSortedTransferableOutputs(utx.ExportedOutputs, Codec) {
 		return errOutputsNotSorted
 	}
-	if rules.IsOdysseyPhase1 && !IsSortedAndUniqueEVMInputs(utx.Ins) {
+	if rules.IsOdyPhase1 && !utils.IsSortedAndUnique(utx.Ins) {
 		return errInputsNotSortedUnique
 	}
 
@@ -187,18 +188,18 @@ func (utx *UnsignedExportTx) SemanticVerify(
 	// Check the transaction consumes and produces the right amounts
 	fc := dione.NewFlowChecker()
 	switch {
-	// Apply dynamic fees to export transactions as of Odyssey Phase 1
-	case rules.IsOdysseyPhase1:
-		gasUsed, err := stx.GasUsed(rules.IsOdysseyPhase1)
+	// Apply dynamic fees to export transactions as of Ody Phase 3
+	case rules.IsOdyPhase3:
+		gasUsed, err := stx.GasUsed(rules.IsOdyPhase5)
 		if err != nil {
 			return err
 		}
-		txFee, err := calculateDynamicFee(gasUsed, baseFee)
+		txFee, err := CalculateDynamicFee(gasUsed, baseFee)
 		if err != nil {
 			return err
 		}
 		fc.Produce(vm.ctx.DIONEAssetID, txFee)
-	// Apply fees to export transactions before Odyssey Phase 1
+	// Apply fees to export transactions before Ody Phase 3
 	default:
 		fc.Produce(vm.ctx.DIONEAssetID, params.OdysseyAtomicTxFee)
 	}
@@ -281,7 +282,7 @@ func (vm *VM) newExportTx(
 	amount uint64, // Amount of tokens to export
 	chainID ids.ID, // Chain to send the UTXOs to
 	to ids.ShortID, // Address of chain recipient
-	baseFee *big.Int, // fee to use post-OP1
+	baseFee *big.Int, // fee to use post-OP3
 	keys []*secp256k1.PrivateKey, // Pay the fee and provide the tokens
 ) (*Tx, error) {
 	outs := []*dione.TransferableOutput{{
@@ -300,7 +301,7 @@ func (vm *VM) newExportTx(
 		dioneNeeded           uint64 = 0
 		ins, dioneIns         []EVMInput
 		signers, dioneSigners [][]*secp256k1.PrivateKey
-		err                   error
+		err                  error
 	)
 
 	// consume non-DIONE
@@ -315,7 +316,7 @@ func (vm *VM) newExportTx(
 
 	rules := vm.currentRules()
 	switch {
-	case rules.IsOdysseyPhase1:
+	case rules.IsOdyPhase3:
 		utx := &UnsignedExportTx{
 			NetworkID:        vm.ctx.NetworkID,
 			BlockchainID:     vm.ctx.ChainID,
@@ -329,7 +330,7 @@ func (vm *VM) newExportTx(
 		}
 
 		var cost uint64
-		cost, err = tx.GasUsed(rules.IsOdysseyPhase1)
+		cost, err = tx.GasUsed(rules.IsOdyPhase5)
 		if err != nil {
 			return nil, err
 		}

@@ -37,13 +37,15 @@ import (
 	"github.com/DioneProtocol/coreth/core/vm"
 	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/utils"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 )
 
-func setupGenesisBlock(db ethdb.Database, genesis *Genesis, lastAcceptedHash common.Hash) (*params.ChainConfig, common.Hash, error) {
-	return SetupGenesisBlock(db, genesis, lastAcceptedHash, false)
+func setupGenesisBlock(db ethdb.Database, triedb *trie.Database, genesis *Genesis, lastAcceptedHash common.Hash) (*params.ChainConfig, common.Hash, error) {
+	return SetupGenesisBlock(db, triedb, genesis, lastAcceptedHash, false)
 }
 
 func TestGenesisBlockForTesting(t *testing.T) {
@@ -55,12 +57,12 @@ func TestGenesisBlockForTesting(t *testing.T) {
 }
 
 func TestSetupGenesis(t *testing.T) {
-	odysseyPhase1Config := *params.TestOdysseyPhase1Config
-	odysseyPhase1Config.OdysseyPhase1BlockTimestamp = big.NewInt(100)
+	odyPhase1Config := *params.TestOdyPhase1Config
+	odyPhase1Config.OdyPhase1BlockTimestamp = utils.NewUint64(100)
 	var (
 		customghash = common.HexToHash("0x1099a11e9e454bd3ef31d688cf21936671966407bc330f051d754b5ce401e7ed")
 		customg     = Genesis{
-			Config: &odysseyPhase1Config,
+			Config: &odyPhase1Config,
 			Alloc: GenesisAlloc{
 				{1}: {Balance: big.NewInt(1), Storage: map[common.Hash]common.Hash{{1}: {1}}},
 			},
@@ -68,9 +70,9 @@ func TestSetupGenesis(t *testing.T) {
 		oldcustomg = customg
 	)
 
-	rollbackOdysseyPhase1Config := odysseyPhase1Config
-	rollbackOdysseyPhase1Config.OdysseyPhase1BlockTimestamp = big.NewInt(90)
-	oldcustomg.Config = &rollbackOdysseyPhase1Config
+	rollbackOdyPhase1Config := odyPhase1Config
+	rollbackOdyPhase1Config.OdyPhase1BlockTimestamp = utils.NewUint64(90)
+	oldcustomg.Config = &rollbackOdyPhase1Config
 	tests := []struct {
 		name       string
 		fn         func(ethdb.Database) (*params.ChainConfig, common.Hash, error)
@@ -81,7 +83,7 @@ func TestSetupGenesis(t *testing.T) {
 		{
 			name: "genesis without ChainConfig",
 			fn: func(db ethdb.Database) (*params.ChainConfig, common.Hash, error) {
-				return setupGenesisBlock(db, new(Genesis), common.Hash{})
+				return setupGenesisBlock(db, trie.NewDatabase(db), new(Genesis), common.Hash{})
 			},
 			wantErr:    errGenesisNoConfig,
 			wantConfig: nil,
@@ -89,7 +91,7 @@ func TestSetupGenesis(t *testing.T) {
 		{
 			name: "no block in DB, genesis == nil",
 			fn: func(db ethdb.Database) (*params.ChainConfig, common.Hash, error) {
-				return setupGenesisBlock(db, nil, common.Hash{})
+				return setupGenesisBlock(db, trie.NewDatabase(db), nil, common.Hash{})
 			},
 			wantErr:    ErrNoGenesis,
 			wantConfig: nil,
@@ -98,7 +100,7 @@ func TestSetupGenesis(t *testing.T) {
 			name: "custom block in DB, genesis == nil",
 			fn: func(db ethdb.Database) (*params.ChainConfig, common.Hash, error) {
 				customg.MustCommit(db)
-				return setupGenesisBlock(db, nil, common.Hash{})
+				return setupGenesisBlock(db, trie.NewDatabase(db), nil, common.Hash{})
 			},
 			wantErr:    ErrNoGenesis,
 			wantConfig: nil,
@@ -107,7 +109,7 @@ func TestSetupGenesis(t *testing.T) {
 			name: "compatible config in DB",
 			fn: func(db ethdb.Database) (*params.ChainConfig, common.Hash, error) {
 				oldcustomg.MustCommit(db)
-				return setupGenesisBlock(db, &customg, customghash)
+				return setupGenesisBlock(db, trie.NewDatabase(db), &customg, customghash)
 			},
 			wantHash:   customghash,
 			wantConfig: customg.Config,
@@ -115,8 +117,8 @@ func TestSetupGenesis(t *testing.T) {
 		{
 			name: "incompatible config for odyssey fork in DB",
 			fn: func(db ethdb.Database) (*params.ChainConfig, common.Hash, error) {
-				// Commit the 'old' genesis block with OdysseyPhase1 transition at 90.
-				// Advance to block #4, past the OdysseyPhase1 transition block of customg.
+				// Commit the 'old' genesis block with OdyPhase1 transition at 90.
+				// Advance to block #4, past the OdyPhase1 transition block of customg.
 				genesis := oldcustomg.MustCommit(db)
 
 				bc, _ := NewBlockChain(db, DefaultCacheConfig, &oldcustomg, dummy.NewFullFaker(), vm.Config{}, genesis.Hash(), false)
@@ -132,15 +134,15 @@ func TestSetupGenesis(t *testing.T) {
 				}
 
 				// This should return a compatibility error.
-				return setupGenesisBlock(db, &customg, bc.lastAccepted.Hash())
+				return setupGenesisBlock(db, trie.NewDatabase(db), &customg, bc.lastAccepted.Hash())
 			},
 			wantHash:   customghash,
 			wantConfig: customg.Config,
 			wantErr: &params.ConfigCompatError{
-				What:         "OdysseyPhase1 fork block timestamp",
-				StoredConfig: big.NewInt(90),
-				NewConfig:    big.NewInt(100),
-				RewindTo:     89,
+				What:         "OdyPhase1 fork block timestamp",
+				StoredTime:   u64(90),
+				NewTime:      u64(100),
+				RewindToTime: 89,
 			},
 		},
 	}
@@ -175,7 +177,7 @@ func TestNetworkUpgradeBetweenHeadAndAcceptedBlock(t *testing.T) {
 	db := rawdb.NewMemoryDatabase()
 
 	customg := Genesis{
-		Config: params.TestOdysseyPhase1Config,
+		Config: params.TestOdyPhase1Config,
 		Alloc: GenesisAlloc{
 			{1}: {Balance: big.NewInt(1), Storage: map[common.Hash]common.Hash{{1}: {1}}},
 		},
@@ -183,7 +185,7 @@ func TestNetworkUpgradeBetweenHeadAndAcceptedBlock(t *testing.T) {
 	bc, _ := NewBlockChain(db, DefaultCacheConfig, &customg, dummy.NewFullFaker(), vm.Config{}, common.Hash{}, false)
 	defer bc.Stop()
 
-	// Advance header to block #4, past the OdysseyPhase2 timestamp.
+	// Advance header to block #4, past the OdyPhase2 timestamp.
 	_, blocks, _, _ := GenerateChainWithGenesis(&customg, dummy.NewFullFaker(), 4, 25, nil)
 
 	require := require.New(t)
@@ -198,22 +200,22 @@ func TestNetworkUpgradeBetweenHeadAndAcceptedBlock(t *testing.T) {
 
 	require.Equal(blocks[1].Hash(), bc.lastAccepted.Hash())
 	// header must be bigger than last accepted
-	require.Greater(block.Time(), bc.lastAccepted.Time())
+	require.Greater(block.Time, bc.lastAccepted.Time())
 
 	activatedGenesis := customg
-	odysseyPhase2Timestamp := big.NewInt(51)
-	updatedOdysseyPhase2Config := *params.TestOdysseyPhase2Config
-	updatedOdysseyPhase2Config.OdysseyPhase2BlockTimestamp = odysseyPhase2Timestamp
+	odyPhase2Timestamp := utils.NewUint64(51)
+	updatedOdyPhase2Config := *params.TestOdyPhase1Config
+	updatedOdyPhase2Config.OdyPhase2BlockTimestamp = odyPhase2Timestamp
 
-	activatedGenesis.Config = &updatedOdysseyPhase1Config
+	activatedGenesis.Config = &updatedOdyPhase2Config
 
 	// assert block is after the activation block
-	require.Greater(block.Time(), odysseyPhase2Timestamp.Uint64())
+	require.Greater(block.Time, *odyPhase2Timestamp)
 	// assert last accepted block is before the activation block
-	require.Less(bc.lastAccepted.Time(), odysseyPhase2Timestamp.Uint64())
+	require.Less(bc.lastAccepted.Time(), *odyPhase2Timestamp)
 
 	// This should not return any error since the last accepted block is before the activation block.
-	config, _, err := setupGenesisBlock(db, &activatedGenesis, bc.lastAccepted.Hash())
+	config, _, err := setupGenesisBlock(db, trie.NewDatabase(db), &activatedGenesis, bc.lastAccepted.Hash())
 	require.NoError(err)
 	if !reflect.DeepEqual(config, activatedGenesis.Config) {
 		t.Errorf("returned %v\nwant     %v", config, activatedGenesis.Config)

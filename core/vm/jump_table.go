@@ -62,7 +62,9 @@ var (
 	byzantiumInstructionSet        = newByzantiumInstructionSet()
 	constantinopleInstructionSet   = newConstantinopleInstructionSet()
 	istanbulInstructionSet         = newIstanbulInstructionSet()
-	odysseyPhase1InstructionSet    = newOdysseyPhase1InstructionSet()
+	odyPhase1InstructionSet    = newOdyPhase1InstructionSet()
+	odyPhase2InstructionSet    = newOdyPhase2InstructionSet()
+	odyPhase3InstructionSet    = newOdyPhase3InstructionSet()
 	dUpgradeInstructionSet         = newDUpgradeInstructionSet()
 )
 
@@ -88,45 +90,45 @@ func validate(jt JumpTable) JumpTable {
 }
 
 func newDUpgradeInstructionSet() JumpTable {
-	instructionSet := newOdysseyPhase1InstructionSet()
+	instructionSet := newOdyPhase3InstructionSet()
 	enable3855(&instructionSet) // PUSH0 instruction
 	enable3860(&instructionSet) // Limit and meter initcode
 	return validate(instructionSet)
 }
 
-// newOdysseyPhase1InstructionSet returns the frontier, homestead, byzantium,
-// contantinople, istanbul, petersburg, OdysseyPhase1 instructions.
-func newOdysseyPhase1InstructionSet() JumpTable {
-	instructionSet := newEIP2929InstructionSet()
+// newOdyPhase3InstructionSet returns the frontier, homestead, byzantium,
+// constantinople, istanbul, petersburg, odyPhase1, 2, and 3 instructions.
+func newOdyPhase3InstructionSet() JumpTable {
+	instructionSet := newOdyPhase2InstructionSet()
 	enable3198(&instructionSet) // Base fee opcode https://eips.ethereum.org/EIPS/eip-3198
 	return validate(instructionSet)
 }
 
-// newEIP2929InstructionSet returns the frontier,
-// homestead, byzantium, contantinople petersburg,
-// istanbul instructions.
-func newEIP2929InstructionSet() JumpTable {
-	instructionSet := newEIP3298InstructionSet()
+// newOdyPhase1InstructionSet returns the frontier,
+// homestead, byzantium, constantinople petersburg,
+// istanbul, and odyPhase1 instructions.
+func newOdyPhase2InstructionSet() JumpTable {
+	instructionSet := newOdyPhase1InstructionSet()
 
 	enable2929(&instructionSet)
-	enablePreOP1(&instructionSet)
+	enableOP2(&instructionSet)
 
 	return validate(instructionSet)
 }
 
-// newEIP3298InstructionSet returns the frontier,
-// homestead, byzantium, contantinople petersburg,
+// newOdyPhase1InstructionSet returns the frontier,
+// homestead, byzantium, constantinople petersburg,
 // and istanbul instructions.
-func newEIP3298InstructionSet() JumpTable {
+func newOdyPhase1InstructionSet() JumpTable {
 	instructionSet := newIstanbulInstructionSet()
 
-	enable3298(&instructionSet)
+	enableOP1(&instructionSet)
 
 	return validate(instructionSet)
 }
 
 // newIstanbulInstructionSet returns the frontier,
-// homestead, byzantium, contantinople and petersburg instructions.
+// homestead, byzantium, constantinople and petersburg instructions.
 func newIstanbulInstructionSet() JumpTable {
 	instructionSet := newConstantinopleInstructionSet()
 
@@ -138,7 +140,7 @@ func newIstanbulInstructionSet() JumpTable {
 }
 
 // newConstantinopleInstructionSet returns the frontier, homestead,
-// byzantium and contantinople instructions.
+// byzantium and constantinople instructions.
 func newConstantinopleInstructionSet() JumpTable {
 	instructionSet := newByzantiumInstructionSet()
 	instructionSet[SHL] = &operation{

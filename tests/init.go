@@ -32,6 +32,7 @@ import (
 	"sort"
 
 	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/utils"
 )
 
 // Forks table defines supported forks and their chain config.
@@ -98,6 +99,19 @@ var Forks = map[string]*params.ChainConfig{
 		PetersburgBlock:     big.NewInt(0),
 		IstanbulBlock:       big.NewInt(0),
 	},
+	"MuirGlacier": {
+		ChainID:             big.NewInt(1),
+		HomesteadBlock:      big.NewInt(0),
+		EIP150Block:         big.NewInt(0),
+		EIP155Block:         big.NewInt(0),
+		EIP158Block:         big.NewInt(0),
+		DAOForkBlock:        big.NewInt(0),
+		ByzantiumBlock:      big.NewInt(0),
+		ConstantinopleBlock: big.NewInt(0),
+		PetersburgBlock:     big.NewInt(0),
+		IstanbulBlock:       big.NewInt(0),
+		MuirGlacierBlock:    big.NewInt(0),
+	},
 	"FrontierToHomesteadAt5": {
 		ChainID:        big.NewInt(1),
 		HomesteadBlock: big.NewInt(5),
@@ -151,7 +165,7 @@ var Forks = map[string]*params.ChainConfig{
 		PetersburgBlock:     big.NewInt(0),
 		IstanbulBlock:       big.NewInt(5),
 	},
-	"OdysseyPhase1": {
+	"OdyPhase1": {
 		ChainID:                     big.NewInt(1),
 		HomesteadBlock:              big.NewInt(0),
 		EIP150Block:                 big.NewInt(0),
@@ -161,7 +175,68 @@ var Forks = map[string]*params.ChainConfig{
 		ConstantinopleBlock:         big.NewInt(0),
 		PetersburgBlock:             big.NewInt(0),
 		IstanbulBlock:               big.NewInt(0),
-		OdysseyPhase1BlockTimestamp: big.NewInt(0),
+		OdyPhase1BlockTimestamp: utils.NewUint64(0),
+	},
+	"OdyPhase2": {
+		ChainID:                     big.NewInt(1),
+		HomesteadBlock:              big.NewInt(0),
+		EIP150Block:                 big.NewInt(0),
+		EIP155Block:                 big.NewInt(0),
+		EIP158Block:                 big.NewInt(0),
+		ByzantiumBlock:              big.NewInt(0),
+		ConstantinopleBlock:         big.NewInt(0),
+		PetersburgBlock:             big.NewInt(0),
+		IstanbulBlock:               big.NewInt(0),
+		MuirGlacierBlock:            big.NewInt(0),
+		OdyPhase1BlockTimestamp: utils.NewUint64(0),
+		OdyPhase2BlockTimestamp: utils.NewUint64(0),
+	},
+	"OdyPhase3": {
+		ChainID:                     big.NewInt(1),
+		HomesteadBlock:              big.NewInt(0),
+		EIP150Block:                 big.NewInt(0),
+		EIP155Block:                 big.NewInt(0),
+		EIP158Block:                 big.NewInt(0),
+		ByzantiumBlock:              big.NewInt(0),
+		ConstantinopleBlock:         big.NewInt(0),
+		PetersburgBlock:             big.NewInt(0),
+		IstanbulBlock:               big.NewInt(0),
+		MuirGlacierBlock:            big.NewInt(0),
+		OdyPhase1BlockTimestamp: utils.NewUint64(0),
+		OdyPhase2BlockTimestamp: utils.NewUint64(0),
+		OdyPhase3BlockTimestamp: utils.NewUint64(0),
+	},
+	"OdyPhase4": {
+		ChainID:                     big.NewInt(1),
+		HomesteadBlock:              big.NewInt(0),
+		EIP150Block:                 big.NewInt(0),
+		EIP155Block:                 big.NewInt(0),
+		EIP158Block:                 big.NewInt(0),
+		ByzantiumBlock:              big.NewInt(0),
+		ConstantinopleBlock:         big.NewInt(0),
+		PetersburgBlock:             big.NewInt(0),
+		IstanbulBlock:               big.NewInt(0),
+		MuirGlacierBlock:            big.NewInt(0),
+		OdyPhase1BlockTimestamp: utils.NewUint64(0),
+		OdyPhase2BlockTimestamp: utils.NewUint64(0),
+		OdyPhase3BlockTimestamp: utils.NewUint64(0),
+		OdyPhase4BlockTimestamp: utils.NewUint64(0),
+	},
+	"OdyPhase5": {
+		ChainID:                     big.NewInt(1),
+		HomesteadBlock:              big.NewInt(0),
+		EIP150Block:                 big.NewInt(0),
+		EIP155Block:                 big.NewInt(0),
+		EIP158Block:                 big.NewInt(0),
+		ByzantiumBlock:              big.NewInt(0),
+		ConstantinopleBlock:         big.NewInt(0),
+		PetersburgBlock:             big.NewInt(0),
+		IstanbulBlock:               big.NewInt(0),
+		OdyPhase1BlockTimestamp: utils.NewUint64(0),
+		OdyPhase2BlockTimestamp: utils.NewUint64(0),
+		OdyPhase3BlockTimestamp: utils.NewUint64(0),
+		OdyPhase4BlockTimestamp: utils.NewUint64(0),
+		OdyPhase5BlockTimestamp: utils.NewUint64(0),
 	},
 	"Banff": {
 		ChainID:                     big.NewInt(1),
@@ -173,8 +248,12 @@ var Forks = map[string]*params.ChainConfig{
 		ConstantinopleBlock:         big.NewInt(0),
 		PetersburgBlock:             big.NewInt(0),
 		IstanbulBlock:               big.NewInt(0),
-		OdysseyPhase1BlockTimestamp: big.NewInt(0),
-		BanffBlockTimestamp:         big.NewInt(0),
+		OdyPhase1BlockTimestamp: utils.NewUint64(0),
+		OdyPhase2BlockTimestamp: utils.NewUint64(0),
+		OdyPhase3BlockTimestamp: utils.NewUint64(0),
+		OdyPhase4BlockTimestamp: utils.NewUint64(0),
+		OdyPhase5BlockTimestamp: utils.NewUint64(0),
+		BanffBlockTimestamp:         utils.NewUint64(0),
 	},
 	"Cortina": {
 		ChainID:                     big.NewInt(1),
@@ -186,9 +265,13 @@ var Forks = map[string]*params.ChainConfig{
 		ConstantinopleBlock:         big.NewInt(0),
 		PetersburgBlock:             big.NewInt(0),
 		IstanbulBlock:               big.NewInt(0),
-		OdysseyPhase1BlockTimestamp: big.NewInt(0),
-		BanffBlockTimestamp:         big.NewInt(0),
-		CortinaBlockTimestamp:       big.NewInt(0),
+		OdyPhase1BlockTimestamp: utils.NewUint64(0),
+		OdyPhase2BlockTimestamp: utils.NewUint64(0),
+		OdyPhase3BlockTimestamp: utils.NewUint64(0),
+		OdyPhase4BlockTimestamp: utils.NewUint64(0),
+		OdyPhase5BlockTimestamp: utils.NewUint64(0),
+		BanffBlockTimestamp:         utils.NewUint64(0),
+		CortinaBlockTimestamp:       utils.NewUint64(0),
 	},
 	"DUpgrade": {
 		ChainID:                     big.NewInt(1),
@@ -200,14 +283,18 @@ var Forks = map[string]*params.ChainConfig{
 		ConstantinopleBlock:         big.NewInt(0),
 		PetersburgBlock:             big.NewInt(0),
 		IstanbulBlock:               big.NewInt(0),
-		OdysseyPhase1BlockTimestamp: big.NewInt(0),
-		BanffBlockTimestamp:         big.NewInt(0),
-		CortinaBlockTimestamp:       big.NewInt(0),
-		DUpgradeBlockTimestamp:      big.NewInt(0),
+		OdyPhase1BlockTimestamp: utils.NewUint64(0),
+		OdyPhase2BlockTimestamp: utils.NewUint64(0),
+		OdyPhase3BlockTimestamp: utils.NewUint64(0),
+		OdyPhase4BlockTimestamp: utils.NewUint64(0),
+		OdyPhase5BlockTimestamp: utils.NewUint64(0),
+		BanffBlockTimestamp:         utils.NewUint64(0),
+		CortinaBlockTimestamp:       utils.NewUint64(0),
+		DUpgradeBlockTimestamp:      utils.NewUint64(0),
 	},
 }
 
-// Returns the set of defined fork names
+// AvailableForks returns the set of defined fork names
 func AvailableForks() []string {
 	var availableForks []string
 	for k := range Forks {

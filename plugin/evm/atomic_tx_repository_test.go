@@ -6,8 +6,9 @@ package evm
 import (
 	"encoding/binary"
 	"fmt"
-	"sort"
 	"testing"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/DioneProtocol/odysseygo/chains/atomic"
 	"github.com/DioneProtocol/odysseygo/database"
@@ -98,17 +99,14 @@ func writeTxs(t testing.TB, repo AtomicTxRepository, fromHeight uint64, toHeight
 // verifyTxs asserts [repo] can find all txs in [txMap] by height and txID
 func verifyTxs(t testing.TB, repo AtomicTxRepository, txMap map[uint64][]*Tx) {
 	// We should be able to fetch indexed txs by height:
-	getComparator := func(txs []*Tx) func(int, int) bool {
-		return func(i, j int) bool {
-			return txs[i].ID().Hex() < txs[j].ID().Hex()
-		}
-	}
 	for height, expectedTxs := range txMap {
 		txs, err := repo.GetByHeight(height)
 		assert.NoErrorf(t, err, "unexpected error on GetByHeight at height=%d", height)
 		assert.Lenf(t, txs, len(expectedTxs), "wrong len of txs at height=%d", height)
 		// txs should be stored in order of txID
-		sort.Slice(expectedTxs, getComparator(expectedTxs))
+		slices.SortFunc(expectedTxs, func(i, j *Tx) bool {
+			return i.Less(j)
+		})
 
 		txIDs := set.Set[ids.ID]{}
 		for i := 0; i < len(txs); i++ {
@@ -212,7 +210,32 @@ func TestAtomicRepositoryReadWriteMultipleTxs(t *testing.T) {
 	verifyTxs(t, repo, txMap)
 }
 
-func TestAtomicRepositoryPostOP1(t *testing.T) {
+func TestAtomicRepositoryPreOP5Migration(t *testing.T) {
+	db := versiondb.New(memdb.New())
+	codec := testTxCodec()
+
+	acceptedAtomicTxDB := prefixdb.New(atomicTxIDDBPrefix, db)
+	txMap := make(map[uint64][]*Tx)
+	addTxs(t, codec, acceptedAtomicTxDB, 1, 100, 1, txMap, nil)
+	if err := db.Commit(); err != nil {
+		t.Fatal(err)
+	}
+
+	// Ensure the atomic repository can correctly migrate the transactions
+	// from the old accepted atomic tx DB to add the height index.
+	repo, err := NewAtomicTxRepository(db, codec, 100, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NoError(t, err)
+	verifyTxs(t, repo, txMap)
+
+	writeTxs(t, repo, 100, 150, constTxsPerHeight(1), txMap, nil)
+	writeTxs(t, repo, 150, 200, constTxsPerHeight(10), txMap, nil)
+	verifyTxs(t, repo, txMap)
+}
+
+func TestAtomicRepositoryPostOP5Migration(t *testing.T) {
 	db := versiondb.New(memdb.New())
 	codec := testTxCodec()
 

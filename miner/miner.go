@@ -31,6 +31,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/utils/timer/mockable"
 	"github.com/DioneProtocol/coreth/consensus"
 	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/txpool"
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
@@ -40,12 +41,12 @@ import (
 // Backend wraps all methods required for mining.
 type Backend interface {
 	BlockChain() *core.BlockChain
-	TxPool() *core.TxPool
+	TxPool() *txpool.TxPool
 }
 
 // Config is the configuration parameters of mining.
 type Config struct {
-	Etherbase common.Address `toml:",omitempty"` // Public address for block mining rewards (default = first account)
+	Etherbase common.Address `toml:",omitempty"` // Public address for block mining rewards
 }
 
 type Miner struct {

@@ -59,14 +59,14 @@ type testBackend struct {
 
 func (b *testBackend) HeaderByNumber(ctx context.Context, number rpc.BlockNumber) (*types.Header, error) {
 	if number == rpc.LatestBlockNumber {
-		return b.chain.CurrentBlock().Header(), nil
+		return b.chain.CurrentBlock(), nil
 	}
 	return b.chain.GetHeaderByNumber(uint64(number)), nil
 }
 
 func (b *testBackend) BlockByNumber(ctx context.Context, number rpc.BlockNumber) (*types.Block, error) {
 	if number == rpc.LatestBlockNumber {
-		return b.chain.CurrentBlock(), nil
+		number = rpc.BlockNumber(b.chain.CurrentBlock().Number.Uint64())
 	}
 	return b.chain.GetBlockByNumber(uint64(number)), nil
 }
@@ -86,6 +86,10 @@ func (b *testBackend) SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) eve
 func (b *testBackend) SubscribeChainAcceptedEvent(ch chan<- core.ChainEvent) event.Subscription {
 	b.acceptedEvent = ch
 	return nil
+}
+
+func (b *testBackend) teardown() {
+	b.chain.Stop()
 }
 
 func newTestBackendFakerEngine(t *testing.T, config *params.ChainConfig, numBlocks int, extDataGasUsage *big.Int, genBlocks func(i int, b *core.BlockGen)) *testBackend {
@@ -113,6 +117,8 @@ func newTestBackendFakerEngine(t *testing.T, config *params.ChainConfig, numBloc
 	return &testBackend{chain: chain}
 }
 
+// newTestBackend creates a test backend. OBS: don't forget to invoke tearDown
+// after use, otherwise the blockchain instance will mem-leak via goroutines.
 func newTestBackend(t *testing.T, config *params.ChainConfig, numBlocks int, extDataGasUsage *big.Int, genBlocks func(i int, b *core.BlockGen)) *testBackend {
 	var gspec = &core.Genesis{
 		Config: config,
@@ -153,7 +159,11 @@ func (b *testBackend) CurrentHeader() *types.Header {
 }
 
 func (b *testBackend) LastAcceptedBlock() *types.Block {
-	return b.chain.CurrentBlock()
+	current := b.chain.CurrentBlock()
+	if current == nil {
+		return nil
+	}
+	return b.chain.GetBlockByNumber(current.Number.Uint64())
 }
 
 func (b *testBackend) GetBlockByNumber(number uint64) *types.Block {
@@ -199,6 +209,7 @@ func applyGasPriceTest(t *testing.T, test suggestTipCapTest, config Config) {
 	oracle.clock.Set(time.Unix(20, 0))
 
 	got, err := oracle.SuggestTipCap(context.Background())
+	backend.teardown()
 	require.NoError(t, err)
 
 	if got.Cmp(test.expectedTip) != 0 {
@@ -325,6 +336,42 @@ func TestSuggestTipCapMinGas(t *testing.T) {
 		genBlock:        testGenBlock(t, 500, 50),
 		expectedTip:     big.NewInt(0),
 	}, defaultOracleConfig())
+}
+
+// Regression test to ensure that SuggestPrice does not panic prior to activation of OdyPhase3
+// Note: support for gas estimation without activated hard forks has been deprecated, but we still
+// ensure that the call does not panic.
+func TestSuggestGasPricePreOP3(t *testing.T) {
+	config := Config{
+		Blocks:     20,
+		Percentile: 60,
+	}
+
+	backend := newTestBackend(t, params.TestOdyPhase2Config, 3, nil, func(i int, b *core.BlockGen) {
+		b.SetCoinbase(common.Address{1})
+
+		signer := types.LatestSigner(params.TestOdyPhase2Config)
+		gasPrice := big.NewInt(params.OdyPhase1MinGasPrice)
+		for j := 0; j < 50; j++ {
+			tx := types.NewTx(&types.LegacyTx{
+				Nonce:    b.TxNonce(addr),
+				To:       &common.Address{},
+				Gas:      params.TxGas,
+				GasPrice: gasPrice,
+				Data:     []byte{},
+			})
+			tx, err := types.SignTx(tx, signer, key)
+			require.NoError(t, err, "failed to create tx")
+			b.AddTx(tx)
+		}
+	})
+	defer backend.teardown()
+
+	oracle, err := NewOracle(backend, config)
+	require.NoError(t, err)
+
+	_, err = oracle.SuggestPrice(context.Background())
+	require.NoError(t, err)
 }
 
 func TestSuggestTipCapMaxBlocksLookback(t *testing.T) {

@@ -112,8 +112,8 @@ func TestDynamicFees(t *testing.T) {
 		{
 			extraData: nil,
 			baseFee:   nil,
-			minFee:    big.NewInt(params.OdysseyPhase1MinBaseFee),
-			maxFee:    big.NewInt(params.OdysseyPhase1MaxBaseFee),
+			minFee:    big.NewInt(params.OdyPhase3MinBaseFee),
+			maxFee:    big.NewInt(params.OdyPhase3MaxBaseFee),
 			genBlocks: func() []blockDefinition {
 				blocks := make([]blockDefinition, 0, len(spacedTimestamps))
 				for _, timestamp := range spacedTimestamps {
@@ -129,8 +129,8 @@ func TestDynamicFees(t *testing.T) {
 		{
 			extraData: nil,
 			baseFee:   nil,
-			minFee:    big.NewInt(params.OdysseyPhase1MinBaseFee),
-			maxFee:    big.NewInt(params.OdysseyPhase1MaxBaseFee),
+			minFee:    big.NewInt(params.OdyPhase3MinBaseFee),
+			maxFee:    big.NewInt(params.OdyPhase3MaxBaseFee),
 			genBlocks: func() []blockDefinition {
 				blocks := make([]blockDefinition, 0, len(spacedTimestamps))
 				for _, timestamp := range spacedTimestamps {
@@ -145,8 +145,8 @@ func TestDynamicFees(t *testing.T) {
 		{
 			extraData: nil,
 			baseFee:   nil,
-			minFee:    big.NewInt(params.OdysseyPhase1MinBaseFee),
-			maxFee:    big.NewInt(params.OdysseyPhase1MaxBaseFee),
+			minFee:    big.NewInt(params.OdyPhase3MinBaseFee),
+			maxFee:    big.NewInt(params.OdyPhase3MaxBaseFee),
 			genBlocks: func() []blockDefinition {
 				return []blockDefinition{
 					{
@@ -203,7 +203,7 @@ func testDynamicFeesStaysWithinRange(t *testing.T, test test) {
 	}
 
 	for index, block := range blocks[1:] {
-		nextExtraData, nextBaseFee, err := CalcBaseFee(params.TestOdysseyPhase1Config, header, block.timestamp)
+		nextExtraData, nextBaseFee, err := CalcBaseFee(params.TestOdyPhase3Config, header, block.timestamp)
 		if err != nil {
 			t.Fatalf("Failed to calculate base fee at index %d: %s", index, err)
 		}
@@ -319,9 +319,9 @@ func TestSelectBigWithinBounds(t *testing.T) {
 	}
 }
 
-// TestCalcBaseFeeOP1 confirms that the inclusion of ExtDataGasUsage increases
+// TestCalcBaseFeeOP4 confirms that the inclusion of ExtDataGasUsage increases
 // the base fee.
-func TestCalcBaseFeeOP1(t *testing.T) {
+func TestCalcBaseFeeOP4(t *testing.T) {
 	events := []struct {
 		block             blockDefinition
 		extDataFeeGreater bool
@@ -403,12 +403,12 @@ func TestCalcBaseFeeOP1(t *testing.T) {
 		BaseFee: big.NewInt(225 * params.GWei),
 		Extra:   nil,
 		// ExtDataGasUsage is set to be nil to ensure CalcBaseFee can handle the
-		// OP1 boundary.
+		// OP3/OP4 boundary.
 	}
 
 	for index, event := range events {
 		block := event.block
-		nextExtraData, nextBaseFee, err := CalcBaseFee(params.TestOdysseyPhase1Config, header, block.timestamp)
+		nextExtraData, nextBaseFee, err := CalcBaseFee(params.TestOdyPhase4Config, header, block.timestamp)
 		assert.NoError(t, err)
 		log.Info("Update", "baseFee", nextBaseFee)
 		header = &types.Header{
@@ -419,7 +419,7 @@ func TestCalcBaseFeeOP1(t *testing.T) {
 			Extra:   nextExtraData,
 		}
 
-		nextExtraData, nextBaseFee, err = CalcBaseFee(params.TestOdysseyPhase1Config, extDataHeader, block.timestamp)
+		nextExtraData, nextBaseFee, err = CalcBaseFee(params.TestOdyPhase4Config, extDataHeader, block.timestamp)
 		assert.NoError(t, err)
 		log.Info("Update", "baseFee (w/extData)", nextBaseFee)
 		extDataHeader = &types.Header{
@@ -446,7 +446,7 @@ func TestCalcBlockGasCost(t *testing.T) {
 			parentBlockGasCost: nil,
 			parentTime:         1,
 			currentTime:        1,
-			expected:           OdysseyPhase1MinBlockGasCost,
+			expected:           OdyPhase4MinBlockGasCost,
 		},
 		"Same timestamp from 0": {
 			parentBlockGasCost: big.NewInt(0),
@@ -525,10 +525,10 @@ func TestCalcBlockGasCost(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			assert.Zero(t, test.expected.Cmp(calcBlockGasCost(
-				OdysseyPhase1TargetBlockRate,
-				OdysseyPhase1MinBlockGasCost,
-				OdysseyPhase1MaxBlockGasCost,
-				OdysseyPhase1BlockGasCostStep,
+				OdyPhase4TargetBlockRate,
+				OdyPhase4MinBlockGasCost,
+				OdyPhase4MaxBlockGasCost,
+				OdyPhase4BlockGasCostStep,
 				test.parentBlockGasCost,
 				test.parentTime,
 				test.currentTime,

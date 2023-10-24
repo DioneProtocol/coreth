@@ -31,6 +31,8 @@ import (
 	"sort"
 
 	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/vmerrs"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/holiman/uint256"
 )
 
@@ -42,6 +44,7 @@ var activators = map[int]func(*JumpTable){
 	2200: enable2200,
 	1884: enable1884,
 	1344: enable1344,
+	1153: enable1153,
 }
 
 // EnableEIP enables the given EIP on the config.
@@ -158,15 +161,16 @@ func enable2929(jt *JumpTable) {
 	jt[SELFDESTRUCT].dynamicGas = gasSelfdestructEIP2929
 }
 
-// enable3298 disables gas refunds for SSTORE and SELFDESTRUCT. Removal of Refunds [DRAFT]
+// enableOP1 disables gas refunds for SSTORE and SELFDESTRUCT. It is very
+// similar to EIP-3298: Removal of Refunds [DRAFT]
 // (https://eips.ethereum.org/EIPS/eip-3298).
-func enable3298(jt *JumpTable) {
+func enableOP1(jt *JumpTable) {
 	jt[SSTORE].dynamicGas = gasSStoreOP1
 	jt[SELFDESTRUCT].dynamicGas = gasSelfdestructOP1
 	jt[CALLEX].dynamicGas = gasCallExpertOP1
 }
 
-func enablePreOP1(jt *JumpTable) {
+func enableOP2(jt *JumpTable) {
 	jt[BALANCEMC] = &operation{execute: opUndefined, maxStack: maxStack(0, 0)}
 	jt[CALLEX] = &operation{execute: opUndefined, maxStack: maxStack(0, 0)}
 }
@@ -181,6 +185,45 @@ func enable3198(jt *JumpTable) {
 		minStack:    minStack(0, 1),
 		maxStack:    maxStack(0, 1),
 	}
+}
+
+// enable1153 applies EIP-1153 "Transient Storage"
+// - Adds TLOAD that reads from transient storage
+// - Adds TSTORE that writes to transient storage
+func enable1153(jt *JumpTable) {
+	jt[TLOAD] = &operation{
+		execute:     opTload,
+		constantGas: params.WarmStorageReadCostEIP2929,
+		minStack:    minStack(1, 1),
+		maxStack:    maxStack(1, 1),
+	}
+
+	jt[TSTORE] = &operation{
+		execute:     opTstore,
+		constantGas: params.WarmStorageReadCostEIP2929,
+		minStack:    minStack(2, 0),
+		maxStack:    maxStack(2, 0),
+	}
+}
+
+// opTload implements TLOAD opcode
+func opTload(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+	loc := scope.Stack.peek()
+	hash := common.Hash(loc.Bytes32())
+	val := interpreter.evm.StateDB.GetTransientState(scope.Contract.Address(), hash)
+	loc.SetBytes(val.Bytes())
+	return nil, nil
+}
+
+// opTstore implements TSTORE opcode
+func opTstore(pc *uint64, interpreter *EVMInterpreter, scope *ScopeContext) ([]byte, error) {
+	if interpreter.readOnly {
+		return nil, vmerrs.ErrWriteProtection
+	}
+	loc := scope.Stack.pop()
+	val := scope.Stack.pop()
+	interpreter.evm.StateDB.SetTransientState(scope.Contract.Address(), loc.Bytes32(), val.Bytes32())
+	return nil, nil
 }
 
 // opBaseFee implements BASEFEE opcode

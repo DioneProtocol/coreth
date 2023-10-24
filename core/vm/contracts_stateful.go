@@ -13,10 +13,10 @@ import (
 	"github.com/holiman/uint256"
 )
 
-// PrecompiledContractsOdyssey contains the default set of pre-compiled Ethereum
+// PrecompiledContractsOdy contains the default set of pre-compiled Ethereum
 // contracts used in the Istanbul release and the stateful precompiled contracts
-// added for the Odyssey release.
-// Odyssey is incompatible with the YoloV3 Release since it does not include the
+// added for the Odyssey Ody release.
+// Ody is incompatible with the YoloV3 Release since it does not include the
 // BLS12-381 Curve Operations added to the set of precompiled contracts
 
 var (

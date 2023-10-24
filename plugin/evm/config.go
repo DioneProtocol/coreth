@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/txpool"
 	"github.com/DioneProtocol/coreth/eth"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cast"
@@ -23,7 +23,7 @@ const (
 	defaultTrieDirtyCommitTarget                      = 20
 	defaultSnapshotCache                              = 256
 	defaultSyncableCommitInterval                     = defaultCommitInterval * 4
-	defaultSnapshotAsync                              = true
+	defaultSnapshotWait                               = false
 	defaultRpcGasCap                                  = 50_000_000 // Default to 50M Gas Limit
 	defaultRpcTxFeeCap                                = 100        // 100 DIONE
 	defaultMetricsExpensiveEnabled                    = true
@@ -78,8 +78,10 @@ type Duration struct {
 type Config struct {
 	// Coreth APIs
 	SnowmanAPIEnabled     bool   `json:"snowman-api-enabled"`
-	CorethAdminAPIEnabled bool   `json:"coreth-admin-api-enabled"`
-	CorethAdminAPIDir     string `json:"coreth-admin-api-dir"`
+	AdminAPIEnabled       bool   `json:"admin-api-enabled"`
+	AdminAPIDir           string `json:"admin-api-dir"`
+	CorethAdminAPIEnabled bool   `json:"coreth-admin-api-enabled"` // Deprecated: use AdminAPIEnabled instead
+	CorethAdminAPIDir     string `json:"coreth-admin-api-dir"`     // Deprecated: use AdminAPIDir instead
 
 	// EnabledEthAPIs is a list of Ethereum services that should be enabled
 	// If none is specified, then we use the default list [defaultEnabledAPIs]
@@ -104,7 +106,7 @@ type Config struct {
 
 	// Eth Settings
 	Preimages      bool `json:"preimages-enabled"`
-	SnapshotAsync  bool `json:"snapshot-async"`
+	SnapshotWait   bool `json:"snapshot-wait"`
 	SnapshotVerify bool `json:"snapshot-verification-enabled"`
 
 	// Pruning Settings
@@ -144,9 +146,12 @@ type Config struct {
 	KeystoreInsecureUnlockAllowed bool   `json:"keystore-insecure-unlock-allowed"`
 
 	// Gossip Settings
-	RemoteTxGossipOnlyEnabled bool     `json:"remote-tx-gossip-only-enabled"`
-	TxRegossipFrequency       Duration `json:"tx-regossip-frequency"`
-	TxRegossipMaxSize         int      `json:"tx-regossip-max-size"`
+	RemoteGossipOnlyEnabled   bool     `json:"remote-gossip-only-enabled"`
+	RegossipFrequency         Duration `json:"regossip-frequency"`
+	RegossipMaxTxs            int      `json:"regossip-max-txs"`
+	RemoteTxGossipOnlyEnabled bool     `json:"remote-tx-gossip-only-enabled"` // Deprecated: use RemoteGossipOnlyEnabled instead
+	TxRegossipFrequency       Duration `json:"tx-regossip-frequency"`         // Deprecated: use RegossipFrequency instead
+	TxRegossipMaxSize         int      `json:"tx-regossip-max-size"`          // Deprecated: use RegossipMaxTxs instead
 
 	// Log
 	LogLevel      string `json:"log-level"`
@@ -208,14 +213,14 @@ func (c *Config) SetDefaults() {
 	c.RPCTxFeeCap = defaultRpcTxFeeCap
 	c.MetricsExpensiveEnabled = defaultMetricsExpensiveEnabled
 
-	c.TxPoolJournal = core.DefaultTxPoolConfig.Journal
-	c.TxPoolRejournal = Duration{core.DefaultTxPoolConfig.Rejournal}
-	c.TxPoolPriceLimit = core.DefaultTxPoolConfig.PriceLimit
-	c.TxPoolPriceBump = core.DefaultTxPoolConfig.PriceBump
-	c.TxPoolAccountSlots = core.DefaultTxPoolConfig.AccountSlots
-	c.TxPoolGlobalSlots = core.DefaultTxPoolConfig.GlobalSlots
-	c.TxPoolAccountQueue = core.DefaultTxPoolConfig.AccountQueue
-	c.TxPoolGlobalQueue = core.DefaultTxPoolConfig.GlobalQueue
+	c.TxPoolJournal = txpool.DefaultConfig.Journal
+	c.TxPoolRejournal = Duration{txpool.DefaultConfig.Rejournal}
+	c.TxPoolPriceLimit = txpool.DefaultConfig.PriceLimit
+	c.TxPoolPriceBump = txpool.DefaultConfig.PriceBump
+	c.TxPoolAccountSlots = txpool.DefaultConfig.AccountSlots
+	c.TxPoolGlobalSlots = txpool.DefaultConfig.GlobalSlots
+	c.TxPoolAccountQueue = txpool.DefaultConfig.AccountQueue
+	c.TxPoolGlobalQueue = txpool.DefaultConfig.GlobalQueue
 
 	c.APIMaxDuration.Duration = defaultApiMaxDuration
 	c.WSCPURefillRate.Duration = defaultWsCpuRefillRate
@@ -229,9 +234,9 @@ func (c *Config) SetDefaults() {
 	c.TrieDirtyCommitTarget = defaultTrieDirtyCommitTarget
 	c.SnapshotCache = defaultSnapshotCache
 	c.AcceptorQueueLimit = defaultAcceptorQueueLimit
-	c.SnapshotAsync = defaultSnapshotAsync
-	c.TxRegossipFrequency.Duration = defaultTxRegossipFrequency
-	c.TxRegossipMaxSize = defaultTxRegossipMaxSize
+	c.SnapshotWait = defaultSnapshotWait
+	c.RegossipFrequency.Duration = defaultTxRegossipFrequency
+	c.RegossipMaxTxs = defaultTxRegossipMaxSize
 	c.OfflinePruningBloomFilterSize = defaultOfflinePruningBloomFilterSize
 	c.LogLevel = defaultLogLevel
 	c.PopulateMissingTriesParallelism = defaultPopulateMissingTriesParallelism
@@ -284,4 +289,31 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
+}
+
+func (c *Config) Deprecate() string {
+	msg := ""
+	// Deprecate the old config options and set the new ones.
+	if c.CorethAdminAPIEnabled {
+		msg += "coreth-admin-api-enabled is deprecated, use admin-api-enabled instead. "
+		c.AdminAPIEnabled = c.CorethAdminAPIEnabled
+	}
+	if c.CorethAdminAPIDir != "" {
+		msg += "coreth-admin-api-dir is deprecated, use admin-api-dir instead. "
+		c.AdminAPIDir = c.CorethAdminAPIDir
+	}
+	if c.RemoteTxGossipOnlyEnabled {
+		msg += "remote-tx-gossip-only-enabled is deprecated, use tx-gossip-enabled instead. "
+		c.RemoteGossipOnlyEnabled = c.RemoteTxGossipOnlyEnabled
+	}
+	if c.TxRegossipFrequency != (Duration{}) {
+		msg += "tx-regossip-frequency is deprecated, use regossip-frequency instead. "
+		c.RegossipFrequency = c.TxRegossipFrequency
+	}
+	if c.TxRegossipMaxSize != 0 {
+		msg += "tx-regossip-max-size is deprecated, use regossip-max-txs instead. "
+		c.RegossipMaxTxs = c.TxRegossipMaxSize
+	}
+
+	return msg
 }

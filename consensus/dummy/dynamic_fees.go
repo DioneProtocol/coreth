@@ -8,45 +8,50 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/odysseygo/utils/wrappers"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 )
 
 var (
-	OdysseyPhase1MinBaseFee = big.NewInt(params.OdysseyPhase1MinBaseFee)
-	OdysseyPhase1MaxBaseFee = big.NewInt(params.OdysseyPhase1MaxBaseFee)
+	OdyPhase3MinBaseFee = big.NewInt(params.OdyPhase3MinBaseFee)
+	OdyPhase3MaxBaseFee = big.NewInt(params.OdyPhase3MaxBaseFee)
+	OdyPhase4MinBaseFee = big.NewInt(params.OdyPhase4MinBaseFee)
+	OdyPhase4MaxBaseFee = big.NewInt(params.OdyPhase4MaxBaseFee)
 
-	OdysseyPhase1BaseFeeChangeDenominator = new(big.Int).SetUint64(params.OdysseyPhase1BaseFeeChangeDenominator)
+	OdyPhase4BaseFeeChangeDenominator = new(big.Int).SetUint64(params.OdyPhase4BaseFeeChangeDenominator)
+	OdyPhase5BaseFeeChangeDenominator = new(big.Int).SetUint64(params.OdyPhase5BaseFeeChangeDenominator)
 
-	OdysseyPhase1BlockGasFee      uint64 = 1_000_000
-	OdysseyPhase1MinBlockGasCost         = new(big.Int).Set(common.Big0)
-	OdysseyPhase1MaxBlockGasCost         = big.NewInt(1_000_000)
-	OdysseyPhase1TargetBlockRate  uint64 = 2 // in seconds
-	OdysseyPhase1BlockGasCostStep        = big.NewInt(200_000)
+	OdyPhase3BlockGasFee      uint64 = 1_000_000
+	OdyPhase4MinBlockGasCost         = new(big.Int).Set(common.Big0)
+	OdyPhase4MaxBlockGasCost         = big.NewInt(1_000_000)
+	OdyPhase4BlockGasCostStep        = big.NewInt(50_000)
+	OdyPhase4TargetBlockRate  uint64 = 2 // in seconds
+	OdyPhase5BlockGasCostStep        = big.NewInt(200_000)
 	rollupWindow                  uint64 = 10
 )
 
 // CalcBaseFee takes the previous header and the timestamp of its child block
 // and calculates the expected base fee as well as the encoding of the past
 // pricing information for the child block.
-// CalcBaseFee should only be called if [timestamp] >= [config.OdysseyPhase1Timestamp]
+// CalcBaseFee should only be called if [timestamp] >= [config.OdyPhase3Timestamp]
 func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uint64) ([]byte, *big.Int, error) {
 	// If the current block is the first EIP-1559 block, or it is the genesis block
 	// return the initial slice and initial base fee.
-	bigTimestamp := new(big.Int).SetUint64(parent.Time)
 	var (
-		isOdysseyPhase1 = config.IsOdysseyPhase1(bigTimestamp)
+		isOdyPhase3 = config.IsOdyPhase3(parent.Time)
+		isOdyPhase4 = config.IsOdyPhase4(parent.Time)
+		isOdyPhase5 = config.IsOdyPhase5(parent.Time)
 	)
-	if !isOdysseyPhase1 || parent.Number.Cmp(common.Big0) == 0 {
-		initialSlice := make([]byte, params.OdysseyPhase1ExtraDataSize)
-		initialBaseFee := big.NewInt(params.OdysseyPhase1InitialBaseFee)
+	if !isOdyPhase3 || parent.Number.Cmp(common.Big0) == 0 {
+		initialSlice := make([]byte, params.OdyPhase3ExtraDataSize)
+		initialBaseFee := big.NewInt(params.OdyPhase3InitialBaseFee)
 		return initialSlice, initialBaseFee, nil
 	}
-	if uint64(len(parent.Extra)) != params.OdysseyPhase1ExtraDataSize {
-		return nil, nil, fmt.Errorf("expected length of parent extra data to be %d, but found %d", params.OdysseyPhase1ExtraDataSize, len(parent.Extra))
+	if uint64(len(parent.Extra)) != params.OdyPhase3ExtraDataSize {
+		return nil, nil, fmt.Errorf("expected length of parent extra data to be %d, but found %d", params.OdyPhase3ExtraDataSize, len(parent.Extra))
 	}
 
 	if timestamp < parent.Time {
@@ -61,12 +66,17 @@ func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uin
 		return nil, nil, err
 	}
 
+	// If OP5, use a less responsive [BaseFeeChangeDenominator] and a higher gas
+	// block limit
 	var (
 		baseFee                  = new(big.Int).Set(parent.BaseFee)
-		baseFeeChangeDenominator = OdysseyPhase1BaseFeeChangeDenominator
-		parentGasTarget          = params.OdysseyPhase1TargetGas
+		baseFeeChangeDenominator = OdyPhase4BaseFeeChangeDenominator
+		parentGasTarget          = params.OdyPhase3TargetGas
 	)
-
+	if isOdyPhase5 {
+		baseFeeChangeDenominator = OdyPhase5BaseFeeChangeDenominator
+		parentGasTarget = params.OdyPhase5TargetGas
+	}
 	parentGasTargetBig := new(big.Int).SetUint64(parentGasTarget)
 
 	// Add in the gas used by the parent block in the correct place
@@ -75,16 +85,33 @@ func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uin
 	if roll < rollupWindow {
 		var blockGasCost, parentExtraStateGasUsed uint64
 		switch {
-		case isOdysseyPhase1:
-			// [blockGasCost] has been removed in OP1, so it is left as 0.
+		case isOdyPhase5:
+			// [blockGasCost] has been removed in OP5, so it is left as 0.
 
 			// At the start of a new network, the parent
 			// may not have a populated [ExtDataGasUsed].
 			if parent.ExtDataGasUsed != nil {
 				parentExtraStateGasUsed = parent.ExtDataGasUsed.Uint64()
 			}
+		case isOdyPhase4:
+			// The [blockGasCost] is paid by the effective tips in the block using
+			// the block's value of [baseFee].
+			blockGasCost = calcBlockGasCost(
+				OdyPhase4TargetBlockRate,
+				OdyPhase4MinBlockGasCost,
+				OdyPhase4MaxBlockGasCost,
+				OdyPhase4BlockGasCostStep,
+				parent.BlockGasCost,
+				parent.Time, timestamp,
+			).Uint64()
+
+			// On the boundary of OP3 and OP4 or at the start of a new network, the parent
+			// may not have a populated [ExtDataGasUsed].
+			if parent.ExtDataGasUsed != nil {
+				parentExtraStateGasUsed = parent.ExtDataGasUsed.Uint64()
+			}
 		default:
-			blockGasCost = OdysseyPhase1BlockGasFee
+			blockGasCost = OdyPhase3BlockGasFee
 		}
 
 		// Compute the new state of the gas rolling window.
@@ -93,8 +120,8 @@ func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uin
 			addedGas = math.MaxUint64
 		}
 
-		// Only add the [blockGasCost] to the gas used if it isn't OP1
-		if !isOdysseyPhase1 {
+		// Only add the [blockGasCost] to the gas used if it isn't OP5
+		if !isOdyPhase5 {
 			addedGas, overflow = math.SafeAdd(addedGas, blockGasCost)
 			if overflow {
 				addedGas = math.MaxUint64
@@ -147,10 +174,12 @@ func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uin
 
 	// Ensure that the base fee does not increase/decrease outside of the bounds
 	switch {
-	case isOdysseyPhase1:
-		baseFee = selectBigWithinBounds(OdysseyPhase1MinBaseFee, baseFee, nil)
+	case isOdyPhase5:
+		baseFee = selectBigWithinBounds(OdyPhase4MinBaseFee, baseFee, nil)
+	case isOdyPhase4:
+		baseFee = selectBigWithinBounds(OdyPhase4MinBaseFee, baseFee, OdyPhase4MaxBaseFee)
 	default:
-		baseFee = selectBigWithinBounds(OdysseyPhase1MinBaseFee, baseFee, OdysseyPhase1MaxBaseFee)
+		baseFee = selectBigWithinBounds(OdyPhase3MinBaseFee, baseFee, OdyPhase3MaxBaseFee)
 	}
 
 	return newRollupWindow, baseFee, nil
@@ -262,7 +291,7 @@ func calcBlockGasCost(
 	parentBlockGasCost *big.Int,
 	parentTime, currentTime uint64,
 ) *big.Int {
-	// Handle OP1 boundary by returning the minimum value as the boundary.
+	// Handle OP3/OP4 boundary by returning the minimum value as the boundary.
 	if parentBlockGasCost == nil {
 		return new(big.Int).Set(minBlockGasCost)
 	}
@@ -297,9 +326,9 @@ func calcBlockGasCost(
 // correctness check performed is that the sum of all tips is >= the
 // required block fee.
 //
-// This function will return nil for all return values prior to Odyssey Phase 1.
+// This function will return nil for all return values prior to Ody Phase 4.
 func MinRequiredTip(config *params.ChainConfig, header *types.Header) (*big.Int, error) {
-	if !config.IsOdysseyPhase1(new(big.Int).SetUint64(header.Time)) {
+	if !config.IsOdyPhase4(header.Time) {
 		return nil, nil
 	}
 	if header.BaseFee == nil {

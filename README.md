@@ -47,11 +47,11 @@ The C-Chain is compatible with almost all Ethereum tooling, including [Remix,](h
 
 As a network composed of multiple blockchains, Odyssey uses *atomic transactions* to move assets between chains. Coreth modifies the Ethereum block format by adding an *ExtraData* field, which contains the atomic transactions.
 
-### Odyssey Native Tokens (ANTs)
+### Odyssey Native Tokens (ONTs)
 
-The C-Chain supports Odyssey Native Tokens, which are created on the X-Chain using precompiled contracts. These precompiled contracts *nativeAssetCall* and *nativeAssetBalance* support the same interface for ANTs as *CALL* and *BALANCE* do for DIONE with the added parameter of *assetID* to specify the asset.
+The C-Chain supports Odyssey Native Tokens, which are created on the X-Chain using precompiled contracts. These precompiled contracts *nativeAssetCall* and *nativeAssetBalance* support the same interface for ONTs as *CALL* and *BALANCE* do for DIONE with the added parameter of *assetID* to specify the asset.
 
-For the full documentation of precompiles for interacting with ANTs and using them in ARC-20s, see [here](https://docs.dioneprotocol.com/build/references/coreth-arc20s).
+For the full documentation of precompiles for interacting with ONTs and using them in ORC-20s, see [here](https://docs.dioneprotocol.com/build/references/coreth-arc20s).
 
 ### Block Timing
 

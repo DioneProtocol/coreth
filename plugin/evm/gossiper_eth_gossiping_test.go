@@ -27,6 +27,7 @@ import (
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/utils"
 )
 
 func fundAddressByGenesis(addrs []common.Address) (string, error) {
@@ -45,7 +46,10 @@ func fundAddressByGenesis(addrs []common.Address) (string, error) {
 
 	genesis.Config = &params.ChainConfig{
 		ChainID:                     params.OdysseyLocalChainID,
-		OdysseyPhase1BlockTimestamp: big.NewInt(0),
+		OdyPhase1BlockTimestamp: utils.NewUint64(0),
+		OdyPhase2BlockTimestamp: utils.NewUint64(0),
+		OdyPhase3BlockTimestamp: utils.NewUint64(0),
+		OdyPhase4BlockTimestamp: utils.NewUint64(0),
 	}
 
 	bytes, err := json.Marshal(genesis)

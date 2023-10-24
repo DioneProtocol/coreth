@@ -1,4 +1,3 @@
-
 // (c) 2019-2020, Ava Labs, Inc. All rights reserved.
 // See the file LICENSE for licensing terms.
 
@@ -180,10 +179,10 @@ func TestVerifyBlockFee(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			blockGasCost := calcBlockGasCost(
-				OdysseyPhase1TargetBlockRate,
-				OdysseyPhase1MinBlockGasCost,
-				OdysseyPhase1MaxBlockGasCost,
-				OdysseyPhase1BlockGasCostStep,
+				OdyPhase4TargetBlockRate,
+				OdyPhase4MinBlockGasCost,
+				OdyPhase4MaxBlockGasCost,
+				OdyPhase4BlockGasCostStep,
 				test.parentBlockGasCost,
 				test.parentTime, test.currentTime,
 			)

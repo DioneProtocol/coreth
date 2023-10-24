@@ -33,6 +33,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/DioneProtocol/coreth/core"
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/DioneProtocol/coreth/rpc"
@@ -167,9 +168,9 @@ func (args *TransactionArgs) setFeeDefaults(ctx context.Context, b feeBackend) e
 	}
 	// Now attempt to fill in default value depending on whether London is active or not.
 	head := b.CurrentHeader()
-	if b.ChainConfig().IsOdysseyPhase1(new(big.Int).SetUint64(head.Time)) {
+	if b.ChainConfig().IsOdyPhase3(head.Time) {
 		// London is active, set maxPriorityFeePerGas and maxFeePerGas.
-		if err := args.setOdysseyPhase1FeeDefault(ctx, head, b); err != nil {
+		if err := args.setOdyPhase3FeeDefault(ctx, head, b); err != nil {
 			return err
 		}
 	} else {
@@ -187,8 +188,8 @@ func (args *TransactionArgs) setFeeDefaults(ctx context.Context, b feeBackend) e
 	return nil
 }
 
-// setOdysseyPhase1FeeDefault fills in reasonable default fee values for unspecified fields.
-func (args *TransactionArgs) setOdysseyPhase1FeeDefault(ctx context.Context, head *types.Header, b feeBackend) error {
+// setOdyPhase3FeeDefault fills in reasonable default fee values for unspecified fields.
+func (args *TransactionArgs) setOdyPhase3FeeDefault(ctx context.Context, head *types.Header, b feeBackend) error {
 	// Set maxPriorityFeePerGas if it is missing.
 	if args.MaxPriorityFeePerGas == nil {
 		tip, err := b.SuggestGasTipCap(ctx)
@@ -218,10 +219,10 @@ func (args *TransactionArgs) setOdysseyPhase1FeeDefault(ctx context.Context, hea
 // ToMessage converts the transaction arguments to the Message type used by the
 // core evm. This method is used in calls and traces that do not require a real
 // live transaction.
-func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int) (types.Message, error) {
+func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int) (*core.Message, error) {
 	// Reject invalid combinations of pre- and post-1559 fee styles
 	if args.GasPrice != nil && (args.MaxFeePerGas != nil || args.MaxPriorityFeePerGas != nil) {
-		return types.Message{}, errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
+		return nil, errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
 	}
 	// Set sender address or use zero address if none specified.
 	addr := args.from()
@@ -282,7 +283,18 @@ func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int) (t
 	if args.AccessList != nil {
 		accessList = *args.AccessList
 	}
-	msg := types.NewMessage(addr, args.To, 0, value, gas, gasPrice, gasFeeCap, gasTipCap, data, accessList, true)
+	msg := &core.Message{
+		From:              addr,
+		To:                args.To,
+		Value:             value,
+		GasLimit:          gas,
+		GasPrice:          gasPrice,
+		GasFeeCap:         gasFeeCap,
+		GasTipCap:         gasTipCap,
+		Data:              data,
+		AccessList:        accessList,
+		SkipAccountChecks: true,
+	}
 	return msg, nil
 }
 

@@ -6,8 +6,8 @@ GOPATH="$(go env GOPATH)"
 # Set binary location
 binary_path=${CORETH_BINARY_PATH:-"$GOPATH/src/github.com/DioneProtocol/odysseygo/build/plugins/evm"}
 
-# DioneProtocol docker hub
-dockerhub_repo="DioneProtocol/odysseygo"
+# Dioneprotocol docker hub
+dockerhub_repo="dioneprotocol/odysseygo"
 
 # Current branch
 current_branch=${CURRENT_BRANCH:-$(git describe --tags --exact-match 2> /dev/null || git symbolic-ref -q --short HEAD || git rev-parse --short HEAD)}

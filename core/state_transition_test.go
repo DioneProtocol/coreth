@@ -87,9 +87,9 @@ func executeStateTransitionTest(t *testing.T, st stateTransitionTest) {
 					Nonce:   0,
 				},
 			},
-			GasLimit: params.OdysseyPhase1GasLimit,
+			GasLimit: params.OdyPhase1GasLimit,
 		}
-		genesis       = gspec.ToBlock(nil)
+		genesis       = gspec.ToBlock()
 		engine        = dummy.NewFaker()
 		blockchain, _ = NewBlockChain(db, DefaultCacheConfig, gspec, engine, vm.Config{}, common.Hash{}, false)
 	)
@@ -125,9 +125,21 @@ func TestNativeAssetContractCall(t *testing.T) {
 		makeTx(1, contractAddr, common.Big0, 100_000, big.NewInt(params.LaunchMinGasPrice), nil), // No input data is necessary, since this will hit the contract's fallback function.
 	}
 
-	phase1Tests := map[string]stateTransitionTest{
-		"phase1": {
-			config:  params.TestOdysseyPhase1Config,
+	phase6Tests := map[string]stateTransitionTest{
+		"phase5": {
+			config:  params.TestOdyPhase5Config,
+			txs:     txs,
+			gasUsed: []uint64{132091, 41618},
+			want:    "",
+		},
+		"prePhase6": {
+			config:  params.TestOdyPhasePre6Config,
+			txs:     txs,
+			gasUsed: []uint64{132091, 21618},
+			want:    "",
+		},
+		"phase6": {
+			config:  params.TestOdyPhase6Config,
 			txs:     txs,
 			gasUsed: []uint64{132091, 41618},
 			want:    "",
@@ -140,7 +152,7 @@ func TestNativeAssetContractCall(t *testing.T) {
 		},
 	}
 
-	for name, stTest := range phase1Tests {
+	for name, stTest := range phase6Tests {
 		t.Run(name, func(t *testing.T) {
 			executeStateTransitionTest(t, stTest)
 		})
@@ -157,9 +169,21 @@ func TestNativeAssetContractConstructor(t *testing.T) {
 		makeContractTx(0, common.Big0, 100_000, big.NewInt(params.LaunchMinGasPrice), data),
 	}
 
-	phase1Tests := map[string]stateTransitionTest{
-		"phase1": {
-			config:  params.TestOdysseyPhase1Config,
+	phase6Tests := map[string]stateTransitionTest{
+		"phase5": {
+			config:  params.TestOdyPhase5Config,
+			txs:     txs,
+			gasUsed: []uint64{92046},
+			want:    "",
+		},
+		"prePhase6": {
+			config:  params.TestOdyPhasePre6Config,
+			txs:     txs,
+			gasUsed: []uint64{72046},
+			want:    "",
+		},
+		"phase6": {
+			config:  params.TestOdyPhase6Config,
 			txs:     txs,
 			gasUsed: []uint64{92046},
 			want:    "",
@@ -172,7 +196,7 @@ func TestNativeAssetContractConstructor(t *testing.T) {
 		},
 	}
 
-	for name, stTest := range phase1Tests {
+	for name, stTest := range phase6Tests {
 		t.Run(name, func(t *testing.T) {
 			executeStateTransitionTest(t, stTest)
 		})
@@ -184,9 +208,26 @@ func TestNativeAssetDirectEOACall(t *testing.T) {
 		makeTx(0, vm.NativeAssetCallAddr, common.Big0, 100_000, big.NewInt(params.LaunchMinGasPrice), nil),
 	}
 
-	phase1Tests := map[string]stateTransitionTest{
-		"phase1": {
-			config:  params.TestOdysseyPhase1Config,
+	phase6Tests := map[string]stateTransitionTest{
+		"phase5": {
+			config:  params.TestOdyPhase5Config,
+			txs:     txs,
+			gasUsed: []uint64{41000},
+			want:    "",
+		},
+		// Note: PrePhase6 used a soft error to ensure the Native Asset Call precompile was not used from an EOA, however,
+		// after PrePhase6 was over, this soft error was no longer needed since it would never be included in the chain, so
+		// it has been removed.
+		// Therefore, there is no need for an error to be returned in this test case even though a soft error would have been
+		// returned during PrePhase6.
+		"prePhase6": {
+			config:  params.TestOdyPhasePre6Config,
+			txs:     txs,
+			gasUsed: []uint64{21000},
+			want:    "",
+		},
+		"phase6": {
+			config:  params.TestOdyPhase6Config,
 			txs:     txs,
 			gasUsed: []uint64{41000},
 			want:    "",
@@ -199,7 +240,7 @@ func TestNativeAssetDirectEOACall(t *testing.T) {
 		},
 	}
 
-	for name, stTest := range phase1Tests {
+	for name, stTest := range phase6Tests {
 		t.Run(name, func(t *testing.T) {
 			executeStateTransitionTest(t, stTest)
 		})

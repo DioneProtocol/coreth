@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/DioneProtocol/odysseygo/utils/timer"
+	"github.com/DioneProtocol/coreth/core/txpool"
 	"github.com/DioneProtocol/coreth/params"
 
 	"github.com/DioneProtocol/odysseygo/snow"
@@ -26,7 +27,7 @@ type blockBuilder struct {
 	ctx         *snow.Context
 	chainConfig *params.ChainConfig
 
-	txPool   *core.TxPool
+	txPool   *txpool.TxPool
 	mempool  *Mempool
 	gossiper Gossiper
 

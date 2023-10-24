@@ -12,8 +12,8 @@ import (
 	"github.com/DioneProtocol/odysseygo/ids"
 	"github.com/DioneProtocol/odysseygo/utils"
 	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
-	"github.com/DioneProtocol/odysseygo/vms/components/chain"
 	"github.com/DioneProtocol/odysseygo/vms/components/dione"
+	"github.com/DioneProtocol/odysseygo/vms/components/chain"
 	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 
 	"github.com/stretchr/testify/assert"
@@ -26,8 +26,8 @@ func TestMempoolAddLocallyCreateAtomicTx(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			assert := assert.New(t)
 
-			// we use OP1 genesis here to not trip any block fees
-			issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
+			// we use OP3 genesis here to not trip any block fees
+			issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdyPhase3, "", "")
 			defer func() {
 				err := vm.Shutdown(context.Background())
 				assert.NoError(err)
@@ -168,7 +168,7 @@ func createImportTx(t *testing.T, vm *VM, txID ids.ID, feeAmount uint64) *Tx {
 
 	// Sort the inputs and outputs to ensure the transaction is canonical
 	utils.Sort(importTx.ImportedInputs)
-	SortEVMOutputs(importTx.Outs)
+	utils.Sort(importTx.Outs)
 
 	tx := &Tx{UnsignedAtomicTx: importTx}
 	// Sign with the correct key
@@ -183,8 +183,8 @@ func createImportTx(t *testing.T, vm *VM, txID ids.ID, feeAmount uint64) *Tx {
 func TestMempoolPriorityDrop(t *testing.T) {
 	assert := assert.New(t)
 
-	// we use OP1 genesis here to not trip any block fees
-	_, vm, _, _, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
+	// we use OP3 genesis here to not trip any block fees
+	_, vm, _, _, _ := GenesisVM(t, true, genesisJSONOdyPhase3, "", "")
 	defer func() {
 		err := vm.Shutdown(context.Background())
 		assert.NoError(err)

@@ -12,10 +12,11 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -23,10 +24,12 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 
+	"github.com/DioneProtocol/coreth/eth/filters"
 	"github.com/DioneProtocol/coreth/internal/ethapi"
 	"github.com/DioneProtocol/coreth/metrics"
 	"github.com/DioneProtocol/coreth/plugin/evm/message"
 	"github.com/DioneProtocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/utils"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -76,18 +79,32 @@ var (
 	testDioneAssetID  = ids.ID{1, 2, 3}
 	username         = "Johns"
 	password         = "CjasdjhiPeirbSenfeI13" // #nosec G101
-	// Use chainId: 15, so that it does not overlap with any Odyssey ChainIDs, which may have their
+	// Use chainId: 43111, so that it does not overlap with any Odyssey ChainIDs, which may have their
 	// config overridden in vm.Initialize.
-	genesisJSONOdysseyPhase1     = "{\"config\":{\"chainId\":15,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"odysseyPhase1BlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
+	genesisJSONOdyPhase0 = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
+	genesisJSONOdyPhase1 = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"odyPhase1BlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
+	genesisJSONOdyPhase2 = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"odyPhase1BlockTimestamp\":0,\"odyPhase2BlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
+	genesisJSONOdyPhase3 = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"odyPhase1BlockTimestamp\":0,\"odyPhase2BlockTimestamp\":0,\"odyPhase3BlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
+	genesisJSONOdyPhase4 = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"odyPhase1BlockTimestamp\":0,\"odyPhase2BlockTimestamp\":0,\"odyPhase3BlockTimestamp\":0,\"odyPhase4BlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
+	genesisJSONOdyPhase5 = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"odyPhase1BlockTimestamp\":0,\"odyPhase2BlockTimestamp\":0,\"odyPhase3BlockTimestamp\":0,\"odyPhase4BlockTimestamp\":0,\"odyPhase5BlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
 
-	genesisJSONBanff   = "{\"config\":{\"chainId\":15,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"odysseyPhasePost1BlockTimestamp\":0,\"banffBlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
-	genesisJSONCortina = "{\"config\":{\"chainId\":15,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"odysseyPhasePost1BlockTimestamp\":0,\"banffBlockTimestamp\":0,\"cortinaBlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
+	genesisJSONOdyPhasePre6  = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"odyPhase1BlockTimestamp\":0,\"odyPhase2BlockTimestamp\":0,\"odyPhase3BlockTimestamp\":0,\"odyPhase4BlockTimestamp\":0,\"odyPhase5BlockTimestamp\":0,\"odyPhasePre6BlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
+	genesisJSONOdyPhase6     = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"odyPhase1BlockTimestamp\":0,\"odyPhase2BlockTimestamp\":0,\"odyPhase3BlockTimestamp\":0,\"odyPhase4BlockTimestamp\":0,\"odyPhase5BlockTimestamp\":0,\"odyPhasePre6BlockTimestamp\":0,\"odyPhase6BlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
+	genesisJSONOdyPhasePost6 = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"odyPhase1BlockTimestamp\":0,\"odyPhase2BlockTimestamp\":0,\"odyPhase3BlockTimestamp\":0,\"odyPhase4BlockTimestamp\":0,\"odyPhase5BlockTimestamp\":0,\"odyPhasePre6BlockTimestamp\":0,\"odyPhase6BlockTimestamp\":0,\"odyPhasePost6BlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
+
+	genesisJSONBanff   = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"odyPhase1BlockTimestamp\":0,\"odyPhase2BlockTimestamp\":0,\"odyPhase3BlockTimestamp\":0,\"odyPhase4BlockTimestamp\":0,\"odyPhase5BlockTimestamp\":0,\"odyPhasePre6BlockTimestamp\":0,\"odyPhase6BlockTimestamp\":0,\"odyPhasePost6BlockTimestamp\":0,\"banffBlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
+	genesisJSONCortina = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"odyPhase1BlockTimestamp\":0,\"odyPhase2BlockTimestamp\":0,\"odyPhase3BlockTimestamp\":0,\"odyPhase4BlockTimestamp\":0,\"odyPhase5BlockTimestamp\":0,\"odyPhasePre6BlockTimestamp\":0,\"odyPhase6BlockTimestamp\":0,\"odyPhasePost6BlockTimestamp\":0,\"banffBlockTimestamp\":0,\"cortinaBlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
 	genesisJSONLatest  = genesisJSONCortina
 
-	odysseyRulesPhase0 = params.Rules{}
-	odysseyRulesPhase1 = params.Rules{IsOdysseyPhase1: true}
-	banffRules         = params.Rules{IsOdysseyPhase1: true, IsBanff: true}
-	// cortinaRules    = params.Rules{IsOdysseyPhase1: true, IsBanff: true, IsCortina: true}
+	odyRulesPhase0 = params.Rules{}
+	odyRulesPhase1 = params.Rules{IsOdyPhase1: true}
+	odyRulesPhase2 = params.Rules{IsOdyPhase1: true, IsOdyPhase2: true}
+	odyRulesPhase3 = params.Rules{IsOdyPhase1: true, IsOdyPhase2: true, IsOdyPhase3: true}
+	odyRulesPhase4 = params.Rules{IsOdyPhase1: true, IsOdyPhase2: true, IsOdyPhase3: true, IsOdyPhase4: true}
+	odyRulesPhase5 = params.Rules{IsOdyPhase1: true, IsOdyPhase2: true, IsOdyPhase3: true, IsOdyPhase4: true, IsOdyPhase5: true}
+	odyRulesPhase6 = params.Rules{IsOdyPhase1: true, IsOdyPhase2: true, IsOdyPhase3: true, IsOdyPhase4: true, IsOdyPhase5: true, IsOdyPhasePre6: true, IsOdyPhase6: true, IsOdyPhasePost6: true}
+	banffRules         = params.Rules{IsOdyPhase1: true, IsOdyPhase2: true, IsOdyPhase3: true, IsOdyPhase4: true, IsOdyPhase5: true, IsOdyPhasePre6: true, IsOdyPhase6: true, IsOdyPhasePost6: true, IsBanff: true}
+	// cortinaRules    = params.Rules{IsOdyPhase1: true, IsOdyPhase2: true, IsOdyPhase3: true, IsOdyPhase4: true, IsOdyPhase5: true, IsOdyPhasePre6: true, IsOdyPhase6: true, IsOdyPhasePost6: true, IsBanff: true, IsCortina: true}
 )
 
 func init() {
@@ -519,8 +536,48 @@ func TestVMUpgrades(t *testing.T) {
 		expectedGasPrice *big.Int
 	}{
 		{
-			name:             "Odyssey Phase 1",
-			genesis:          genesisJSONOdysseyPhase1,
+			name:             "Ody Phase 0",
+			genesis:          genesisJSONOdyPhase0,
+			expectedGasPrice: big.NewInt(params.LaunchMinGasPrice),
+		},
+		{
+			name:             "Ody Phase 1",
+			genesis:          genesisJSONOdyPhase1,
+			expectedGasPrice: big.NewInt(params.OdyPhase1MinGasPrice),
+		},
+		{
+			name:             "Ody Phase 2",
+			genesis:          genesisJSONOdyPhase2,
+			expectedGasPrice: big.NewInt(params.OdyPhase1MinGasPrice),
+		},
+		{
+			name:             "Ody Phase 3",
+			genesis:          genesisJSONOdyPhase3,
+			expectedGasPrice: big.NewInt(0),
+		},
+		{
+			name:             "Ody Phase 4",
+			genesis:          genesisJSONOdyPhase4,
+			expectedGasPrice: big.NewInt(0),
+		},
+		{
+			name:             "Ody Phase 5",
+			genesis:          genesisJSONOdyPhase5,
+			expectedGasPrice: big.NewInt(0),
+		},
+		{
+			name:             "Ody Phase Pre 6",
+			genesis:          genesisJSONOdyPhasePre6,
+			expectedGasPrice: big.NewInt(0),
+		},
+		{
+			name:             "Ody Phase 6",
+			genesis:          genesisJSONOdyPhase6,
+			expectedGasPrice: big.NewInt(0),
+		},
+		{
+			name:             "Ody Phase Post 6",
+			genesis:          genesisJSONOdyPhasePost6,
 			expectedGasPrice: big.NewInt(0),
 		},
 		{
@@ -594,7 +651,7 @@ func TestVMUpgrades(t *testing.T) {
 func TestImportMissingUTXOs(t *testing.T) {
 	// make a VM with a shared memory that has an importable UTXO to build a block
 	importAmount := uint64(50000000)
-	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase2, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
 	defer func() {
@@ -611,7 +668,7 @@ func TestImportMissingUTXOs(t *testing.T) {
 	require.NoError(t, err)
 
 	// make another VM which is missing the UTXO in shared memory
-	_, vm2, _, _, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
+	_, vm2, _, _, _ := GenesisVM(t, true, genesisJSONOdyPhase2, "", "")
 	defer func() {
 		err := vm2.Shutdown(context.Background())
 		require.NoError(t, err)
@@ -632,7 +689,7 @@ func TestImportMissingUTXOs(t *testing.T) {
 // and they will be indexed correctly when accepted.
 func TestIssueAtomicTxs(t *testing.T) {
 	importAmount := uint64(50000000)
-	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase2, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
 
@@ -682,6 +739,23 @@ func TestIssueAtomicTxs(t *testing.T) {
 		t.Fatal(err)
 	} else if lastAcceptedID != blk.ID() {
 		t.Fatalf("Expected last accepted blockID to be the accepted block: %s, but found %s", blk.ID(), lastAcceptedID)
+	}
+	vm.blockChain.DrainAcceptorQueue()
+	filterAPI := filters.NewFilterAPI(filters.NewFilterSystem(vm.eth.APIBackend, filters.Config{
+		Timeout: 5 * time.Minute,
+	}))
+	blockHash := common.Hash(blk.ID())
+	logs, err := filterAPI.GetLogs(context.Background(), filters.FilterCriteria{
+		BlockHash: &blockHash,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(logs) != 0 {
+		t.Fatalf("Expected log length to be 0, but found %d", len(logs))
+	}
+	if logs == nil {
+		t.Fatal("Expected logs to be non-nil")
 	}
 
 	exportTx, err := vm.newExportTx(vm.ctx.DIONEAssetID, importAmount-(2*params.OdysseyAtomicTxFee), vm.ctx.XChainID, testShortIDAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
@@ -738,7 +812,7 @@ func TestIssueAtomicTxs(t *testing.T) {
 
 func TestBuildEthTxBlock(t *testing.T) {
 	importAmount := uint64(20000000)
-	issuer, vm, dbManager, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "{\"pruning-enabled\":true}", "", map[ids.ShortID]uint64{
+	issuer, vm, dbManager, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase2, "{\"pruning-enabled\":true}", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
 
@@ -873,7 +947,7 @@ func TestBuildEthTxBlock(t *testing.T) {
 		context.Background(),
 		NewContext(),
 		dbManager,
-		[]byte(genesisJSONOdysseyPhase1),
+		[]byte(genesisJSONOdyPhase2),
 		[]byte(""),
 		[]byte("{\"pruning-enabled\":true}"),
 		issuer,
@@ -1007,7 +1081,7 @@ func testConflictingImportTxs(t *testing.T, genesis string) {
 	rules := vm.currentRules()
 	var extraData []byte
 	switch {
-	case rules.IsOdysseyPhase1:
+	case rules.IsOdyPhase5:
 		extraData, err = vm.codec.Marshal(codecVersion, []*Tx{conflictTxs[1]})
 	default:
 		extraData, err = vm.codec.Marshal(codecVersion, conflictTxs[1])
@@ -1040,7 +1114,7 @@ func testConflictingImportTxs(t *testing.T, genesis string) {
 		t.Fatalf("Expected to fail with err: %s, but found err: %s", errConflictingAtomicInputs, err)
 	}
 
-	if !rules.IsOdysseyPhase1 {
+	if !rules.IsOdyPhase5 {
 		return
 	}
 
@@ -1183,7 +1257,7 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			_, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
+			_, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdyPhase5, "", "")
 			issuedTxs, evictedTxs := issueTxs(t, vm, sharedMemory)
 
 			for i, tx := range issuedTxs {
@@ -1201,7 +1275,11 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 
 func TestConflictingImportTxsAcrossBlocks(t *testing.T) {
 	for name, genesis := range map[string]string{
-		"odysseyPhase1": genesisJSONOdysseyPhase1,
+		"odyPhase1": genesisJSONOdyPhase1,
+		"odyPhase2": genesisJSONOdyPhase2,
+		"odyPhase3": genesisJSONOdyPhase3,
+		"odyPhase4": genesisJSONOdyPhase4,
+		"odyPhase5": genesisJSONOdyPhase5,
 	} {
 		genesis := genesis
 		t.Run(name, func(t *testing.T) {
@@ -1224,10 +1302,10 @@ func TestSetPreferenceRace(t *testing.T) {
 	// Create two VMs which will agree on block A and then
 	// build the two distinct preferred chains above
 	importAmount := uint64(1000000000)
-	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "{\"pruning-enabled\":true}", "", map[ids.ShortID]uint64{
+	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "{\"pruning-enabled\":true}", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
-	issuer2, vm2, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "{\"pruning-enabled\":true}", "", map[ids.ShortID]uint64{
+	issuer2, vm2, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "{\"pruning-enabled\":true}", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
 
@@ -1475,7 +1553,7 @@ func TestConflictingTransitiveAncestryWithGap(t *testing.T) {
 
 	importAmount := uint64(1000000000)
 
-	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "",
+	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "", "",
 		map[ids.ShortID]uint64{
 			addr0: importAmount,
 			addr1: importAmount,
@@ -1593,7 +1671,7 @@ func TestConflictingTransitiveAncestryWithGap(t *testing.T) {
 }
 
 func TestBonusBlocksTxs(t *testing.T) {
-	issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
+	issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdyPhase0, "", "")
 
 	defer func() {
 		if err := vm.Shutdown(context.Background()); err != nil {
@@ -1700,10 +1778,10 @@ func TestBonusBlocksTxs(t *testing.T) {
 // get rejected.
 func TestReorgProtection(t *testing.T) {
 	importAmount := uint64(1000000000)
-	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "{\"pruning-enabled\":false}", "", map[ids.ShortID]uint64{
+	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "{\"pruning-enabled\":false}", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
-	issuer2, vm2, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "{\"pruning-enabled\":false}", "", map[ids.ShortID]uint64{
+	issuer2, vm2, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "{\"pruning-enabled\":false}", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
 
@@ -1882,10 +1960,10 @@ func TestReorgProtection(t *testing.T) {
 //	B   C
 func TestNonCanonicalAccept(t *testing.T) {
 	importAmount := uint64(1000000000)
-	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
-	issuer2, vm2, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer2, vm2, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
 
@@ -2057,10 +2135,10 @@ func TestNonCanonicalAccept(t *testing.T) {
 //	    D
 func TestStickyPreference(t *testing.T) {
 	importAmount := uint64(1000000000)
-	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
-	issuer2, vm2, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer2, vm2, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
 
@@ -2331,10 +2409,10 @@ func TestStickyPreference(t *testing.T) {
 //	    D
 func TestUncleBlock(t *testing.T) {
 	importAmount := uint64(1000000000)
-	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
-	issuer2, vm2, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer2, vm2, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
 
@@ -2505,7 +2583,7 @@ func TestUncleBlock(t *testing.T) {
 		blkDEthBlock.Transactions(),
 		uncles,
 		nil,
-		new(trie.Trie),
+		trie.NewStackTrie(nil),
 		blkDEthBlock.ExtData(),
 		false,
 	)
@@ -2528,7 +2606,7 @@ func TestUncleBlock(t *testing.T) {
 // contains no transactions.
 func TestEmptyBlock(t *testing.T) {
 	importAmount := uint64(1000000000)
-	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
 
@@ -2594,10 +2672,10 @@ func TestEmptyBlock(t *testing.T) {
 //	    D
 func TestAcceptReorg(t *testing.T) {
 	importAmount := uint64(1000000000)
-	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
-	issuer2, vm2, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer2, vm2, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
 
@@ -2804,7 +2882,7 @@ func TestAcceptReorg(t *testing.T) {
 
 func TestFutureBlock(t *testing.T) {
 	importAmount := uint64(1000000000)
-	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
 
@@ -2860,9 +2938,132 @@ func TestFutureBlock(t *testing.T) {
 	}
 }
 
+// Regression test to ensure we can build blocks if we are starting with the
+// Ody Phase 1 ruleset in genesis.
+func TestBuildOdyPhase1Block(t *testing.T) {
+	importAmount := uint64(1000000000)
+	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase1, "", "", map[ids.ShortID]uint64{
+		testShortIDAddrs[0]: importAmount,
+	})
+	defer func() {
+		if err := vm.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	newTxPoolHeadChan := make(chan core.NewTxPoolReorgEvent, 1)
+	vm.txPool.SubscribeNewReorgEvent(newTxPoolHeadChan)
+
+	key := testKeys[0].ToECDSA()
+	address := testEthAddrs[0]
+
+	importTx, err := vm.newImportTx(vm.ctx.XChainID, address, initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := vm.issueTx(importTx, true /*=local*/); err != nil {
+		t.Fatal(err)
+	}
+
+	<-issuer
+
+	blk, err := vm.BuildBlock(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := blk.Verify(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	if status := blk.Status(); status != choices.Processing {
+		t.Fatalf("Expected status of built block to be %s, but found %s", choices.Processing, status)
+	}
+
+	if err := vm.SetPreference(context.Background(), blk.ID()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := blk.Accept(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	newHead := <-newTxPoolHeadChan
+	if newHead.Head.Hash() != common.Hash(blk.ID()) {
+		t.Fatalf("Expected new block to match")
+	}
+
+	txs := make([]*types.Transaction, 10)
+	for i := 0; i < 5; i++ {
+		tx := types.NewTransaction(uint64(i), address, big.NewInt(10), 21000, big.NewInt(params.LaunchMinGasPrice), nil)
+		signedTx, err := types.SignTx(tx, types.NewEIP155Signer(vm.chainID), key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		txs[i] = signedTx
+	}
+	for i := 5; i < 10; i++ {
+		tx := types.NewTransaction(uint64(i), address, big.NewInt(10), 21000, big.NewInt(params.OdyPhase1MinGasPrice), nil)
+		signedTx, err := types.SignTx(tx, types.NewEIP155Signer(vm.chainID), key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		txs[i] = signedTx
+	}
+	errs := vm.txPool.AddRemotesSync(txs)
+	for i, err := range errs {
+		if err != nil {
+			t.Fatalf("Failed to add tx at index %d: %s", i, err)
+		}
+	}
+
+	<-issuer
+
+	blk, err = vm.BuildBlock(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := blk.Verify(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	if status := blk.Status(); status != choices.Processing {
+		t.Fatalf("Expected status of built block to be %s, but found %s", choices.Processing, status)
+	}
+
+	if err := blk.Accept(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	if status := blk.Status(); status != choices.Accepted {
+		t.Fatalf("Expected status of accepted block to be %s, but found %s", choices.Accepted, status)
+	}
+
+	lastAcceptedID, err := vm.LastAccepted(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lastAcceptedID != blk.ID() {
+		t.Fatalf("Expected last accepted blockID to be the accepted block: %s, but found %s", blk.ID(), lastAcceptedID)
+	}
+
+	// Confirm all txs are present
+	ethBlkTxs := vm.blockChain.GetBlockByNumber(2).Transactions()
+	for i, tx := range txs {
+		if len(ethBlkTxs) <= i {
+			t.Fatalf("missing transactions expected: %d but found: %d", len(txs), len(ethBlkTxs))
+		}
+		if ethBlkTxs[i].Hash() != tx.Hash() {
+			t.Fatalf("expected tx at index %d to have hash: %x but has: %x", i, txs[i].Hash(), tx.Hash())
+		}
+	}
+}
+
 func TestLastAcceptedBlockNumberAllow(t *testing.T) {
 	importAmount := uint64(1000000000)
-	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
 
@@ -2934,7 +3135,7 @@ func TestLastAcceptedBlockNumberAllow(t *testing.T) {
 // that does not conflict. Accepts [blkB] and rejects [blkA], then asserts that the virtuous atomic
 // transaction in [blkA] is correctly re-issued into the atomic transaction mempool.
 func TestReissueAtomicTx(t *testing.T) {
-	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase1, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: 10000000,
 		testShortIDAddrs[1]: 10000000,
 	})
@@ -3046,7 +3247,7 @@ func TestReissueAtomicTx(t *testing.T) {
 }
 
 func TestAtomicTxFailsEVMStateTransferBuildBlock(t *testing.T) {
-	issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
+	issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdyPhase1, "", "")
 
 	defer func() {
 		if err := vm.Shutdown(context.Background()); err != nil {
@@ -3094,7 +3295,7 @@ func TestAtomicTxFailsEVMStateTransferBuildBlock(t *testing.T) {
 }
 
 func TestBuildInvalidBlockHead(t *testing.T) {
-	issuer, vm, _, _, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
+	issuer, vm, _, _, _ := GenesisVM(t, true, genesisJSONOdyPhase0, "", "")
 
 	defer func() {
 		if err := vm.Shutdown(context.Background()); err != nil {
@@ -3167,14 +3368,14 @@ func TestConfigureLogLevel(t *testing.T) {
 		{
 			name:        "Log level info",
 			logConfig:   "{\"log-level\": \"info\"}",
-			genesisJSON: genesisJSONOdysseyPhase1,
+			genesisJSON: genesisJSONOdyPhase2,
 			upgradeJSON: "",
 			expectedErr: "",
 		},
 		{
 			name:        "Invalid log level",
 			logConfig:   "{\"log-level\": \"cchain\"}",
-			genesisJSON: genesisJSONOdysseyPhase1,
+			genesisJSON: genesisJSONOdyPhase3,
 			upgradeJSON: "",
 			expectedErr: "failed to initialize logger due to",
 		},
@@ -3232,9 +3433,191 @@ func TestConfigureLogLevel(t *testing.T) {
 }
 
 // Regression test to ensure we can build blocks if we are starting with the
-//Odyssey Phase 1 ruleset in genesis.
-func TestBuildOdysseyPhase1Block(t *testing.T) {
-	issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
+// Ody Phase 4 ruleset in genesis.
+func TestBuildOdyPhase4Block(t *testing.T) {
+	issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdyPhase4, "", "")
+
+	defer func() {
+		if err := vm.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	newTxPoolHeadChan := make(chan core.NewTxPoolReorgEvent, 1)
+	vm.txPool.SubscribeNewReorgEvent(newTxPoolHeadChan)
+
+	key := testKeys[0].ToECDSA()
+	address := testEthAddrs[0]
+
+	importAmount := uint64(1000000000)
+	utxoID := dione.UTXOID{TxID: ids.GenerateTestID()}
+
+	utxo := &dione.UTXO{
+		UTXOID: utxoID,
+		Asset:  dione.Asset{ID: vm.ctx.DIONEAssetID},
+		Out: &secp256k1fx.TransferOutput{
+			Amt: importAmount,
+			OutputOwners: secp256k1fx.OutputOwners{
+				Threshold: 1,
+				Addrs:     []ids.ShortID{testKeys[0].PublicKey().Address()},
+			},
+		},
+	}
+	utxoBytes, err := vm.codec.Marshal(codecVersion, utxo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	xChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.XChainID)
+	inputID := utxo.InputID()
+	if err := xChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{{
+		Key:   inputID[:],
+		Value: utxoBytes,
+		Traits: [][]byte{
+			testKeys[0].PublicKey().Address().Bytes(),
+		},
+	}}}}); err != nil {
+		t.Fatal(err)
+	}
+
+	importTx, err := vm.newImportTx(vm.ctx.XChainID, address, initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := vm.issueTx(importTx, true /*=local*/); err != nil {
+		t.Fatal(err)
+	}
+
+	<-issuer
+
+	blk, err := vm.BuildBlock(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := blk.Verify(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	if status := blk.Status(); status != choices.Processing {
+		t.Fatalf("Expected status of built block to be %s, but found %s", choices.Processing, status)
+	}
+
+	if err := vm.SetPreference(context.Background(), blk.ID()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := blk.Accept(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	ethBlk := blk.(*chain.BlockWrapper).Block.(*Block).ethBlock
+	if eBlockGasCost := ethBlk.BlockGasCost(); eBlockGasCost == nil || eBlockGasCost.Cmp(common.Big0) != 0 {
+		t.Fatalf("expected blockGasCost to be 0 but got %d", eBlockGasCost)
+	}
+	if eExtDataGasUsed := ethBlk.ExtDataGasUsed(); eExtDataGasUsed == nil || eExtDataGasUsed.Cmp(big.NewInt(1230)) != 0 {
+		t.Fatalf("expected extDataGasUsed to be 1000 but got %d", eExtDataGasUsed)
+	}
+	minRequiredTip, err := dummy.MinRequiredTip(vm.chainConfig, ethBlk.Header())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if minRequiredTip == nil || minRequiredTip.Cmp(common.Big0) != 0 {
+		t.Fatalf("expected minRequiredTip to be 0 but got %d", minRequiredTip)
+	}
+
+	newHead := <-newTxPoolHeadChan
+	if newHead.Head.Hash() != common.Hash(blk.ID()) {
+		t.Fatalf("Expected new block to match")
+	}
+
+	txs := make([]*types.Transaction, 10)
+	for i := 0; i < 5; i++ {
+		tx := types.NewTransaction(uint64(i), address, big.NewInt(10), 21000, big.NewInt(params.LaunchMinGasPrice), nil)
+		signedTx, err := types.SignTx(tx, types.NewEIP155Signer(vm.chainID), key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		txs[i] = signedTx
+	}
+	for i := 5; i < 10; i++ {
+		tx := types.NewTransaction(uint64(i), address, big.NewInt(10), 21000, big.NewInt(params.OdyPhase1MinGasPrice), nil)
+		signedTx, err := types.SignTx(tx, types.NewEIP155Signer(vm.chainID), key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		txs[i] = signedTx
+	}
+	errs := vm.txPool.AddRemotes(txs)
+	for i, err := range errs {
+		if err != nil {
+			t.Fatalf("Failed to add tx at index %d: %s", i, err)
+		}
+	}
+
+	<-issuer
+
+	blk, err = vm.BuildBlock(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := blk.Verify(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	if status := blk.Status(); status != choices.Processing {
+		t.Fatalf("Expected status of built block to be %s, but found %s", choices.Processing, status)
+	}
+
+	if err := blk.Accept(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	ethBlk = blk.(*chain.BlockWrapper).Block.(*Block).ethBlock
+	if ethBlk.BlockGasCost() == nil || ethBlk.BlockGasCost().Cmp(big.NewInt(100)) < 0 {
+		t.Fatalf("expected blockGasCost to be at least 100 but got %d", ethBlk.BlockGasCost())
+	}
+	if ethBlk.ExtDataGasUsed() == nil || ethBlk.ExtDataGasUsed().Cmp(common.Big0) != 0 {
+		t.Fatalf("expected extDataGasUsed to be 0 but got %d", ethBlk.ExtDataGasUsed())
+	}
+	minRequiredTip, err = dummy.MinRequiredTip(vm.chainConfig, ethBlk.Header())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if minRequiredTip == nil || minRequiredTip.Cmp(big.NewInt(0.05*params.GWei)) < 0 {
+		t.Fatalf("expected minRequiredTip to be at least 0.05 gwei but got %d", minRequiredTip)
+	}
+
+	if status := blk.Status(); status != choices.Accepted {
+		t.Fatalf("Expected status of accepted block to be %s, but found %s", choices.Accepted, status)
+	}
+
+	lastAcceptedID, err := vm.LastAccepted(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lastAcceptedID != blk.ID() {
+		t.Fatalf("Expected last accepted blockID to be the accepted block: %s, but found %s", blk.ID(), lastAcceptedID)
+	}
+
+	// Confirm all txs are present
+	ethBlkTxs := vm.blockChain.GetBlockByNumber(2).Transactions()
+	for i, tx := range txs {
+		if len(ethBlkTxs) <= i {
+			t.Fatalf("missing transactions expected: %d but found: %d", len(txs), len(ethBlkTxs))
+		}
+		if ethBlkTxs[i].Hash() != tx.Hash() {
+			t.Fatalf("expected tx at index %d to have hash: %x but has: %x", i, txs[i].Hash(), tx.Hash())
+		}
+	}
+}
+
+// Regression test to ensure we can build blocks if we are starting with the
+// Ody Phase 5 ruleset in genesis.
+func TestBuildOdyPhase5Block(t *testing.T) {
+	issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdyPhase5, "", "")
 
 	defer func() {
 		if err := vm.Shutdown(context.Background()); err != nil {
@@ -3409,7 +3792,7 @@ func TestBuildOdysseyPhase1Block(t *testing.T) {
 // in onFinalizeAndAssemble it will not cause a panic due to calling RevertToSnapshot(revID) on the
 // same revision ID twice.
 func TestConsecutiveAtomicTransactionsRevertSnapshot(t *testing.T) {
-	issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
+	issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdyPhase1, "", "")
 
 	defer func() {
 		if err := vm.Shutdown(context.Background()); err != nil {
@@ -3468,7 +3851,7 @@ func TestConsecutiveAtomicTransactionsRevertSnapshot(t *testing.T) {
 
 func TestAtomicTxBuildBlockDropsConflicts(t *testing.T) {
 	importAmount := uint64(10000000)
-	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdysseyPhase1, "", "", map[ids.ShortID]uint64{
+	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase5, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 		testShortIDAddrs[1]: importAmount,
 		testShortIDAddrs[2]: importAmount,
@@ -3537,7 +3920,7 @@ func TestAtomicTxBuildBlockDropsConflicts(t *testing.T) {
 
 func TestBuildBlockDoesNotExceedAtomicGasLimit(t *testing.T) {
 	importAmount := uint64(10000000)
-	issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdysseyPhase1, "", "")
+	issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdyPhase5, "", "")
 
 	defer func() {
 		if err := vm.Shutdown(context.Background()); err != nil {
@@ -3580,9 +3963,132 @@ func TestBuildBlockDoesNotExceedAtomicGasLimit(t *testing.T) {
 	}
 }
 
+func TestExtraStateChangeAtomicGasLimitExceeded(t *testing.T) {
+	importAmount := uint64(10000000)
+	// We create two VMs one in ApriotPhase4 and one in OdyPhase5, so that we can construct a block
+	// containing a large enough atomic transaction that it will exceed the atomic gas limit in
+	// OdyPhase5.
+	issuer, vm1, _, sharedMemory1, _ := GenesisVM(t, true, genesisJSONOdyPhase4, "", "")
+	_, vm2, _, sharedMemory2, _ := GenesisVM(t, true, genesisJSONOdyPhase5, "", "")
+
+	defer func() {
+		if err := vm1.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		if err := vm2.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	kc := secp256k1fx.NewKeychain()
+	kc.Add(testKeys[0])
+	txID, err := ids.ToID(hashing.ComputeHash256(testShortIDAddrs[0][:]))
+	assert.NoError(t, err)
+
+	// Add enough UTXOs, such that the created import transaction will attempt to consume more gas than allowed
+	// in OdyPhase5.
+	for i := 0; i < 100; i++ {
+		_, err := addUTXO(sharedMemory1, vm1.ctx, txID, uint32(i), vm1.ctx.DIONEAssetID, importAmount, testShortIDAddrs[0])
+		assert.NoError(t, err)
+
+		_, err = addUTXO(sharedMemory2, vm2.ctx, txID, uint32(i), vm2.ctx.DIONEAssetID, importAmount, testShortIDAddrs[0])
+		assert.NoError(t, err)
+	}
+
+	// Double the initial base fee used when estimating the cost of this transaction to ensure that when it is
+	// used in OdyPhase5 it still pays a sufficient fee with the fixed fee per atomic transaction.
+	importTx, err := vm1.newImportTx(vm1.ctx.XChainID, testEthAddrs[0], new(big.Int).Mul(common.Big2, initialBaseFee), []*secp256k1.PrivateKey{testKeys[0]})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := vm1.issueTx(importTx, true); err != nil {
+		t.Fatal(err)
+	}
+
+	<-issuer
+	blk1, err := vm1.BuildBlock(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := blk1.Verify(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	validEthBlock := blk1.(*chain.BlockWrapper).Block.(*Block).ethBlock
+
+	extraData, err := vm2.codec.Marshal(codecVersion, []*Tx{importTx})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Construct the new block with the extra data in the new format (slice of atomic transactions).
+	ethBlk2 := types.NewBlock(
+		types.CopyHeader(validEthBlock.Header()),
+		nil,
+		nil,
+		nil,
+		new(trie.Trie),
+		extraData,
+		true,
+	)
+
+	state, err := vm2.blockChain.State()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Hack: test [onExtraStateChange] directly to ensure it catches the atomic gas limit error correctly.
+	if _, _, err := vm2.onExtraStateChange(ethBlk2, state); err == nil || !strings.Contains(err.Error(), "exceeds atomic gas limit") {
+		t.Fatalf("Expected block to fail verification due to exceeded atomic gas limit, but found error: %v", err)
+	}
+}
+
 func TestGetAtomicRepositoryRepairHeights(t *testing.T) {
 	mainnetHeights := getAtomicRepositoryRepairHeights(bonusBlockMainnetHeights, canonicalBlockMainnetHeights)
 	assert.Len(t, mainnetHeights, 76)
-	sorted := sort.SliceIsSorted(mainnetHeights, func(i, j int) bool { return mainnetHeights[i] < mainnetHeights[j] })
-	assert.True(t, sorted)
+	assert.True(t, slices.IsSorted(mainnetHeights))
+}
+
+func TestSkipChainConfigCheckCompatible(t *testing.T) {
+	// Hack: registering metrics uses global variables, so we need to disable metrics here so that we can initialize the VM twice.
+	metrics.Enabled = false
+	defer func() { metrics.Enabled = true }()
+
+	importAmount := uint64(50000000)
+	issuer, vm, dbManager, _, appSender := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase1, "", "", map[ids.ShortID]uint64{
+		testShortIDAddrs[0]: importAmount,
+	})
+	defer func() { require.NoError(t, vm.Shutdown(context.Background())) }()
+
+	// Since rewinding is permitted for last accepted height of 0, we must
+	// accept one block to test the SkipUpgradeCheck functionality.
+	importTx, err := vm.newImportTx(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+	require.NoError(t, err)
+	require.NoError(t, vm.issueTx(importTx, true /*=local*/))
+	<-issuer
+
+	blk, err := vm.BuildBlock(context.Background())
+	require.NoError(t, err)
+	require.NoError(t, blk.Verify(context.Background()))
+	require.NoError(t, vm.SetPreference(context.Background(), blk.ID()))
+	require.NoError(t, blk.Accept(context.Background()))
+
+	reinitVM := &VM{}
+	// use the block's timestamp instead of 0 since rewind to genesis
+	// is hardcoded to be allowed in core/genesis.go.
+	genesisWithUpgrade := &core.Genesis{}
+	require.NoError(t, json.Unmarshal([]byte(genesisJSONOdyPhase1), genesisWithUpgrade))
+	genesisWithUpgrade.Config.OdyPhase2BlockTimestamp = utils.TimeToNewUint64(blk.Timestamp())
+	genesisWithUpgradeBytes, err := json.Marshal(genesisWithUpgrade)
+	require.NoError(t, err)
+
+	// this will not be allowed
+	err = reinitVM.Initialize(context.Background(), vm.ctx, dbManager, genesisWithUpgradeBytes, []byte{}, []byte{}, issuer, []*engCommon.Fx{}, appSender)
+	require.ErrorContains(t, err, "mismatching OdyPhase2 fork block timestamp in database")
+
+	// try again with skip-upgrade-check
+	config := []byte("{\"skip-upgrade-check\": true}")
+	err = reinitVM.Initialize(context.Background(), vm.ctx, dbManager, genesisWithUpgradeBytes, []byte{}, config, issuer, []*engCommon.Fx{}, appSender)
+	require.NoError(t, err)
+	require.NoError(t, reinitVM.Shutdown(context.Background()))
 }

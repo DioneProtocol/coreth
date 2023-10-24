@@ -24,6 +24,7 @@ import (
 
 	"github.com/DioneProtocol/coreth/core"
 	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/txpool"
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/plugin/evm/message"
 )
@@ -57,7 +58,7 @@ type pushGossiper struct {
 
 	client        peer.NetworkClient
 	blockchain    *core.BlockChain
-	txPool        *core.TxPool
+	txPool        *txpool.TxPool
 	atomicMempool *Mempool
 
 	// We attempt to batch transactions we need to gossip to avoid runaway
@@ -78,7 +79,7 @@ type pushGossiper struct {
 }
 
 // createGossiper constructs and returns a pushGossiper or noopGossiper
-// based on whether vm.chainConfig.OdysseyPhase1BlockTimestamp is set
+// based on whether vm.chainConfig.OdyPhase4BlockTimestamp is set
 func (vm *VM) createGossiper(stats GossipStats) Gossiper {
 	net := &pushGossiper{
 		ctx:                vm.ctx,
@@ -139,7 +140,7 @@ func (n *pushGossiper) queueExecutableTxs(state *state.StateDB, baseFee *big.Int
 		}
 
 		// Don't try to regossip a transaction too frequently
-		if time.Since(tx.FirstSeen()) < n.config.TxRegossipFrequency.Duration {
+		if time.Since(tx.FirstSeen()) < n.config.RegossipFrequency.Duration {
 			continue
 		}
 
@@ -187,7 +188,7 @@ func (n *pushGossiper) queueRegossipTxs() types.Transactions {
 
 	// Add best transactions to be gossiped (preferring local txs)
 	tip := n.blockchain.CurrentBlock()
-	state, err := n.blockchain.StateAt(tip.Root())
+	state, err := n.blockchain.StateAt(tip.Root)
 	if err != nil || state == nil {
 		log.Debug(
 			"could not get state at tip",
@@ -196,14 +197,14 @@ func (n *pushGossiper) queueRegossipTxs() types.Transactions {
 		)
 		return nil
 	}
-	localQueued := n.queueExecutableTxs(state, tip.BaseFee(), localTxs, n.config.TxRegossipMaxSize)
+	localQueued := n.queueExecutableTxs(state, tip.BaseFee, localTxs, n.config.RegossipMaxTxs)
 	localCount := len(localQueued)
 	n.stats.IncEthTxsRegossipQueuedLocal(localCount)
-	if localCount >= n.config.TxRegossipMaxSize {
+	if localCount >= n.config.RegossipMaxTxs {
 		n.stats.IncEthTxsRegossipQueued()
 		return localQueued
 	}
-	remoteQueued := n.queueExecutableTxs(state, tip.BaseFee(), remoteTxs, n.config.TxRegossipMaxSize-localCount)
+	remoteQueued := n.queueExecutableTxs(state, tip.BaseFee, remoteTxs, n.config.RegossipMaxTxs-localCount)
 	n.stats.IncEthTxsRegossipQueuedRemote(len(remoteQueued))
 	if localCount+len(remoteQueued) > 0 {
 		// only increment the regossip stat when there are any txs queued
@@ -219,7 +220,7 @@ func (n *pushGossiper) awaitEthTxGossip() {
 	go n.ctx.Log.RecoverAndPanic(func() {
 		var (
 			gossipTicker   = time.NewTicker(ethTxsGossipInterval)
-			regossipTicker = time.NewTicker(n.config.TxRegossipFrequency.Duration)
+			regossipTicker = time.NewTicker(n.config.RegossipFrequency.Duration)
 		)
 		defer func() {
 			gossipTicker.Stop()
@@ -344,11 +345,11 @@ func (n *pushGossiper) gossipEthTxs(force bool) (int, error) {
 	for _, tx := range txs {
 		txHash := tx.Hash()
 		txStatus := n.txPool.Status([]common.Hash{txHash})[0]
-		if txStatus != core.TxStatusPending {
+		if txStatus != txpool.TxStatusPending {
 			continue
 		}
 
-		if n.config.RemoteTxGossipOnlyEnabled && n.txPool.HasLocal(txHash) {
+		if n.config.RemoteGossipOnlyEnabled && n.txPool.HasLocal(txHash) {
 			continue
 		}
 
@@ -370,7 +371,7 @@ func (n *pushGossiper) gossipEthTxs(force bool) (int, error) {
 
 	// Attempt to gossip [selectedTxs]
 	msgTxs := make([]*types.Transaction, 0)
-	msgTxsSize := common.StorageSize(0)
+	msgTxsSize := uint64(0)
 	for _, tx := range selectedTxs {
 		size := tx.Size()
 		if msgTxsSize+size > message.EthMsgSoftCapSize {
@@ -406,7 +407,7 @@ func (n *pushGossiper) GossipEthTxs(txs []*types.Transaction) error {
 type GossipHandler struct {
 	vm            *VM
 	atomicMempool *Mempool
-	txPool        *core.TxPool
+	txPool        *txpool.TxPool
 	stats         GossipReceivedStats
 }
 
@@ -509,7 +510,7 @@ func (h *GossipHandler) HandleEthTxs(nodeID ids.NodeID, msg message.EthTxsGossip
 				"err", err,
 				"tx", txs[i].Hash(),
 			)
-			if err == core.ErrAlreadyKnown {
+			if err == txpool.ErrAlreadyKnown {
 				h.stats.IncEthTxsGossipReceivedKnown()
 			} else {
 				h.stats.IncAtomicGossipReceivedError()

@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/DioneProtocol/coreth/core/state"
 	"github.com/DioneProtocol/coreth/params"
 
@@ -27,8 +29,8 @@ import (
 )
 
 var (
-	_                            UnsignedAtomicTx       = &UnsignedImportTx{}
-	_                            secp256k1fx.UnsignedTx = &UnsignedImportTx{}
+	_                           UnsignedAtomicTx       = &UnsignedImportTx{}
+	_                           secp256k1fx.UnsignedTx = &UnsignedImportTx{}
 	errImportNonDIONEInputBanff                         = errors.New("import input cannot contain non-DIONE in Banff")
 	errImportNonDIONEOutputBanff                        = errors.New("import output cannot contain non-DIONE in Banff")
 )
@@ -71,12 +73,12 @@ func (utx *UnsignedImportTx) Verify(
 		return errWrongNetworkID
 	case ctx.ChainID != utx.BlockchainID:
 		return errWrongBlockchainID
-	case rules.IsOdysseyPhase1 && len(utx.Outs) == 0:
+	case rules.IsOdyPhase3 && len(utx.Outs) == 0:
 		return errNoEVMOutputs
 	}
 
 	// Make sure that the tx has a valid peer chain ID
-	if rules.IsOdysseyPhase1 {
+	if rules.IsOdyPhase5 {
 		// Note that SameSubnet verifies that [tx.SourceChain] isn't this
 		// chain's ID
 		if err := verify.SameSubnet(context.TODO(), ctx, utx.SourceChain); err != nil {
@@ -105,13 +107,19 @@ func (utx *UnsignedImportTx) Verify(
 			return errImportNonDIONEInputBanff
 		}
 	}
-	if !utils.IsSortedAndUniqueSortable(utx.ImportedInputs) {
+	if !utils.IsSortedAndUnique(utx.ImportedInputs) {
 		return errInputsNotSortedUnique
 	}
 
-	if rules.IsOdysseyPhase1 {
-		if !IsSortedAndUniqueEVMOutputs(utx.Outs) {
+	if rules.IsOdyPhase2 {
+		if !utils.IsSortedAndUnique(utx.Outs) {
 			return errOutputsNotSortedUnique
+		}
+	} else if rules.IsOdyPhase1 {
+		if !slices.IsSortedFunc(utx.Outs, func(i, j EVMOutput) bool {
+			return i.Less(j)
+		}) {
+			return errOutputsNotSorted
 		}
 	}
 
@@ -184,20 +192,20 @@ func (utx *UnsignedImportTx) SemanticVerify(
 	// Check the transaction consumes and produces the right amounts
 	fc := dione.NewFlowChecker()
 	switch {
-	// Apply dynamic fees to import transactions as of Odyssey Phase 1
-	case rules.IsOdysseyPhase1:
-		gasUsed, err := stx.GasUsed(rules.IsOdysseyPhase1)
+	// Apply dynamic fees to import transactions as of Ody Phase 3
+	case rules.IsOdyPhase3:
+		gasUsed, err := stx.GasUsed(rules.IsOdyPhase5)
 		if err != nil {
 			return err
 		}
-		txFee, err := calculateDynamicFee(gasUsed, baseFee)
+		txFee, err := CalculateDynamicFee(gasUsed, baseFee)
 		if err != nil {
 			return err
 		}
 		fc.Produce(vm.ctx.DIONEAssetID, txFee)
 
-	// Apply fees to import transactions as of Odyssey Phase 1
-	case rules.IsOdysseyPhase1:
+	// Apply fees to import transactions as of Ody Phase 2
+	case rules.IsOdyPhase2:
 		fc.Produce(vm.ctx.DIONEAssetID, params.OdysseyAtomicTxFee)
 	}
 	for _, out := range utx.Outs {
@@ -273,7 +281,7 @@ func (utx *UnsignedImportTx) AtomicOps() (ids.ID, *atomic.Requests, error) {
 func (vm *VM) newImportTx(
 	chainID ids.ID, // chain to import from
 	to common.Address, // Address of recipient
-	baseFee *big.Int, // fee to use post-OP1
+	baseFee *big.Int, // fee to use post-OP3
 	keys []*secp256k1.PrivateKey, // Keys to import the funds
 ) (*Tx, error) {
 	kc := secp256k1fx.NewKeychain()
@@ -293,7 +301,7 @@ func (vm *VM) newImportTx(
 func (vm *VM) newImportTxWithUTXOs(
 	chainID ids.ID, // chain to import from
 	to common.Address, // Address of recipient
-	baseFee *big.Int, // fee to use post-OP1
+	baseFee *big.Int, // fee to use post-OP3
 	kc *secp256k1fx.Keychain, // Keychain to use for signing the atomic UTXOs
 	atomicUTXOs []*dione.UTXO, // UTXOs to spend
 ) (*Tx, error) {
@@ -349,9 +357,9 @@ func (vm *VM) newImportTxWithUTXOs(
 		txFeeWithChange    uint64
 	)
 	switch {
-	case rules.IsOdysseyPhase1:
+	case rules.IsOdyPhase3:
 		if baseFee == nil {
-			return nil, errNilBaseFeeOdysseyPhase1
+			return nil, errNilBaseFeeOdyPhase3
 		}
 		utx := &UnsignedImportTx{
 			NetworkID:      vm.ctx.NetworkID,
@@ -365,21 +373,21 @@ func (vm *VM) newImportTxWithUTXOs(
 			return nil, err
 		}
 
-		gasUsedWithoutChange, err := tx.GasUsed(rules.IsOdysseyPhase1)
+		gasUsedWithoutChange, err := tx.GasUsed(rules.IsOdyPhase5)
 		if err != nil {
 			return nil, err
 		}
 		gasUsedWithChange := gasUsedWithoutChange + EVMOutputGas
 
-		txFeeWithoutChange, err = calculateDynamicFee(gasUsedWithoutChange, baseFee)
+		txFeeWithoutChange, err = CalculateDynamicFee(gasUsedWithoutChange, baseFee)
 		if err != nil {
 			return nil, err
 		}
-		txFeeWithChange, err = calculateDynamicFee(gasUsedWithChange, baseFee)
+		txFeeWithChange, err = CalculateDynamicFee(gasUsedWithChange, baseFee)
 		if err != nil {
 			return nil, err
 		}
-	default:
+	case rules.IsOdyPhase2:
 		txFeeWithoutChange = params.OdysseyAtomicTxFee
 		txFeeWithChange = params.OdysseyAtomicTxFee
 	}
@@ -404,7 +412,7 @@ func (vm *VM) newImportTxWithUTXOs(
 		return nil, errNoEVMOutputs
 	}
 
-	SortEVMOutputs(outs)
+	utils.Sort(outs)
 
 	// Create the transaction
 	utx := &UnsignedImportTx{
