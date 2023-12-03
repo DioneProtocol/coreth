@@ -55,9 +55,9 @@ func NewClient(uri, chain string) Client {
 	}
 }
 
-// NewCChainClient returns a Client for interacting with the C Chain
-func NewCChainClient(uri string) Client {
-	return NewClient(uri, "C")
+// NewDChainClient returns a Client for interacting with the Delta Chain
+func NewDChainClient(uri string) Client {
+	return NewClient(uri, "D")
 }
 
 // IssueTx issues a transaction to a node and returns the TxID
@@ -180,8 +180,8 @@ func (c *client) ExportDIONE(
 	return c.Export(ctx, user, amount, to, targetChain, "DIONE", options...)
 }
 
-// Export sends an asset from this chain to the P/C-Chain.
-// After this tx is accepted, the DIONE must be imported to the P/C-chain with an importTx.
+// Export sends an asset from this chain to the O/D-Chain.
+// After this tx is accepted, the DIONE must be imported to the O/D-chain with an importTx.
 // Returns the ID of the newly created atomic transaction
 func (c *client) Export(
 	ctx context.Context,
@@ -221,7 +221,7 @@ func (c *client) LockProfile(ctx context.Context, options ...rpc.Option) error {
 	return c.adminRequester.SendRequest(ctx, "admin.lockProfile", struct{}{}, &api.EmptyReply{}, options...)
 }
 
-// SetLogLevel dynamically sets the log level for the C Chain
+// SetLogLevel dynamically sets the log level for the D Chain
 func (c *client) SetLogLevel(ctx context.Context, level log.Lvl, options ...rpc.Option) error {
 	return c.adminRequester.SendRequest(ctx, "admin.setLogLevel", &SetLogLevelArgs{
 		Level: level.String(),

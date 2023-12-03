@@ -122,8 +122,8 @@ func createImportTx(t *testing.T, vm *VM, txID ids.ID, feeAmount uint64) *Tx {
 	var importAmount uint64 = 10000000
 	importTx := &UnsignedImportTx{
 		NetworkID:    testNetworkID,
-		BlockchainID: testCChainID,
-		SourceChain:  testXChainID,
+		BlockchainID: testDChainID,
+		SourceChain:  testAChainID,
 		ImportedInputs: []*dione.TransferableInput{
 			{
 				UTXOID: dione.UTXOID{

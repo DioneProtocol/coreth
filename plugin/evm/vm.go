@@ -102,10 +102,10 @@ const (
 )
 
 var (
-	// x2cRate is the conversion rate between the smallest denomination on the X-Chain
-	// 1 nDIONE and the smallest denomination on the C-Chain 1 wei. Where 1 nDIONE = 1 gWei.
+	// x2cRate is the conversion rate between the smallest denomination on the A-Chain CHAIN_NAMES
+	// 1 nDIONE and the smallest denomination on the D-Chain 1 wei. Where 1 nDIONE = 1 gWei.
 	// This is only required for DIONE because the denomination of 1 DIONE is 9 decimal
-	// places on the X and P chains, but is 18 decimal places within the EVM.
+	// places on the A and O chains, but is 18 decimal places within the EVM.
 	x2cRate       = big.NewInt(x2cRateInt64)
 	x2cRateMinus1 = big.NewInt(x2cRateMinus1Int64)
 

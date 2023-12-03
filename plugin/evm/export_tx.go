@@ -89,7 +89,7 @@ func (utx *UnsignedExportTx) Verify(
 			return errWrongChainID
 		}
 	} else {
-		if utx.DestinationChain != ctx.XChainID {
+		if utx.DestinationChain != ctx.AChainID {
 			return errWrongChainID
 		}
 	}
@@ -108,7 +108,7 @@ func (utx *UnsignedExportTx) Verify(
 			return err
 		}
 		assetID := out.AssetID()
-		if assetID != ctx.DIONEAssetID && utx.DestinationChain == constants.PlatformChainID {
+		if assetID != ctx.DIONEAssetID && utx.DestinationChain == constants.OmegaChainID {
 			return errWrongChainID
 		}
 		if rules.IsBanff && assetID != ctx.DIONEAssetID {
