@@ -40,13 +40,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/core/state"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/trie"
-	"github.com/DioneProtocol/coreth/utils"
+	"github.com/ava-labs/coreth/core"
+	"github.com/ava-labs/coreth/core/rawdb"
+	"github.com/ava-labs/coreth/core/state"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/trie"
+	"github.com/ava-labs/coreth/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"
@@ -67,8 +67,8 @@ func init() {
 
 	cpy := *params.TestChainConfig
 	eip1559Config = &cpy
-	eip1559Config.OdyPhase2BlockTimestamp = utils.NewUint64(0)
-	eip1559Config.OdyPhase3BlockTimestamp = utils.NewUint64(0)
+	eip1559Config.ApricotPhase2BlockTimestamp = utils.NewUint64(0)
+	eip1559Config.ApricotPhase3BlockTimestamp = utils.NewUint64(0)
 }
 
 type testBlockChain struct {

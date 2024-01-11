@@ -9,15 +9,15 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/DioneProtocol/odysseygo/chains/atomic"
-	"github.com/DioneProtocol/odysseygo/ids"
-	engCommon "github.com/DioneProtocol/odysseygo/snow/engine/common"
-	"github.com/DioneProtocol/odysseygo/utils/constants"
-	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
-	"github.com/DioneProtocol/odysseygo/utils/units"
-	"github.com/DioneProtocol/odysseygo/vms/components/dione"
-	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/ids"
+	engCommon "github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/ava-labs/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -25,9 +25,9 @@ import (
 // that attempt to send the funds to each of the test keys (list of length 3).
 func createExportTxOptions(t *testing.T, vm *VM, issuer chan engCommon.Message, sharedMemory *atomic.Memory) []*Tx {
 	// Add a UTXO to shared memory
-	utxo := &dione.UTXO{
-		UTXOID: dione.UTXOID{TxID: ids.GenerateTestID()},
-		Asset:  dione.Asset{ID: vm.ctx.DIONEAssetID},
+	utxo := &avax.UTXO{
+		UTXOID: avax.UTXOID{TxID: ids.GenerateTestID()},
+		Asset:  avax.Asset{ID: vm.ctx.AVAXAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: uint64(50000000),
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -41,9 +41,9 @@ func createExportTxOptions(t *testing.T, vm *VM, issuer chan engCommon.Message, 
 		t.Fatal(err)
 	}
 
-	AChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.AChainID)
+	xChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.XChainID)
 	inputID := utxo.InputID()
-	if err := aChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{{
+	if err := xChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{{
 		Key:   inputID[:],
 		Value: utxoBytes,
 		Traits: [][]byte{
@@ -54,7 +54,7 @@ func createExportTxOptions(t *testing.T, vm *VM, issuer chan engCommon.Message, 
 	}
 
 	// Import the funds
-	importTx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+	importTx, err := vm.newImportTx(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func createExportTxOptions(t *testing.T, vm *VM, issuer chan engCommon.Message, 
 	// Use the funds to create 3 conflicting export transactions sending the funds to each of the test addresses
 	exportTxs := make([]*Tx, 0, 3)
 	for _, addr := range testShortIDAddrs {
-		exportTx, err := vm.newExportTx(vm.ctx.DIONEAssetID, uint64(5000000), vm.ctx.AChainID, addr, initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+		exportTx, err := vm.newExportTx(vm.ctx.AVAXAssetID, uint64(5000000), vm.ctx.XChainID, addr, initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -100,22 +100,22 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 	addr := key.PublicKey().Address()
 	ethAddr := GetEthAddress(key)
 
-	dioneAmount := 50 * units.MilliDione
-	dioneUTXOID := dione.UTXOID{
+	avaxAmount := 50 * units.MilliAvax
+	avaxUTXOID := avax.UTXOID{
 		OutputIndex: 0,
 	}
-	dioneInputID := dioneUTXOID.InputID()
+	avaxInputID := avaxUTXOID.InputID()
 
 	customAmount := uint64(100)
 	customAssetID := ids.ID{1, 2, 3, 4, 5, 7}
-	customUTXOID := dione.UTXOID{
+	customUTXOID := avax.UTXOID{
 		OutputIndex: 1,
 	}
 	customInputID := customUTXOID.InputID()
 
-	customUTXO := &dione.UTXO{
+	customUTXO := &avax.UTXO{
 		UTXOID: customUTXOID,
-		Asset:  dione.Asset{ID: customAssetID},
+		Asset:  avax.Asset{ID: customAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: customAmount,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -128,7 +128,7 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 	tests := []struct {
 		name          string
 		tx            []EVMInput
-		dioneBalance   *big.Int
+		avaxBalance   *big.Int
 		balances      map[ids.ID]*big.Int
 		expectedNonce uint64
 		shouldErr     bool
@@ -136,7 +136,7 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 		{
 			name:        "no transfers",
 			tx:          nil,
-			dioneBalance: big.NewInt(int64(dioneAmount) * x2cRateInt64),
+			avaxBalance: big.NewInt(int64(avaxAmount) * x2cRateInt64),
 			balances: map[ids.ID]*big.Int{
 				customAssetID: big.NewInt(int64(customAmount)),
 			},
@@ -144,16 +144,16 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 			shouldErr:     false,
 		},
 		{
-			name: "spend half DIONE",
+			name: "spend half AVAX",
 			tx: []EVMInput{
 				{
 					Address: ethAddr,
-					Amount:  dioneAmount / 2,
-					AssetID: testDioneAssetID,
+					Amount:  avaxAmount / 2,
+					AssetID: testAvaxAssetID,
 					Nonce:   0,
 				},
 			},
-			dioneBalance: big.NewInt(int64(dioneAmount/2) * x2cRateInt64),
+			avaxBalance: big.NewInt(int64(avaxAmount/2) * x2cRateInt64),
 			balances: map[ids.ID]*big.Int{
 				customAssetID: big.NewInt(int64(customAmount)),
 			},
@@ -161,16 +161,16 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 			shouldErr:     false,
 		},
 		{
-			name: "spend all DIONE",
+			name: "spend all AVAX",
 			tx: []EVMInput{
 				{
 					Address: ethAddr,
-					Amount:  dioneAmount,
-					AssetID: testDioneAssetID,
+					Amount:  avaxAmount,
+					AssetID: testAvaxAssetID,
 					Nonce:   0,
 				},
 			},
-			dioneBalance: big.NewInt(0),
+			avaxBalance: big.NewInt(0),
 			balances: map[ids.ID]*big.Int{
 				customAssetID: big.NewInt(int64(customAmount)),
 			},
@@ -178,16 +178,16 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 			shouldErr:     false,
 		},
 		{
-			name: "spend too much DIONE",
+			name: "spend too much AVAX",
 			tx: []EVMInput{
 				{
 					Address: ethAddr,
-					Amount:  dioneAmount + 1,
-					AssetID: testDioneAssetID,
+					Amount:  avaxAmount + 1,
+					AssetID: testAvaxAssetID,
 					Nonce:   0,
 				},
 			},
-			dioneBalance: big.NewInt(0),
+			avaxBalance: big.NewInt(0),
 			balances: map[ids.ID]*big.Int{
 				customAssetID: big.NewInt(int64(customAmount)),
 			},
@@ -204,7 +204,7 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 					Nonce:   0,
 				},
 			},
-			dioneBalance: big.NewInt(int64(dioneAmount) * x2cRateInt64),
+			avaxBalance: big.NewInt(int64(avaxAmount) * x2cRateInt64),
 			balances: map[ids.ID]*big.Int{
 				customAssetID: big.NewInt(int64(customAmount / 2)),
 			},
@@ -221,7 +221,7 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 					Nonce:   0,
 				},
 			},
-			dioneBalance: big.NewInt(int64(dioneAmount) * x2cRateInt64),
+			avaxBalance: big.NewInt(int64(avaxAmount) * x2cRateInt64),
 			balances: map[ids.ID]*big.Int{
 				customAssetID: big.NewInt(0),
 			},
@@ -238,7 +238,7 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 					Nonce:   0,
 				},
 			},
-			dioneBalance: big.NewInt(int64(dioneAmount) * x2cRateInt64),
+			avaxBalance: big.NewInt(int64(avaxAmount) * x2cRateInt64),
 			balances: map[ids.ID]*big.Int{
 				customAssetID: big.NewInt(0),
 			},
@@ -256,12 +256,12 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 				},
 				{
 					Address: ethAddr,
-					Amount:  dioneAmount,
-					AssetID: testDioneAssetID,
+					Amount:  avaxAmount,
+					AssetID: testAvaxAssetID,
 					Nonce:   0,
 				},
 			},
-			dioneBalance: big.NewInt(0),
+			avaxBalance: big.NewInt(0),
 			balances: map[ids.ID]*big.Int{
 				customAssetID: big.NewInt(0),
 			},
@@ -279,12 +279,12 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 				},
 				{
 					Address: ethAddr,
-					Amount:  dioneAmount,
-					AssetID: testDioneAssetID,
+					Amount:  avaxAmount,
+					AssetID: testAvaxAssetID,
 					Nonce:   1,
 				},
 			},
-			dioneBalance: big.NewInt(0),
+			avaxBalance: big.NewInt(0),
 			balances: map[ids.ID]*big.Int{
 				customAssetID: big.NewInt(0),
 			},
@@ -302,12 +302,12 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 				},
 				{
 					Address: ethAddr,
-					Amount:  dioneAmount,
-					AssetID: testDioneAssetID,
+					Amount:  avaxAmount,
+					AssetID: testAvaxAssetID,
 					Nonce:   1,
 				},
 			},
-			dioneBalance: big.NewInt(0),
+			avaxBalance: big.NewInt(0),
 			balances: map[ids.ID]*big.Int{
 				customAssetID: big.NewInt(0),
 			},
@@ -317,18 +317,18 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdyPhase0, "", "")
+			issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONApricotPhase0, "", "")
 			defer func() {
 				if err := vm.Shutdown(context.Background()); err != nil {
 					t.Fatal(err)
 				}
 			}()
 
-			dioneUTXO := &dione.UTXO{
-				UTXOID: dioneUTXOID,
-				Asset:  dione.Asset{ID: vm.ctx.DIONEAssetID},
+			avaxUTXO := &avax.UTXO{
+				UTXOID: avaxUTXOID,
+				Asset:  avax.Asset{ID: vm.ctx.AVAXAssetID},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: dioneAmount,
+					Amt: avaxAmount,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Threshold: 1,
 						Addrs:     []ids.ShortID{addr},
@@ -336,7 +336,7 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 				},
 			}
 
-			dioneUTXOBytes, err := vm.codec.Marshal(codecVersion, dioneUTXO)
+			avaxUTXOBytes, err := vm.codec.Marshal(codecVersion, avaxUTXO)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -346,11 +346,11 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			aChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.AChainID)
-			if err := aChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{
+			xChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.XChainID)
+			if err := xChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{
 				{
-					Key:   dioneInputID[:],
-					Value: dioneUTXOBytes,
+					Key:   avaxInputID[:],
+					Value: avaxUTXOBytes,
 					Traits: [][]byte{
 						addr.Bytes(),
 					},
@@ -366,7 +366,7 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			tx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+			tx, err := vm.newImportTx(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -414,14 +414,14 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			dioneBalance := stateDB.GetBalance(ethAddr)
-			if dioneBalance.Cmp(test.dioneBalance) != 0 {
-				t.Fatalf("address balance %s equal %s not %s", addr.String(), dioneBalance, test.dioneBalance)
+			avaxBalance := stateDB.GetBalance(ethAddr)
+			if avaxBalance.Cmp(test.avaxBalance) != 0 {
+				t.Fatalf("address balance %s equal %s not %s", addr.String(), avaxBalance, test.avaxBalance)
 			}
 
 			for assetID, expectedBalance := range test.balances {
 				balance := stateDB.GetBalanceMultiCoin(ethAddr, common.Hash(assetID))
-				if dioneBalance.Cmp(test.dioneBalance) != 0 {
+				if avaxBalance.Cmp(test.avaxBalance) != 0 {
 					t.Fatalf("%s address balance %s equal %s not %s", assetID, addr.String(), balance, expectedBalance)
 				}
 			}
@@ -434,7 +434,7 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 }
 
 func TestExportTxSemanticVerify(t *testing.T) {
-	_, vm, _, _, _ := GenesisVM(t, true, genesisJSONOdyPhase0, "", "")
+	_, vm, _, _, _ := GenesisVM(t, true, genesisJSONApricotPhase0, "", "")
 
 	defer func() {
 		if err := vm.Shutdown(context.Background()); err != nil {
@@ -449,7 +449,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 	ethAddr := testEthAddrs[0]
 
 	var (
-		dioneBalance           = 10 * units.Dione
+		avaxBalance           = 10 * units.Avax
 		custom0Balance uint64 = 100
 		custom0AssetID        = ids.ID{1, 2, 3, 4, 5}
 		custom1Balance uint64 = 1000
@@ -459,12 +459,12 @@ func TestExportTxSemanticVerify(t *testing.T) {
 	validExportTx := &UnsignedExportTx{
 		NetworkID:        vm.ctx.NetworkID,
 		BlockchainID:     vm.ctx.ChainID,
-		DestinationChain: vm.ctx.AChainID,
+		DestinationChain: vm.ctx.XChainID,
 		Ins: []EVMInput{
 			{
 				Address: ethAddr,
-				Amount:  dioneBalance,
-				AssetID: vm.ctx.DIONEAssetID,
+				Amount:  avaxBalance,
+				AssetID: vm.ctx.AVAXAssetID,
 				Nonce:   0,
 			},
 			{
@@ -480,9 +480,9 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				Nonce:   0,
 			},
 		},
-		ExportedOutputs: []*dione.TransferableOutput{
+		ExportedOutputs: []*avax.TransferableOutput{
 			{
-				Asset: dione.Asset{ID: custom0AssetID},
+				Asset: avax.Asset{ID: custom0AssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: custom0Balance,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -494,23 +494,23 @@ func TestExportTxSemanticVerify(t *testing.T) {
 		},
 	}
 
-	validDIONEExportTx := &UnsignedExportTx{
+	validAVAXExportTx := &UnsignedExportTx{
 		NetworkID:        vm.ctx.NetworkID,
 		BlockchainID:     vm.ctx.ChainID,
-		DestinationChain: vm.ctx.AChainID,
+		DestinationChain: vm.ctx.XChainID,
 		Ins: []EVMInput{
 			{
 				Address: ethAddr,
-				Amount:  dioneBalance,
-				AssetID: vm.ctx.DIONEAssetID,
+				Amount:  avaxBalance,
+				AssetID: vm.ctx.AVAXAssetID,
 				Nonce:   0,
 			},
 		},
-		ExportedOutputs: []*dione.TransferableOutput{
+		ExportedOutputs: []*avax.TransferableOutput{
 			{
-				Asset: dione.Asset{ID: vm.ctx.DIONEAssetID},
+				Asset: avax.Asset{ID: vm.ctx.AVAXAssetID},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: dioneBalance / 2,
+					Amt: avaxBalance / 2,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Threshold: 1,
 						Addrs:     []ids.ShortID{addr},
@@ -537,41 +537,41 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: false,
 		},
 		{
-			name: "O-Chain before OP5",
+			name: "P-chain before AP5",
 			tx: func() *Tx {
-				validExportTx := *validDIONEExportTx
-				validExportTx.DestinationChain = constants.OmegaChainID
+				validExportTx := *validAVAXExportTx
+				validExportTx.DestinationChain = constants.PlatformChainID
 				return &Tx{UnsignedAtomicTx: &validExportTx}
 			}(),
 			signers: [][]*secp256k1.PrivateKey{
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
-			name: "O-Chain after OP5",
+			name: "P-chain after AP5",
 			tx: func() *Tx {
-				validExportTx := *validDIONEExportTx
-				validExportTx.DestinationChain = constants.OmegaChainID
+				validExportTx := *validAVAXExportTx
+				validExportTx.DestinationChain = constants.PlatformChainID
 				return &Tx{UnsignedAtomicTx: &validExportTx}
 			}(),
 			signers: [][]*secp256k1.PrivateKey{
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase5,
+			rules:     apricotRulesPhase5,
 			shouldErr: false,
 		},
 		{
-			name: "random chain after OP5",
+			name: "random chain after AP5",
 			tx: func() *Tx {
-				validExportTx := *validDIONEExportTx
+				validExportTx := *validAVAXExportTx
 				validExportTx.DestinationChain = ids.GenerateTestID()
 				return &Tx{UnsignedAtomicTx: &validExportTx}
 			}(),
@@ -579,14 +579,14 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase5,
+			rules:     apricotRulesPhase5,
 			shouldErr: true,
 		},
 		{
-			name: "O-Chain multi-coin before OP5",
+			name: "P-chain multi-coin before AP5",
 			tx: func() *Tx {
 				validExportTx := *validExportTx
-				validExportTx.DestinationChain = constants.OmegaChainID
+				validExportTx.DestinationChain = constants.PlatformChainID
 				return &Tx{UnsignedAtomicTx: &validExportTx}
 			}(),
 			signers: [][]*secp256k1.PrivateKey{
@@ -595,14 +595,14 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
-			name: "O-Chain multi-coin after OP5",
+			name: "P-chain multi-coin after AP5",
 			tx: func() *Tx {
 				validExportTx := *validExportTx
-				validExportTx.DestinationChain = constants.OmegaChainID
+				validExportTx.DestinationChain = constants.PlatformChainID
 				return &Tx{UnsignedAtomicTx: &validExportTx}
 			}(),
 			signers: [][]*secp256k1.PrivateKey{
@@ -611,11 +611,11 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase5,
+			rules:     apricotRulesPhase5,
 			shouldErr: true,
 		},
 		{
-			name: "random chain multi-coin  after OP5",
+			name: "random chain multi-coin  after AP5",
 			tx: func() *Tx {
 				validExportTx := *validExportTx
 				validExportTx.DestinationChain = ids.GenerateTestID()
@@ -627,7 +627,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase5,
+			rules:     apricotRulesPhase5,
 			shouldErr: true,
 		},
 		{
@@ -643,7 +643,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
@@ -659,7 +659,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
@@ -675,7 +675,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
@@ -692,15 +692,15 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
 			name: "invalid output",
 			tx: func() *Tx {
 				validExportTx := *validExportTx
-				validExportTx.ExportedOutputs = []*dione.TransferableOutput{{
-					Asset: dione.Asset{ID: custom0AssetID},
+				validExportTx.ExportedOutputs = []*avax.TransferableOutput{{
+					Asset: avax.Asset{ID: custom0AssetID},
 					Out: &secp256k1fx.TransferOutput{
 						Amt: custom0Balance,
 						OutputOwners: secp256k1fx.OutputOwners{
@@ -717,16 +717,16 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
 			name: "unsorted outputs",
 			tx: func() *Tx {
 				validExportTx := *validExportTx
-				exportOutputs := []*dione.TransferableOutput{
+				exportOutputs := []*avax.TransferableOutput{
 					{
-						Asset: dione.Asset{ID: custom0AssetID},
+						Asset: avax.Asset{ID: custom0AssetID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: custom0Balance/2 + 1,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -736,7 +736,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 						},
 					},
 					{
-						Asset: dione.Asset{ID: custom0AssetID},
+						Asset: avax.Asset{ID: custom0AssetID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: custom0Balance/2 - 1,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -747,7 +747,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 					},
 				}
 				// Sort the outputs and then swap the ordering to ensure that they are ordered incorrectly
-				dione.SortTransferableOutputs(exportOutputs, Codec)
+				avax.SortTransferableOutputs(exportOutputs, Codec)
 				exportOutputs[0], exportOutputs[1] = exportOutputs[1], exportOutputs[0]
 				validExportTx.ExportedOutputs = exportOutputs
 				return &Tx{UnsignedAtomicTx: &validExportTx}
@@ -758,7 +758,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
@@ -775,16 +775,16 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
 			name: "custom asset insufficient funds",
 			tx: func() *Tx {
 				validExportTx := *validExportTx
-				validExportTx.ExportedOutputs = []*dione.TransferableOutput{
+				validExportTx.ExportedOutputs = []*avax.TransferableOutput{
 					{
-						Asset: dione.Asset{ID: custom0AssetID},
+						Asset: avax.Asset{ID: custom0AssetID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: custom0Balance + 1,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -802,18 +802,18 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
-			name: "dione insufficient funds",
+			name: "avax insufficient funds",
 			tx: func() *Tx {
 				validExportTx := *validExportTx
-				validExportTx.ExportedOutputs = []*dione.TransferableOutput{
+				validExportTx.ExportedOutputs = []*avax.TransferableOutput{
 					{
-						Asset: dione.Asset{ID: vm.ctx.DIONEAssetID},
+						Asset: avax.Asset{ID: vm.ctx.AVAXAssetID},
 						Out: &secp256k1fx.TransferOutput{
-							Amt: dioneBalance, // after fees this should be too much
+							Amt: avaxBalance, // after fees this should be too much
 							OutputOwners: secp256k1fx.OutputOwners{
 								Threshold: 1,
 								Addrs:     []ids.ShortID{addr},
@@ -829,7 +829,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
@@ -842,7 +842,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
@@ -853,7 +853,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
@@ -865,7 +865,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
@@ -877,7 +877,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
@@ -889,7 +889,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 				{key},
 			},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 		{
@@ -897,7 +897,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 			tx:        &Tx{UnsignedAtomicTx: validExportTx},
 			signers:   [][]*secp256k1.PrivateKey{},
 			baseFee:   initialBaseFee,
-			rules:     odyRulesPhase3,
+			rules:     apricotRulesPhase3,
 			shouldErr: true,
 		},
 	}
@@ -922,9 +922,9 @@ func TestExportTxSemanticVerify(t *testing.T) {
 }
 
 func TestExportTxAccept(t *testing.T) {
-	_, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdyPhase0, "", "")
+	_, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONApricotPhase0, "", "")
 
-	aChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.AChainID)
+	xChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.XChainID)
 
 	defer func() {
 		if err := vm.Shutdown(context.Background()); err != nil {
@@ -937,7 +937,7 @@ func TestExportTxAccept(t *testing.T) {
 	ethAddr := testEthAddrs[0]
 
 	var (
-		dioneBalance           = 10 * units.Dione
+		avaxBalance           = 10 * units.Avax
 		custom0Balance uint64 = 100
 		custom0AssetID        = ids.ID{1, 2, 3, 4, 5}
 	)
@@ -945,12 +945,12 @@ func TestExportTxAccept(t *testing.T) {
 	exportTx := &UnsignedExportTx{
 		NetworkID:        vm.ctx.NetworkID,
 		BlockchainID:     vm.ctx.ChainID,
-		DestinationChain: vm.ctx.AChainID,
+		DestinationChain: vm.ctx.XChainID,
 		Ins: []EVMInput{
 			{
 				Address: ethAddr,
-				Amount:  dioneBalance,
-				AssetID: vm.ctx.DIONEAssetID,
+				Amount:  avaxBalance,
+				AssetID: vm.ctx.AVAXAssetID,
 				Nonce:   0,
 			},
 			{
@@ -960,11 +960,11 @@ func TestExportTxAccept(t *testing.T) {
 				Nonce:   0,
 			},
 		},
-		ExportedOutputs: []*dione.TransferableOutput{
+		ExportedOutputs: []*avax.TransferableOutput{
 			{
-				Asset: dione.Asset{ID: vm.ctx.DIONEAssetID},
+				Asset: avax.Asset{ID: vm.ctx.AVAXAssetID},
 				Out: &secp256k1fx.TransferOutput{
-					Amt: dioneBalance,
+					Amt: avaxBalance,
 					OutputOwners: secp256k1fx.OutputOwners{
 						Threshold: 1,
 						Addrs:     []ids.ShortID{addr},
@@ -972,7 +972,7 @@ func TestExportTxAccept(t *testing.T) {
 				},
 			},
 			{
-				Asset: dione.Asset{ID: custom0AssetID},
+				Asset: avax.Asset{ID: custom0AssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: custom0Balance,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -1008,7 +1008,7 @@ func TestExportTxAccept(t *testing.T) {
 	if err := vm.ctx.SharedMemory.Apply(map[ids.ID]*atomic.Requests{chainID: {PutRequests: atomicRequests.PutRequests}}, commitBatch); err != nil {
 		t.Fatal(err)
 	}
-	indexedValues, _, _, err := aChainSharedMemory.Indexed(vm.ctx.ChainID, [][]byte{addr.Bytes()}, nil, nil, 3)
+	indexedValues, _, _, err := xChainSharedMemory.Indexed(vm.ctx.ChainID, [][]byte{addr.Bytes()}, nil, nil, 3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1017,21 +1017,21 @@ func TestExportTxAccept(t *testing.T) {
 		t.Fatalf("expected 2 values but got %d", len(indexedValues))
 	}
 
-	dioneUTXOID := dione.UTXOID{
+	avaxUTXOID := avax.UTXOID{
 		TxID:        tx.ID(),
 		OutputIndex: 0,
 	}
-	dioneInputID := dioneUTXOID.InputID()
+	avaxInputID := avaxUTXOID.InputID()
 
-	customUTXOID := dione.UTXOID{
+	customUTXOID := avax.UTXOID{
 		TxID:        tx.ID(),
 		OutputIndex: 1,
 	}
 	customInputID := customUTXOID.InputID()
 
-	fetchedValues, err := aChainSharedMemory.Get(vm.ctx.ChainID, [][]byte{
+	fetchedValues, err := xChainSharedMemory.Get(vm.ctx.ChainID, [][]byte{
 		customInputID[:],
-		dioneInputID[:],
+		avaxInputID[:],
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -1044,18 +1044,18 @@ func TestExportTxAccept(t *testing.T) {
 		t.Fatalf("inconsistent values returned fetched %x indexed %x", fetchedValues[1], indexedValues[1])
 	}
 
-	customUTXOBytes, err := Codec.Marshal(codecVersion, &dione.UTXO{
+	customUTXOBytes, err := Codec.Marshal(codecVersion, &avax.UTXO{
 		UTXOID: customUTXOID,
-		Asset:  dione.Asset{ID: custom0AssetID},
+		Asset:  avax.Asset{ID: custom0AssetID},
 		Out:    exportTx.ExportedOutputs[1].Out,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	dioneUTXOBytes, err := Codec.Marshal(codecVersion, &dione.UTXO{
-		UTXOID: dioneUTXOID,
-		Asset:  dione.Asset{ID: vm.ctx.DIONEAssetID},
+	avaxUTXOBytes, err := Codec.Marshal(codecVersion, &avax.UTXO{
+		UTXOID: avaxUTXOID,
+		Asset:  avax.Asset{ID: vm.ctx.AVAXAssetID},
 		Out:    exportTx.ExportedOutputs[0].Out,
 	})
 	if err != nil {
@@ -1065,8 +1065,8 @@ func TestExportTxAccept(t *testing.T) {
 	if !bytes.Equal(fetchedValues[0], customUTXOBytes) {
 		t.Fatalf("incorrect values returned expected %x got %x", customUTXOBytes, fetchedValues[0])
 	}
-	if !bytes.Equal(fetchedValues[1], dioneUTXOBytes) {
-		t.Fatalf("incorrect values returned expected %x got %x", dioneUTXOBytes, fetchedValues[1])
+	if !bytes.Equal(fetchedValues[1], avaxUTXOBytes) {
+		t.Fatalf("incorrect values returned expected %x got %x", avaxUTXOBytes, fetchedValues[1])
 	}
 }
 
@@ -1074,25 +1074,25 @@ func TestExportTxVerify(t *testing.T) {
 	var exportAmount uint64 = 10000000
 	exportTx := &UnsignedExportTx{
 		NetworkID:        testNetworkID,
-		BlockchainID:     testDChainID,
-		DestinationChain: testAChainID,
+		BlockchainID:     testCChainID,
+		DestinationChain: testXChainID,
 		Ins: []EVMInput{
 			{
 				Address: testEthAddrs[0],
 				Amount:  exportAmount,
-				AssetID: testDioneAssetID,
+				AssetID: testAvaxAssetID,
 				Nonce:   0,
 			},
 			{
 				Address: testEthAddrs[2],
 				Amount:  exportAmount,
-				AssetID: testDioneAssetID,
+				AssetID: testAvaxAssetID,
 				Nonce:   0,
 			},
 		},
-		ExportedOutputs: []*dione.TransferableOutput{
+		ExportedOutputs: []*avax.TransferableOutput{
 			{
-				Asset: dione.Asset{ID: testDioneAssetID},
+				Asset: avax.Asset{ID: testAvaxAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: exportAmount,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -1103,7 +1103,7 @@ func TestExportTxVerify(t *testing.T) {
 				},
 			},
 			{
-				Asset: dione.Asset{ID: testDioneAssetID},
+				Asset: avax.Asset{ID: testAvaxAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: exportAmount,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -1117,7 +1117,7 @@ func TestExportTxVerify(t *testing.T) {
 	}
 
 	// Sort the inputs and outputs to ensure the transaction is canonical
-	dione.SortTransferableOutputs(exportTx.ExportedOutputs, Codec)
+	avax.SortTransferableOutputs(exportTx.ExportedOutputs, Codec)
 	// Pass in a list of signers here with the appropriate length
 	// to avoid causing a nil-pointer error in the helper method
 	emptySigners := make([][]*secp256k1.PrivateKey, 2)
@@ -1131,7 +1131,7 @@ func TestExportTxVerify(t *testing.T) {
 				return (*UnsignedExportTx)(nil)
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase0,
+			rules:       apricotRulesPhase0,
 			expectedErr: errNilTx.Error(),
 		},
 		"valid export tx": {
@@ -1139,7 +1139,7 @@ func TestExportTxVerify(t *testing.T) {
 				return exportTx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase0,
+			rules:       apricotRulesPhase0,
 			expectedErr: "",
 		},
 		"valid export tx banff": {
@@ -1157,7 +1157,7 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase0,
+			rules:       apricotRulesPhase0,
 			expectedErr: errWrongNetworkID.Error(),
 		},
 		"incorrect blockchainID": {
@@ -1167,7 +1167,7 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase0,
+			rules:       apricotRulesPhase0,
 			expectedErr: errWrongBlockchainID.Error(),
 		},
 		"incorrect destination chain": {
@@ -1177,7 +1177,7 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase0,
+			rules:       apricotRulesPhase0,
 			expectedErr: errWrongChainID.Error(), // TODO make this error more specific to destination not just chainID
 		},
 		"no exported outputs": {
@@ -1187,33 +1187,33 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase0,
+			rules:       apricotRulesPhase0,
 			expectedErr: errNoExportOutputs.Error(),
 		},
 		"unsorted outputs": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
-				tx.ExportedOutputs = []*dione.TransferableOutput{
+				tx.ExportedOutputs = []*avax.TransferableOutput{
 					tx.ExportedOutputs[1],
 					tx.ExportedOutputs[0],
 				}
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase0,
+			rules:       apricotRulesPhase0,
 			expectedErr: errOutputsNotSorted.Error(),
 		},
 		"invalid exported output": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
-				tx.ExportedOutputs = []*dione.TransferableOutput{tx.ExportedOutputs[0], nil}
+				tx.ExportedOutputs = []*avax.TransferableOutput{tx.ExportedOutputs[0], nil}
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase0,
+			rules:       apricotRulesPhase0,
 			expectedErr: "nil transferable output is not valid",
 		},
-		"unsorted EVM inputs before OP1": {
+		"unsorted EVM inputs before AP1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
 				tx.Ins = []EVMInput{
@@ -1223,10 +1223,10 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase0,
+			rules:       apricotRulesPhase0,
 			expectedErr: "",
 		},
-		"unsorted EVM inputs after OP1": {
+		"unsorted EVM inputs after AP1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
 				tx.Ins = []EVMInput{
@@ -1236,7 +1236,7 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase1,
+			rules:       apricotRulesPhase1,
 			expectedErr: errInputsNotSortedUnique.Error(),
 		},
 		"EVM input with amount 0": {
@@ -1246,37 +1246,37 @@ func TestExportTxVerify(t *testing.T) {
 					{
 						Address: testEthAddrs[0],
 						Amount:  0,
-						AssetID: testDioneAssetID,
+						AssetID: testAvaxAssetID,
 						Nonce:   0,
 					},
 				}
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase0,
+			rules:       apricotRulesPhase0,
 			expectedErr: errNoValueInput.Error(),
 		},
-		"non-unique EVM input before OP1": {
+		"non-unique EVM input before AP1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
 				tx.Ins = []EVMInput{tx.Ins[0], tx.Ins[0]}
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase0,
+			rules:       apricotRulesPhase0,
 			expectedErr: "",
 		},
-		"non-unique EVM input after OP1": {
+		"non-unique EVM input after AP1": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
 				tx.Ins = []EVMInput{tx.Ins[0], tx.Ins[0]}
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase1,
+			rules:       apricotRulesPhase1,
 			expectedErr: errInputsNotSortedUnique.Error(),
 		},
-		"non-DIONE input Ody Phase 6": {
+		"non-AVAX input Apricot Phase 6": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
 				tx.Ins = []EVMInput{
@@ -1290,15 +1290,15 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase6,
+			rules:       apricotRulesPhase6,
 			expectedErr: "",
 		},
-		"non-DIONE output Ody Phase 6": {
+		"non-AVAX output Apricot Phase 6": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
-				tx.ExportedOutputs = []*dione.TransferableOutput{
+				tx.ExportedOutputs = []*avax.TransferableOutput{
 					{
-						Asset: dione.Asset{ID: nonExistentID},
+						Asset: avax.Asset{ID: nonExistentID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: exportAmount,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -1312,10 +1312,10 @@ func TestExportTxVerify(t *testing.T) {
 				return &tx
 			},
 			ctx:         ctx,
-			rules:       odyRulesPhase6,
+			rules:       apricotRulesPhase6,
 			expectedErr: "",
 		},
-		"non-DIONE input Banff": {
+		"non-AVAX input Banff": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
 				tx.Ins = []EVMInput{
@@ -1330,14 +1330,14 @@ func TestExportTxVerify(t *testing.T) {
 			},
 			ctx:         ctx,
 			rules:       banffRules,
-			expectedErr: errExportNonDIONEInputBanff.Error(),
+			expectedErr: errExportNonAVAXInputBanff.Error(),
 		},
-		"non-DIONE output Banff": {
+		"non-AVAX output Banff": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *exportTx
-				tx.ExportedOutputs = []*dione.TransferableOutput{
+				tx.ExportedOutputs = []*avax.TransferableOutput{
 					{
-						Asset: dione.Asset{ID: nonExistentID},
+						Asset: avax.Asset{ID: nonExistentID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: exportAmount,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -1352,7 +1352,7 @@ func TestExportTxVerify(t *testing.T) {
 			},
 			ctx:         ctx,
 			rules:       banffRules,
-			expectedErr: errExportNonDIONEOutputBanff.Error(),
+			expectedErr: errExportNonAVAXOutputBanff.Error(),
 		},
 	}
 
@@ -1366,9 +1366,9 @@ func TestExportTxVerify(t *testing.T) {
 // Note: this is a brittle test to ensure that the gas cost of a transaction does
 // not change
 func TestExportTxGasCost(t *testing.T) {
-	dioneAssetID := ids.GenerateTestID()
+	avaxAssetID := ids.GenerateTestID()
 	chainID := ids.GenerateTestID()
-	aChainID := ids.GenerateTestID()
+	xChainID := ids.GenerateTestID()
 	networkID := uint32(5)
 	exportAmount := uint64(5000000)
 
@@ -1385,18 +1385,18 @@ func TestExportTxGasCost(t *testing.T) {
 			UnsignedExportTx: &UnsignedExportTx{
 				NetworkID:        networkID,
 				BlockchainID:     chainID,
-				DestinationChain: aChainID,
+				DestinationChain: xChainID,
 				Ins: []EVMInput{
 					{
 						Address: testEthAddrs[0],
 						Amount:  exportAmount,
-						AssetID: dioneAssetID,
+						AssetID: avaxAssetID,
 						Nonce:   0,
 					},
 				},
-				ExportedOutputs: []*dione.TransferableOutput{
+				ExportedOutputs: []*avax.TransferableOutput{
 					{
-						Asset: dione.Asset{ID: dioneAssetID},
+						Asset: avax.Asset{ID: avaxAssetID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: exportAmount,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -1417,18 +1417,18 @@ func TestExportTxGasCost(t *testing.T) {
 			UnsignedExportTx: &UnsignedExportTx{
 				NetworkID:        networkID,
 				BlockchainID:     chainID,
-				DestinationChain: aChainID,
+				DestinationChain: xChainID,
 				Ins: []EVMInput{
 					{
 						Address: testEthAddrs[0],
 						Amount:  exportAmount,
-						AssetID: dioneAssetID,
+						AssetID: avaxAssetID,
 						Nonce:   0,
 					},
 				},
-				ExportedOutputs: []*dione.TransferableOutput{
+				ExportedOutputs: []*avax.TransferableOutput{
 					{
-						Asset: dione.Asset{ID: dioneAssetID},
+						Asset: avax.Asset{ID: avaxAssetID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: exportAmount,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -1450,18 +1450,18 @@ func TestExportTxGasCost(t *testing.T) {
 			UnsignedExportTx: &UnsignedExportTx{
 				NetworkID:        networkID,
 				BlockchainID:     chainID,
-				DestinationChain: aChainID,
+				DestinationChain: xChainID,
 				Ins: []EVMInput{
 					{
 						Address: testEthAddrs[0],
 						Amount:  exportAmount,
-						AssetID: dioneAssetID,
+						AssetID: avaxAssetID,
 						Nonce:   0,
 					},
 				},
-				ExportedOutputs: []*dione.TransferableOutput{
+				ExportedOutputs: []*avax.TransferableOutput{
 					{
-						Asset: dione.Asset{ID: dioneAssetID},
+						Asset: avax.Asset{ID: avaxAssetID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: exportAmount,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -1482,18 +1482,18 @@ func TestExportTxGasCost(t *testing.T) {
 			UnsignedExportTx: &UnsignedExportTx{
 				NetworkID:        networkID,
 				BlockchainID:     chainID,
-				DestinationChain: aChainID,
+				DestinationChain: xChainID,
 				Ins: []EVMInput{
 					{
 						Address: testEthAddrs[0],
 						Amount:  exportAmount,
-						AssetID: dioneAssetID,
+						AssetID: avaxAssetID,
 						Nonce:   0,
 					},
 				},
-				ExportedOutputs: []*dione.TransferableOutput{
+				ExportedOutputs: []*avax.TransferableOutput{
 					{
-						Asset: dione.Asset{ID: dioneAssetID},
+						Asset: avax.Asset{ID: avaxAssetID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: exportAmount,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -1514,30 +1514,30 @@ func TestExportTxGasCost(t *testing.T) {
 			UnsignedExportTx: &UnsignedExportTx{
 				NetworkID:        networkID,
 				BlockchainID:     chainID,
-				DestinationChain: aChainID,
+				DestinationChain: xChainID,
 				Ins: []EVMInput{
 					{
 						Address: testEthAddrs[0],
 						Amount:  exportAmount,
-						AssetID: dioneAssetID,
+						AssetID: avaxAssetID,
 						Nonce:   0,
 					},
 					{
 						Address: testEthAddrs[1],
 						Amount:  exportAmount,
-						AssetID: dioneAssetID,
+						AssetID: avaxAssetID,
 						Nonce:   0,
 					},
 					{
 						Address: testEthAddrs[2],
 						Amount:  exportAmount,
-						AssetID: dioneAssetID,
+						AssetID: avaxAssetID,
 						Nonce:   0,
 					},
 				},
-				ExportedOutputs: []*dione.TransferableOutput{
+				ExportedOutputs: []*avax.TransferableOutput{
 					{
-						Asset: dione.Asset{ID: dioneAssetID},
+						Asset: avax.Asset{ID: avaxAssetID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: exportAmount * 3,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -1558,30 +1558,30 @@ func TestExportTxGasCost(t *testing.T) {
 			UnsignedExportTx: &UnsignedExportTx{
 				NetworkID:        networkID,
 				BlockchainID:     chainID,
-				DestinationChain: aChainID,
+				DestinationChain: xChainID,
 				Ins: []EVMInput{
 					{
 						Address: testEthAddrs[0],
 						Amount:  exportAmount,
-						AssetID: dioneAssetID,
+						AssetID: avaxAssetID,
 						Nonce:   0,
 					},
 					{
 						Address: testEthAddrs[1],
 						Amount:  exportAmount,
-						AssetID: dioneAssetID,
+						AssetID: avaxAssetID,
 						Nonce:   0,
 					},
 					{
 						Address: testEthAddrs[2],
 						Amount:  exportAmount,
-						AssetID: dioneAssetID,
+						AssetID: avaxAssetID,
 						Nonce:   0,
 					},
 				},
-				ExportedOutputs: []*dione.TransferableOutput{
+				ExportedOutputs: []*avax.TransferableOutput{
 					{
-						Asset: dione.Asset{ID: dioneAssetID},
+						Asset: avax.Asset{ID: avaxAssetID},
 						Out: &secp256k1fx.TransferOutput{
 							Amt: exportAmount * 3,
 							OutputOwners: secp256k1fx.OutputOwners{
@@ -1634,49 +1634,49 @@ func TestNewExportTx(t *testing.T) {
 		genesis            string
 		rules              params.Rules
 		bal                uint64
-		expectedBurnedDIONE uint64
+		expectedBurnedAVAX uint64
 	}{
 		{
-			name:               "ody phase 0",
-			genesis:            genesisJSONOdyPhase0,
-			rules:              odyRulesPhase0,
+			name:               "apricot phase 0",
+			genesis:            genesisJSONApricotPhase0,
+			rules:              apricotRulesPhase0,
 			bal:                44000000,
-			expectedBurnedDIONE: 1000000,
+			expectedBurnedAVAX: 1000000,
 		},
 		{
-			name:               "ody phase 1",
-			genesis:            genesisJSONOdyPhase1,
-			rules:              odyRulesPhase1,
+			name:               "apricot phase 1",
+			genesis:            genesisJSONApricotPhase1,
+			rules:              apricotRulesPhase1,
 			bal:                44000000,
-			expectedBurnedDIONE: 1000000,
+			expectedBurnedAVAX: 1000000,
 		},
 		{
-			name:               "ody phase 2",
-			genesis:            genesisJSONOdyPhase2,
-			rules:              odyRulesPhase2,
+			name:               "apricot phase 2",
+			genesis:            genesisJSONApricotPhase2,
+			rules:              apricotRulesPhase2,
 			bal:                43000000,
-			expectedBurnedDIONE: 1000000,
+			expectedBurnedAVAX: 1000000,
 		},
 		{
-			name:               "ody phase 3",
-			genesis:            genesisJSONOdyPhase3,
-			rules:              odyRulesPhase3,
+			name:               "apricot phase 3",
+			genesis:            genesisJSONApricotPhase3,
+			rules:              apricotRulesPhase3,
 			bal:                44446500,
-			expectedBurnedDIONE: 276750,
+			expectedBurnedAVAX: 276750,
 		},
 		{
-			name:               "ody phase 4",
-			genesis:            genesisJSONOdyPhase4,
-			rules:              odyRulesPhase4,
+			name:               "apricot phase 4",
+			genesis:            genesisJSONApricotPhase4,
+			rules:              apricotRulesPhase4,
 			bal:                44446500,
-			expectedBurnedDIONE: 276750,
+			expectedBurnedAVAX: 276750,
 		},
 		{
-			name:               "ody phase 5",
-			genesis:            genesisJSONOdyPhase5,
-			rules:              odyRulesPhase5,
+			name:               "apricot phase 5",
+			genesis:            genesisJSONApricotPhase5,
+			rules:              apricotRulesPhase5,
 			bal:                39946500,
-			expectedBurnedDIONE: 2526750,
+			expectedBurnedAVAX: 2526750,
 		},
 	}
 	for _, test := range tests {
@@ -1691,11 +1691,11 @@ func TestNewExportTx(t *testing.T) {
 
 			parent := vm.LastAcceptedBlockInternal().(*Block)
 			importAmount := uint64(50000000)
-			utxoID := dione.UTXOID{TxID: ids.GenerateTestID()}
+			utxoID := avax.UTXOID{TxID: ids.GenerateTestID()}
 
-			utxo := &dione.UTXO{
+			utxo := &avax.UTXO{
 				UTXOID: utxoID,
-				Asset:  dione.Asset{ID: vm.ctx.DIONEAssetID},
+				Asset:  avax.Asset{ID: vm.ctx.AVAXAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: importAmount,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -1709,9 +1709,9 @@ func TestNewExportTx(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			aChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.AChainID)
+			xChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.XChainID)
 			inputID := utxo.InputID()
-			if err := aChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{{
+			if err := xChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{{
 				Key:   inputID[:],
 				Value: utxoBytes,
 				Traits: [][]byte{
@@ -1721,7 +1721,7 @@ func TestNewExportTx(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			tx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+			tx, err := vm.newImportTx(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1752,7 +1752,7 @@ func TestNewExportTx(t *testing.T) {
 			parent = vm.LastAcceptedBlockInternal().(*Block)
 			exportAmount := uint64(5000000)
 
-			tx, err = vm.newExportTx(vm.ctx.DIONEAssetID, exportAmount, vm.ctx.AChainID, testShortIDAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+			tx, err = vm.newExportTx(vm.ctx.AVAXAssetID, exportAmount, vm.ctx.XChainID, testShortIDAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1763,12 +1763,12 @@ func TestNewExportTx(t *testing.T) {
 				t.Fatal("newExportTx created an invalid transaction", err)
 			}
 
-			burnedDIONE, err := exportTx.Burned(vm.ctx.DIONEAssetID)
+			burnedAVAX, err := exportTx.Burned(vm.ctx.AVAXAssetID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if burnedDIONE != test.expectedBurnedDIONE {
-				t.Fatalf("burned wrong amount of DIONE - expected %d burned %d", test.expectedBurnedDIONE, burnedDIONE)
+			if burnedAVAX != test.expectedBurnedAVAX {
+				t.Fatalf("burned wrong amount of AVAX - expected %d burned %d", test.expectedBurnedAVAX, burnedAVAX)
 			}
 
 			commitBatch, err := vm.db.CommitBatch()
@@ -1795,8 +1795,8 @@ func TestNewExportTx(t *testing.T) {
 			}
 
 			addr := GetEthAddress(testKeys[0])
-			if sdb.GetBalance(addr).Cmp(new(big.Int).SetUint64(test.bal*units.Dione)) != 0 {
-				t.Fatalf("address balance %s equal %s not %s", addr.String(), sdb.GetBalance(addr), new(big.Int).SetUint64(test.bal*units.Dione))
+			if sdb.GetBalance(addr).Cmp(new(big.Int).SetUint64(test.bal*units.Avax)) != 0 {
+				t.Fatalf("address balance %s equal %s not %s", addr.String(), sdb.GetBalance(addr), new(big.Int).SetUint64(test.bal*units.Avax))
 			}
 		})
 	}
@@ -1811,30 +1811,30 @@ func TestNewExportTxMulticoin(t *testing.T) {
 		balmc   uint64
 	}{
 		{
-			name:    "ody phase 0",
-			genesis: genesisJSONOdyPhase0,
-			rules:   odyRulesPhase0,
+			name:    "apricot phase 0",
+			genesis: genesisJSONApricotPhase0,
+			rules:   apricotRulesPhase0,
 			bal:     49000000,
 			balmc:   25000000,
 		},
 		{
-			name:    "ody phase 1",
-			genesis: genesisJSONOdyPhase1,
-			rules:   odyRulesPhase1,
+			name:    "apricot phase 1",
+			genesis: genesisJSONApricotPhase1,
+			rules:   apricotRulesPhase1,
 			bal:     49000000,
 			balmc:   25000000,
 		},
 		{
-			name:    "ody phase 2",
-			genesis: genesisJSONOdyPhase2,
-			rules:   odyRulesPhase2,
+			name:    "apricot phase 2",
+			genesis: genesisJSONApricotPhase2,
+			rules:   apricotRulesPhase2,
 			bal:     48000000,
 			balmc:   25000000,
 		},
 		{
-			name:    "ody phase 3",
-			genesis: genesisJSONOdyPhase3,
-			rules:   odyRulesPhase3,
+			name:    "apricot phase 3",
+			genesis: genesisJSONApricotPhase3,
+			rules:   apricotRulesPhase3,
 			bal:     48947900,
 			balmc:   25000000,
 		},
@@ -1851,11 +1851,11 @@ func TestNewExportTxMulticoin(t *testing.T) {
 
 			parent := vm.LastAcceptedBlockInternal().(*Block)
 			importAmount := uint64(50000000)
-			utxoID := dione.UTXOID{TxID: ids.GenerateTestID()}
+			utxoID := avax.UTXOID{TxID: ids.GenerateTestID()}
 
-			utxo := &dione.UTXO{
+			utxo := &avax.UTXO{
 				UTXOID: utxoID,
-				Asset:  dione.Asset{ID: vm.ctx.DIONEAssetID},
+				Asset:  avax.Asset{ID: vm.ctx.AVAXAssetID},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: importAmount,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -1873,10 +1873,10 @@ func TestNewExportTxMulticoin(t *testing.T) {
 
 			tid := ids.GenerateTestID()
 			importAmount2 := uint64(30000000)
-			utxoID2 := dione.UTXOID{TxID: ids.GenerateTestID()}
-			utxo2 := &dione.UTXO{
+			utxoID2 := avax.UTXOID{TxID: ids.GenerateTestID()}
+			utxo2 := &avax.UTXO{
 				UTXOID: utxoID2,
-				Asset:  dione.Asset{ID: tid},
+				Asset:  avax.Asset{ID: tid},
 				Out: &secp256k1fx.TransferOutput{
 					Amt: importAmount2,
 					OutputOwners: secp256k1fx.OutputOwners{
@@ -1890,9 +1890,9 @@ func TestNewExportTxMulticoin(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			aChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.AChainID)
+			xChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.XChainID)
 			inputID2 := utxo2.InputID()
-			if err := aChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{
+			if err := xChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{
 				{
 					Key:   inputID[:],
 					Value: utxoBytes,
@@ -1911,7 +1911,7 @@ func TestNewExportTxMulticoin(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			tx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+			tx, err := vm.newImportTx(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1948,7 +1948,7 @@ func TestNewExportTxMulticoin(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			tx, err = vm.newExportTx(tid, exportAmount, vm.ctx.AChainID, exportId, initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+			tx, err = vm.newExportTx(tid, exportAmount, vm.ctx.XChainID, exportId, initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1983,8 +1983,8 @@ func TestNewExportTxMulticoin(t *testing.T) {
 			}
 
 			addr := GetEthAddress(testKeys[0])
-			if stdb.GetBalance(addr).Cmp(new(big.Int).SetUint64(test.bal*units.Dione)) != 0 {
-				t.Fatalf("address balance %s equal %s not %s", addr.String(), stdb.GetBalance(addr), new(big.Int).SetUint64(test.bal*units.Dione))
+			if stdb.GetBalance(addr).Cmp(new(big.Int).SetUint64(test.bal*units.Avax)) != 0 {
+				t.Fatalf("address balance %s equal %s not %s", addr.String(), stdb.GetBalance(addr), new(big.Int).SetUint64(test.bal*units.Avax))
 			}
 			if stdb.GetBalanceMultiCoin(addr, common.BytesToHash(tid[:])).Cmp(new(big.Int).SetUint64(test.balmc)) != 0 {
 				t.Fatalf("address balance multicoin %s equal %s not %s", addr.String(), stdb.GetBalanceMultiCoin(addr, common.BytesToHash(tid[:])), new(big.Int).SetUint64(test.balmc))

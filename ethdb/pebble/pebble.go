@@ -37,8 +37,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/DioneProtocol/coreth/ethdb"
-	"github.com/DioneProtocol/coreth/metrics"
+	"github.com/ava-labs/coreth/ethdb"
+	"github.com/ava-labs/coreth/metrics"
 	"github.com/cockroachdb/pebble"
 	"github.com/cockroachdb/pebble/bloom"
 	"github.com/ethereum/go-ethereum/common"

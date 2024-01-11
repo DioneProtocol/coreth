@@ -34,23 +34,23 @@ import (
 	"sync"
 	"time"
 
-	"github.com/DioneProtocol/coreth/eth"
-	"github.com/DioneProtocol/coreth/vmerrs"
+	"github.com/ava-labs/coreth/eth"
+	"github.com/ava-labs/coreth/vmerrs"
 
-	"github.com/DioneProtocol/coreth/accounts/abi"
-	"github.com/DioneProtocol/coreth/accounts/abi/bind"
-	"github.com/DioneProtocol/coreth/consensus/dummy"
-	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/bloombits"
-	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/core/state"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/core/vm"
-	"github.com/DioneProtocol/coreth/eth/filters"
-	"github.com/DioneProtocol/coreth/ethdb"
-	"github.com/DioneProtocol/coreth/interfaces"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/rpc"
+	"github.com/ava-labs/coreth/accounts/abi"
+	"github.com/ava-labs/coreth/accounts/abi/bind"
+	"github.com/ava-labs/coreth/consensus/dummy"
+	"github.com/ava-labs/coreth/core"
+	"github.com/ava-labs/coreth/core/bloombits"
+	"github.com/ava-labs/coreth/core/rawdb"
+	"github.com/ava-labs/coreth/core/state"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/core/vm"
+	"github.com/ava-labs/coreth/eth/filters"
+	"github.com/ava-labs/coreth/ethdb"
+	"github.com/ava-labs/coreth/interfaces"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -649,7 +649,7 @@ func (b *SimulatedBackend) callContract(ctx context.Context, call interfaces.Cal
 		return nil, errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
 	}
 	head := b.blockchain.CurrentHeader()
-	if !b.blockchain.Config().IsOdyPhase3(head.Time) {
+	if !b.blockchain.Config().IsApricotPhase3(head.Time) {
 		// If there's no basefee, then it must be a non-1559 execution
 		if call.GasPrice == nil {
 			call.GasPrice = new(big.Int)

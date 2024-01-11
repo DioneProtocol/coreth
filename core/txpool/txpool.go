@@ -36,14 +36,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/DioneProtocol/coreth/consensus/dummy"
-	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/state"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/metrics"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/utils"
-	"github.com/DioneProtocol/coreth/vmerrs"
+	"github.com/ava-labs/coreth/consensus/dummy"
+	"github.com/ava-labs/coreth/core"
+	"github.com/ava-labs/coreth/core/state"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/metrics"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/utils"
+	"github.com/ava-labs/coreth/vmerrs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/prque"
 	"github.com/ethereum/go-ethereum/event"
@@ -114,7 +114,7 @@ var (
 var (
 	evictionInterval      = time.Minute      // Time interval to check for evictable transactions
 	statsReportInterval   = 8 * time.Second  // Time interval to report transaction pool stats
-	baseFeeUpdateInterval = 10 * time.Second // Time interval at which to schedule a base fee update for the tx pool after Ody Phase 3 is enabled
+	baseFeeUpdateInterval = 10 * time.Second // Time interval at which to schedule a base fee update for the tx pool after Apricot Phase 3 is enabled
 )
 
 var (
@@ -1387,7 +1387,7 @@ func (pool *TxPool) runReorg(done chan struct{}, reset *txpoolResetRequest, dirt
 	// because of another transaction (e.g. higher gas price).
 	if reset != nil {
 		pool.demoteUnexecutables()
-		if reset.newHead != nil && pool.chainconfig.IsOdyPhase3(reset.newHead.Time) {
+		if reset.newHead != nil && pool.chainconfig.IsApricotPhase3(reset.newHead.Time) {
 			_, baseFeeEstimate, err := dummy.EstimateNextBaseFee(pool.chainconfig, reset.newHead, uint64(time.Now().Unix()))
 			if err == nil {
 				pool.priced.SetBaseFee(baseFeeEstimate)
@@ -1521,8 +1521,8 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 	// Update all fork indicator by next pending block number.
 	next := new(big.Int).Add(newHead.Number, big.NewInt(1))
 	pool.istanbul.Store(pool.chainconfig.IsIstanbul(next))
-	pool.eip2718.Store(pool.chainconfig.IsOdyPhase2(newHead.Time))
-	pool.eip1559.Store(pool.chainconfig.IsOdyPhase3(newHead.Time))
+	pool.eip2718.Store(pool.chainconfig.IsApricotPhase2(newHead.Time))
+	pool.eip1559.Store(pool.chainconfig.IsApricotPhase3(newHead.Time))
 	pool.eip3860.Store(pool.chainconfig.IsDUpgrade(newHead.Time))
 }
 
@@ -1789,13 +1789,13 @@ func (pool *TxPool) demoteUnexecutables() {
 }
 
 func (pool *TxPool) startPeriodicFeeUpdate() {
-	if pool.chainconfig.OdyPhase3BlockTimestamp == nil {
+	if pool.chainconfig.ApricotPhase3BlockTimestamp == nil {
 		return
 	}
 
 	// Call updateBaseFee here to ensure that there is not a [baseFeeUpdateInterval] delay
-	// when starting up in OdyPhase3 before the base fee is updated.
-	if time.Now().After(utils.Uint64ToTime(pool.chainconfig.OdyPhase3BlockTimestamp)) {
+	// when starting up in ApricotPhase3 before the base fee is updated.
+	if time.Now().After(utils.Uint64ToTime(pool.chainconfig.ApricotPhase3BlockTimestamp)) {
 		pool.updateBaseFee()
 	}
 
@@ -1808,7 +1808,7 @@ func (pool *TxPool) periodicBaseFeeUpdate() {
 
 	// Sleep until its time to start the periodic base fee update or the tx pool is shutting down
 	select {
-	case <-time.After(time.Until(utils.Uint64ToTime(pool.chainconfig.OdyPhase3BlockTimestamp))):
+	case <-time.After(time.Until(utils.Uint64ToTime(pool.chainconfig.ApricotPhase3BlockTimestamp))):
 	case <-pool.generalShutdownChan:
 		return // Return early if shutting down
 	}

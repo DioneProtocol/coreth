@@ -6,7 +6,7 @@ package precompile
 import (
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/DioneProtocol/coreth/utils"
+	"github.com/ava-labs/coreth/utils"
 )
 
 // StatefulPrecompileConfig defines the interface for a stateful precompile to

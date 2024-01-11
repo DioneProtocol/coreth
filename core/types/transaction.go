@@ -531,7 +531,7 @@ type TxWithMinerFee struct {
 // NewTxWithMinerFee creates a wrapped transaction, calculating the effective
 // miner gasTipCap if a base fee is provided.
 // Returns error in case of a negative effective miner gasTipCap.
-func NewTxWithMinerFee(tx *Transaction, baseFee *big.Int) (*TxWithMinerFee, error) { // @here
+func NewTxWithMinerFee(tx *Transaction, baseFee *big.Int) (*TxWithMinerFee, error) {
 	minerFee, err := tx.EffectiveGasTip(baseFee)
 	if err != nil {
 		return nil, err

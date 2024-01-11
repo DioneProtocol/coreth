@@ -34,12 +34,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/core/vm"
-	"github.com/DioneProtocol/coreth/eth/tracers"
-	"github.com/DioneProtocol/coreth/tests"
+	"github.com/ava-labs/coreth/core"
+	"github.com/ava-labs/coreth/core/rawdb"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/core/vm"
+	"github.com/ava-labs/coreth/eth/tracers"
+	"github.com/ava-labs/coreth/tests"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -74,8 +74,8 @@ func TestPrestateWithDiffModeTracer(t *testing.T) {
 	testPrestateDiffTracer("prestateTracer", "prestate_tracer_with_diff_mode", t)
 }
 
-func TestPrestateWithDiffModeONTTracer(t *testing.T) {
-	testPrestateDiffTracer("prestateTracer", "prestate_tracer_ont", t)
+func TestPrestateWithDiffModeANTTracer(t *testing.T) {
+	testPrestateDiffTracer("prestateTracer", "prestate_tracer_ant", t)
 }
 
 func testPrestateDiffTracer(tracerName string, dirPath string, t *testing.T) {

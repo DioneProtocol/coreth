@@ -8,50 +8,50 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/DioneProtocol/odysseygo/utils/wrappers"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 )
 
 var (
-	OdyPhase3MinBaseFee = big.NewInt(params.OdyPhase3MinBaseFee)
-	OdyPhase3MaxBaseFee = big.NewInt(params.OdyPhase3MaxBaseFee)
-	OdyPhase4MinBaseFee = big.NewInt(params.OdyPhase4MinBaseFee)
-	OdyPhase4MaxBaseFee = big.NewInt(params.OdyPhase4MaxBaseFee)
+	ApricotPhase3MinBaseFee = big.NewInt(params.ApricotPhase3MinBaseFee)
+	ApricotPhase3MaxBaseFee = big.NewInt(params.ApricotPhase3MaxBaseFee)
+	ApricotPhase4MinBaseFee = big.NewInt(params.ApricotPhase4MinBaseFee)
+	ApricotPhase4MaxBaseFee = big.NewInt(params.ApricotPhase4MaxBaseFee)
 
-	OdyPhase4BaseFeeChangeDenominator = new(big.Int).SetUint64(params.OdyPhase4BaseFeeChangeDenominator)
-	OdyPhase5BaseFeeChangeDenominator = new(big.Int).SetUint64(params.OdyPhase5BaseFeeChangeDenominator)
+	ApricotPhase4BaseFeeChangeDenominator = new(big.Int).SetUint64(params.ApricotPhase4BaseFeeChangeDenominator)
+	ApricotPhase5BaseFeeChangeDenominator = new(big.Int).SetUint64(params.ApricotPhase5BaseFeeChangeDenominator)
 
-	OdyPhase3BlockGasFee      uint64 = 1_000_000
-	OdyPhase4MinBlockGasCost         = new(big.Int).Set(common.Big0)
-	OdyPhase4MaxBlockGasCost         = big.NewInt(1_000_000)
-	OdyPhase4BlockGasCostStep        = big.NewInt(50_000)
-	OdyPhase4TargetBlockRate  uint64 = 2 // in seconds
-	OdyPhase5BlockGasCostStep        = big.NewInt(200_000)
+	ApricotPhase3BlockGasFee      uint64 = 1_000_000
+	ApricotPhase4MinBlockGasCost         = new(big.Int).Set(common.Big0)
+	ApricotPhase4MaxBlockGasCost         = big.NewInt(1_000_000)
+	ApricotPhase4BlockGasCostStep        = big.NewInt(50_000)
+	ApricotPhase4TargetBlockRate  uint64 = 2 // in seconds
+	ApricotPhase5BlockGasCostStep        = big.NewInt(200_000)
 	rollupWindow                  uint64 = 10
 )
 
 // CalcBaseFee takes the previous header and the timestamp of its child block
 // and calculates the expected base fee as well as the encoding of the past
 // pricing information for the child block.
-// CalcBaseFee should only be called if [timestamp] >= [config.OdyPhase3Timestamp]
+// CalcBaseFee should only be called if [timestamp] >= [config.ApricotPhase3Timestamp]
 func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uint64) ([]byte, *big.Int, error) {
 	// If the current block is the first EIP-1559 block, or it is the genesis block
 	// return the initial slice and initial base fee.
 	var (
-		isOdyPhase3 = config.IsOdyPhase3(parent.Time)
-		isOdyPhase4 = config.IsOdyPhase4(parent.Time)
-		isOdyPhase5 = config.IsOdyPhase5(parent.Time)
+		isApricotPhase3 = config.IsApricotPhase3(parent.Time)
+		isApricotPhase4 = config.IsApricotPhase4(parent.Time)
+		isApricotPhase5 = config.IsApricotPhase5(parent.Time)
 	)
-	if !isOdyPhase3 || parent.Number.Cmp(common.Big0) == 0 {
-		initialSlice := make([]byte, params.OdyPhase3ExtraDataSize)
-		initialBaseFee := big.NewInt(params.OdyPhase3InitialBaseFee)
+	if !isApricotPhase3 || parent.Number.Cmp(common.Big0) == 0 {
+		initialSlice := make([]byte, params.ApricotPhase3ExtraDataSize)
+		initialBaseFee := big.NewInt(params.ApricotPhase3InitialBaseFee)
 		return initialSlice, initialBaseFee, nil
 	}
-	if uint64(len(parent.Extra)) != params.OdyPhase3ExtraDataSize {
-		return nil, nil, fmt.Errorf("expected length of parent extra data to be %d, but found %d", params.OdyPhase3ExtraDataSize, len(parent.Extra))
+	if uint64(len(parent.Extra)) != params.ApricotPhase3ExtraDataSize {
+		return nil, nil, fmt.Errorf("expected length of parent extra data to be %d, but found %d", params.ApricotPhase3ExtraDataSize, len(parent.Extra))
 	}
 
 	if timestamp < parent.Time {
@@ -66,16 +66,16 @@ func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uin
 		return nil, nil, err
 	}
 
-	// If OP5, use a less responsive [BaseFeeChangeDenominator] and a higher gas
+	// If AP5, use a less responsive [BaseFeeChangeDenominator] and a higher gas
 	// block limit
 	var (
 		baseFee                  = new(big.Int).Set(parent.BaseFee)
-		baseFeeChangeDenominator = OdyPhase4BaseFeeChangeDenominator
-		parentGasTarget          = params.OdyPhase3TargetGas
+		baseFeeChangeDenominator = ApricotPhase4BaseFeeChangeDenominator
+		parentGasTarget          = params.ApricotPhase3TargetGas
 	)
-	if isOdyPhase5 {
-		baseFeeChangeDenominator = OdyPhase5BaseFeeChangeDenominator
-		parentGasTarget = params.OdyPhase5TargetGas
+	if isApricotPhase5 {
+		baseFeeChangeDenominator = ApricotPhase5BaseFeeChangeDenominator
+		parentGasTarget = params.ApricotPhase5TargetGas
 	}
 	parentGasTargetBig := new(big.Int).SetUint64(parentGasTarget)
 
@@ -85,33 +85,33 @@ func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uin
 	if roll < rollupWindow {
 		var blockGasCost, parentExtraStateGasUsed uint64
 		switch {
-		case isOdyPhase5:
-			// [blockGasCost] has been removed in OP5, so it is left as 0.
+		case isApricotPhase5:
+			// [blockGasCost] has been removed in AP5, so it is left as 0.
 
 			// At the start of a new network, the parent
 			// may not have a populated [ExtDataGasUsed].
 			if parent.ExtDataGasUsed != nil {
 				parentExtraStateGasUsed = parent.ExtDataGasUsed.Uint64()
 			}
-		case isOdyPhase4:
+		case isApricotPhase4:
 			// The [blockGasCost] is paid by the effective tips in the block using
 			// the block's value of [baseFee].
 			blockGasCost = calcBlockGasCost(
-				OdyPhase4TargetBlockRate,
-				OdyPhase4MinBlockGasCost,
-				OdyPhase4MaxBlockGasCost,
-				OdyPhase4BlockGasCostStep,
+				ApricotPhase4TargetBlockRate,
+				ApricotPhase4MinBlockGasCost,
+				ApricotPhase4MaxBlockGasCost,
+				ApricotPhase4BlockGasCostStep,
 				parent.BlockGasCost,
 				parent.Time, timestamp,
 			).Uint64()
 
-			// On the boundary of OP3 and OP4 or at the start of a new network, the parent
+			// On the boundary of AP3 and AP4 or at the start of a new network, the parent
 			// may not have a populated [ExtDataGasUsed].
 			if parent.ExtDataGasUsed != nil {
 				parentExtraStateGasUsed = parent.ExtDataGasUsed.Uint64()
 			}
 		default:
-			blockGasCost = OdyPhase3BlockGasFee
+			blockGasCost = ApricotPhase3BlockGasFee
 		}
 
 		// Compute the new state of the gas rolling window.
@@ -120,8 +120,8 @@ func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uin
 			addedGas = math.MaxUint64
 		}
 
-		// Only add the [blockGasCost] to the gas used if it isn't OP5
-		if !isOdyPhase5 {
+		// Only add the [blockGasCost] to the gas used if it isn't AP5
+		if !isApricotPhase5 {
 			addedGas, overflow = math.SafeAdd(addedGas, blockGasCost)
 			if overflow {
 				addedGas = math.MaxUint64
@@ -174,12 +174,12 @@ func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uin
 
 	// Ensure that the base fee does not increase/decrease outside of the bounds
 	switch {
-	case isOdyPhase5:
-		baseFee = selectBigWithinBounds(OdyPhase4MinBaseFee, baseFee, nil)
-	case isOdyPhase4:
-		baseFee = selectBigWithinBounds(OdyPhase4MinBaseFee, baseFee, OdyPhase4MaxBaseFee)
+	case isApricotPhase5:
+		baseFee = selectBigWithinBounds(ApricotPhase4MinBaseFee, baseFee, nil)
+	case isApricotPhase4:
+		baseFee = selectBigWithinBounds(ApricotPhase4MinBaseFee, baseFee, ApricotPhase4MaxBaseFee)
 	default:
-		baseFee = selectBigWithinBounds(OdyPhase3MinBaseFee, baseFee, OdyPhase3MaxBaseFee)
+		baseFee = selectBigWithinBounds(ApricotPhase3MinBaseFee, baseFee, ApricotPhase3MaxBaseFee)
 	}
 
 	return newRollupWindow, baseFee, nil
@@ -291,7 +291,7 @@ func calcBlockGasCost(
 	parentBlockGasCost *big.Int,
 	parentTime, currentTime uint64,
 ) *big.Int {
-	// Handle OP3/OP4 boundary by returning the minimum value as the boundary.
+	// Handle AP3/AP4 boundary by returning the minimum value as the boundary.
 	if parentBlockGasCost == nil {
 		return new(big.Int).Set(minBlockGasCost)
 	}
@@ -326,9 +326,9 @@ func calcBlockGasCost(
 // correctness check performed is that the sum of all tips is >= the
 // required block fee.
 //
-// This function will return nil for all return values prior to Ody Phase 4.
+// This function will return nil for all return values prior to Apricot Phase 4.
 func MinRequiredTip(config *params.ChainConfig, header *types.Header) (*big.Int, error) {
-	if !config.IsOdyPhase4(header.Time) {
+	if !config.IsApricotPhase4(header.Time) {
 		return nil, nil
 	}
 	if header.BaseFee == nil {

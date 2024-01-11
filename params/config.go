@@ -32,27 +32,27 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/DioneProtocol/coreth/precompile"
-	"github.com/DioneProtocol/coreth/utils"
+	"github.com/ava-labs/coreth/precompile"
+	"github.com/ava-labs/coreth/utils"
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// Odyssey ChainIDs
+// Avalanche ChainIDs
 var (
-	// OdysseyMainnetChainID ...
-	OdysseyMainnetChainID = big.NewInt(153)
-	// OdysseyOdytChainID ...
-	OdysseyOdytChainID = big.NewInt(13)
-	// OdysseyLocalChainID ...
-	OdysseyLocalChainID = big.NewInt(12)
+	// AvalancheMainnetChainID ...
+	AvalancheMainnetChainID = big.NewInt(43114)
+	// AvalancheFujiChainID ...
+	AvalancheFujiChainID = big.NewInt(43113)
+	// AvalancheLocalChainID ...
+	AvalancheLocalChainID = big.NewInt(43112)
 
 	errNonGenesisForkByHeight = errors.New("coreth only supports forking by height at the genesis block")
 )
 
 var (
-	// OdysseyMainnetChainConfig is the configuration for Odyssey Main Network
-	OdysseyMainnetChainConfig = &ChainConfig{
-		ChainID:                         OdysseyMainnetChainID,
+	// AvalancheMainnetChainConfig is the configuration for Avalanche Main Network
+	AvalancheMainnetChainConfig = &ChainConfig{
+		ChainID:                         AvalancheMainnetChainID,
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    big.NewInt(0),
 		DAOForkSupport:                  true,
@@ -64,22 +64,22 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase5BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePre6BlockTimestamp:  	 utils.NewUint64(0),
-		OdyPhase6BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePost6BlockTimestamp: 	 utils.NewUint64(0),
-		OdyPhase7BlockTimestamp:     	 nil,
-		BanffBlockTimestamp:             utils.NewUint64(0),
-		CortinaBlockTimestamp:           utils.NewUint64(0),
+		ApricotPhase1BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.March, 31, 14, 0, 0, 0, time.UTC)),
+		ApricotPhase2BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.May, 10, 11, 0, 0, 0, time.UTC)),
+		ApricotPhase3BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.August, 24, 14, 0, 0, 0, time.UTC)),
+		ApricotPhase4BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.September, 22, 21, 0, 0, 0, time.UTC)),
+		ApricotPhase5BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.December, 2, 18, 0, 0, 0, time.UTC)),
+		ApricotPhasePre6BlockTimestamp:  utils.TimeToNewUint64(time.Date(2022, time.September, 5, 1, 30, 0, 0, time.UTC)),
+		ApricotPhase6BlockTimestamp:     utils.TimeToNewUint64(time.Date(2022, time.September, 6, 20, 0, 0, 0, time.UTC)),
+		ApricotPhasePost6BlockTimestamp: utils.TimeToNewUint64(time.Date(2022, time.September, 7, 3, 0, 0, 0, time.UTC)),
+		BanffBlockTimestamp:             utils.TimeToNewUint64(time.Date(2022, time.October, 18, 16, 0, 0, 0, time.UTC)),
+		CortinaBlockTimestamp:           utils.TimeToNewUint64(time.Date(2023, time.April, 25, 15, 0, 0, 0, time.UTC)),
+		// TODO Add DUpgrade timestamp
 	}
 
-	// OdysseyOdytChainConfig is the configuration for the Odyt Test Network
-	OdysseyOdytChainConfig = &ChainConfig{
-		ChainID:                         OdysseyOdytChainID,
+	// AvalancheFujiChainConfig is the configuration for the Fuji Test Network
+	AvalancheFujiChainConfig = &ChainConfig{
+		ChainID:                         AvalancheFujiChainID,
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    big.NewInt(0),
 		DAOForkSupport:                  true,
@@ -91,22 +91,22 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase5BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePre6BlockTimestamp:  	 utils.NewUint64(0),
-		OdyPhase6BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePost6BlockTimestamp: 	 utils.NewUint64(0),
-		OdyPhase7BlockTimestamp:     	 nil,
-		BanffBlockTimestamp:             utils.NewUint64(0),
-		CortinaBlockTimestamp:           utils.NewUint64(0),
+		ApricotPhase1BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.March, 26, 14, 0, 0, 0, time.UTC)),
+		ApricotPhase2BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.May, 5, 14, 0, 0, 0, time.UTC)),
+		ApricotPhase3BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.August, 16, 19, 0, 0, 0, time.UTC)),
+		ApricotPhase4BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.September, 16, 21, 0, 0, 0, time.UTC)),
+		ApricotPhase5BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.November, 24, 15, 0, 0, 0, time.UTC)),
+		ApricotPhasePre6BlockTimestamp:  utils.TimeToNewUint64(time.Date(2022, time.September, 6, 20, 0, 0, 0, time.UTC)),
+		ApricotPhase6BlockTimestamp:     utils.TimeToNewUint64(time.Date(2022, time.September, 6, 20, 0, 0, 0, time.UTC)),
+		ApricotPhasePost6BlockTimestamp: utils.TimeToNewUint64(time.Date(2022, time.September, 7, 6, 0, 0, 0, time.UTC)),
+		BanffBlockTimestamp:             utils.TimeToNewUint64(time.Date(2022, time.October, 3, 14, 0, 0, 0, time.UTC)),
+		CortinaBlockTimestamp:           utils.TimeToNewUint64(time.Date(2023, time.April, 6, 15, 0, 0, 0, time.UTC)),
+		// TODO Add DUpgrade timestamp
 	}
 
-	// OdysseyLocalChainConfig is the configuration for the Odyssey Local Network
-	OdysseyLocalChainConfig = &ChainConfig{
-		ChainID:                         OdysseyLocalChainID,
+	// AvalancheLocalChainConfig is the configuration for the Avalanche Local Network
+	AvalancheLocalChainConfig = &ChainConfig{
+		ChainID:                         AvalancheLocalChainID,
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    big.NewInt(0),
 		DAOForkSupport:                  true,
@@ -118,22 +118,21 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase5BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePre6BlockTimestamp:  	 utils.NewUint64(0),
-		OdyPhase6BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePost6BlockTimestamp: 	 utils.NewUint64(0),
-		OdyPhase7BlockTimestamp:     	 nil,
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+		ApricotPhase6BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          utils.NewUint64(0),
 	}
 
 	TestChainConfig = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
+		AvalancheContext:                AvalancheContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    nil,
@@ -146,22 +145,21 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase5BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePre6BlockTimestamp:  	 utils.NewUint64(0),
-		OdyPhase6BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePost6BlockTimestamp: 	 utils.NewUint64(0),
-		OdyPhase7BlockTimestamp:     	 nil,
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+		ApricotPhase6BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          utils.NewUint64(0),
 	}
 
 	TestLaunchConfig = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
+		AvalancheContext:                AvalancheContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    nil,
@@ -174,22 +172,21 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 nil,
-		OdyPhase2BlockTimestamp:     	 nil,
-		OdyPhase3BlockTimestamp:     	 nil,
-		OdyPhase4BlockTimestamp:     	 nil,
-		OdyPhase5BlockTimestamp:     	 nil,
-		OdyPhasePre6BlockTimestamp:  	 nil,
-		OdyPhase6BlockTimestamp:     	 nil,
-		OdyPhasePost6BlockTimestamp: 	 nil,
-		OdyPhase7BlockTimestamp:     	 nil,
+		ApricotPhase1BlockTimestamp:     nil,
+		ApricotPhase2BlockTimestamp:     nil,
+		ApricotPhase3BlockTimestamp:     nil,
+		ApricotPhase4BlockTimestamp:     nil,
+		ApricotPhase5BlockTimestamp:     nil,
+		ApricotPhasePre6BlockTimestamp:  nil,
+		ApricotPhase6BlockTimestamp:     nil,
+		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
 	}
 
-	TestOdyPhase1Config = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
+	TestApricotPhase1Config = &ChainConfig{
+		AvalancheContext:                AvalancheContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    nil,
@@ -202,22 +199,21 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 nil,
-		OdyPhase3BlockTimestamp:     	 nil,
-		OdyPhase4BlockTimestamp:     	 nil,
-		OdyPhase5BlockTimestamp:     	 nil,
-		OdyPhasePre6BlockTimestamp:  	 nil,
-		OdyPhase6BlockTimestamp:     	 nil,
-		OdyPhasePost6BlockTimestamp: 	 nil,
-		OdyPhase7BlockTimestamp:     	 nil,
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     nil,
+		ApricotPhase3BlockTimestamp:     nil,
+		ApricotPhase4BlockTimestamp:     nil,
+		ApricotPhase5BlockTimestamp:     nil,
+		ApricotPhasePre6BlockTimestamp:  nil,
+		ApricotPhase6BlockTimestamp:     nil,
+		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
 	}
 
-	TestOdyPhase2Config = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
+	TestApricotPhase2Config = &ChainConfig{
+		AvalancheContext:                AvalancheContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    nil,
@@ -230,21 +226,21 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 nil,
-		OdyPhase4BlockTimestamp:     	 nil,
-		OdyPhase5BlockTimestamp:     	 nil,
-		OdyPhasePre6BlockTimestamp:  	 nil,
-		OdyPhase6BlockTimestamp:     	 nil,
-		OdyPhasePost6BlockTimestamp: 	 nil,
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     nil,
+		ApricotPhase4BlockTimestamp:     nil,
+		ApricotPhase5BlockTimestamp:     nil,
+		ApricotPhasePre6BlockTimestamp:  nil,
+		ApricotPhase6BlockTimestamp:     nil,
+		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
 	}
 
-	TestOdyPhase3Config = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
+	TestApricotPhase3Config = &ChainConfig{
+		AvalancheContext:                AvalancheContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    nil,
@@ -257,22 +253,21 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 nil,
-		OdyPhase5BlockTimestamp:     	 nil,
-		OdyPhasePre6BlockTimestamp:  	 nil,
-		OdyPhase6BlockTimestamp:     	 nil,
-		OdyPhasePost6BlockTimestamp: 	 nil,
-		OdyPhase7BlockTimestamp:     	 nil,
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     nil,
+		ApricotPhase5BlockTimestamp:     nil,
+		ApricotPhasePre6BlockTimestamp:  nil,
+		ApricotPhase6BlockTimestamp:     nil,
+		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
 	}
 
-	TestOdyPhase4Config = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
+	TestApricotPhase4Config = &ChainConfig{
+		AvalancheContext:                AvalancheContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    nil,
@@ -285,22 +280,21 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:    	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase5BlockTimestamp:   	     nil,
-		OdyPhasePre6BlockTimestamp:  	 nil,
-		OdyPhase6BlockTimestamp:     	 nil,
-		OdyPhasePost6BlockTimestamp: 	 nil,
-		OdyPhase7BlockTimestamp:     	 nil,
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     nil,
+		ApricotPhasePre6BlockTimestamp:  nil,
+		ApricotPhase6BlockTimestamp:     nil,
+		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
 	}
 
-	TestOdyPhase5Config = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
+	TestApricotPhase5Config = &ChainConfig{
+		AvalancheContext:                AvalancheContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    nil,
@@ -313,22 +307,21 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase5BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePre6BlockTimestamp:  	 nil,
-		OdyPhase6BlockTimestamp:     	 nil,
-		OdyPhasePost6BlockTimestamp: 	 nil,
-		OdyPhase7BlockTimestamp:     	 nil,
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  nil,
+		ApricotPhase6BlockTimestamp:     nil,
+		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
 	}
 
-	TestOdyPhasePre6Config = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
+	TestApricotPhasePre6Config = &ChainConfig{
+		AvalancheContext:                AvalancheContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    nil,
@@ -341,22 +334,21 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase5BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePre6BlockTimestamp:  	 utils.NewUint64(0),
-		OdyPhase6BlockTimestamp:     	 nil,
-		OdyPhasePost6BlockTimestamp: 	 nil,
-		OdyPhase7BlockTimestamp:     	 nil,
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+		ApricotPhase6BlockTimestamp:     nil,
+		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
 	}
 
-	TestOdyPhase6Config = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
+	TestApricotPhase6Config = &ChainConfig{
+		AvalancheContext:                AvalancheContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    nil,
@@ -369,22 +361,21 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase5BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePre6BlockTimestamp:  	 utils.NewUint64(0),
-		OdyPhase6BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePost6BlockTimestamp: 	 nil,
-		OdyPhase7BlockTimestamp:     	 nil,
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+		ApricotPhase6BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
 	}
 
-	TestOdyPhasePost6Config = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
+	TestApricotPhasePost6Config = &ChainConfig{
+		AvalancheContext:                AvalancheContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    nil,
@@ -397,50 +388,21 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase5BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePre6BlockTimestamp:  	 utils.NewUint64(0),
-		OdyPhase6BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePost6BlockTimestamp: 	 utils.NewUint64(0),
-		OdyPhase7BlockTimestamp:     	 nil,
-		BanffBlockTimestamp:             nil,
-		CortinaBlockTimestamp:           nil,
-		DUpgradeBlockTimestamp:          nil,
-	}
-
-	TestOdyPhase7Config = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
-		ChainID:                         big.NewInt(1),
-		HomesteadBlock:                  big.NewInt(0),
-		DAOForkBlock:                    nil,
-		DAOForkSupport:                  false,
-		EIP150Block:                     big.NewInt(0),
-		EIP155Block:                     big.NewInt(0),
-		EIP158Block:                     big.NewInt(0),
-		ByzantiumBlock:                  big.NewInt(0),
-		ConstantinopleBlock:             big.NewInt(0),
-		PetersburgBlock:                 big.NewInt(0),
-		IstanbulBlock:                   big.NewInt(0),
-		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase5BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePre6BlockTimestamp:  	 utils.NewUint64(0),
-		OdyPhase6BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePost6BlockTimestamp: 	 utils.NewUint64(0),
-		OdyPhase7BlockTimestamp:     	 utils.NewUint64(0),
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+		ApricotPhase6BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
 	}
 
 	TestBanffChainConfig = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
+		AvalancheContext:                AvalancheContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    nil,
@@ -453,22 +415,21 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase5BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePre6BlockTimestamp:  	 utils.NewUint64(0),
-		OdyPhase6BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePost6BlockTimestamp: 	 utils.NewUint64(0),
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+		ApricotPhase6BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
-		OdyPhase7BlockTimestamp:     	 nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
 	}
 
 	TestCortinaChainConfig = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
+		AvalancheContext:                AvalancheContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    nil,
@@ -481,22 +442,21 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase5BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePre6BlockTimestamp:  	 utils.NewUint64(0),
-		OdyPhase6BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePost6BlockTimestamp: 	 utils.NewUint64(0),
-		OdyPhase7BlockTimestamp:     	 nil,
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+		ApricotPhase6BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          nil,
 	}
 
 	TestDUpgradeChainConfig = &ChainConfig{
-		OdysseyContext:                OdysseyContext{common.Hash{1}},
+		AvalancheContext:                AvalancheContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    nil,
@@ -509,20 +469,19 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		OdyPhase1BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase2BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase3BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase4BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhase5BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePre6BlockTimestamp:  	 utils.NewUint64(0),
-		OdyPhase6BlockTimestamp:     	 utils.NewUint64(0),
-		OdyPhasePost6BlockTimestamp: 	 utils.NewUint64(0),
-		OdyPhase7BlockTimestamp:     	 nil,
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+		ApricotPhase6BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 	}
 
-	TestRules = TestChainConfig.OdysseyRules(new(big.Int), 0)
+	TestRules = TestChainConfig.AvalancheRules(new(big.Int), 0)
 )
 
 // ChainConfig is the core config which determines the blockchain settings.
@@ -531,7 +490,7 @@ var (
 // that any network, identified by its genesis block, can have its own
 // set of configuration options.
 type ChainConfig struct {
-	OdysseyContext `json:"-"` // Odyssey specific context set during VM initialization. Not serialized.
+	AvalancheContext `json:"-"` // Avalanche specific context set during VM initialization. Not serialized.
 
 	ChainID *big.Int `json:"chainId"` // chainId identifies the current chain and is used for replay protection
 
@@ -551,24 +510,24 @@ type ChainConfig struct {
 	IstanbulBlock       *big.Int `json:"istanbulBlock,omitempty"`       // Istanbul switch block (nil = no fork, 0 = already on istanbul)
 	MuirGlacierBlock    *big.Int `json:"muirGlacierBlock,omitempty"`    // Eip-2384 (bomb delay) switch block (nil = no fork, 0 = already activated)
 
-	// Odyssey Network Upgrades
-	OdyPhase1BlockTimestamp *uint64 `json:"odyPhase1BlockTimestamp,omitempty"` // Ody Phase 1 Block Timestamp (nil = no fork, 0 = already activated)
-	// Ody Phase 2 Block Timestamp (nil = no fork, 0 = already activated)
-	// Ody Phase 2 includes a modified version of the Berlin Hard Fork from Ethereum
-	OdyPhase2BlockTimestamp *uint64 `json:"odyPhase2BlockTimestamp,omitempty"`
-	// Ody Phase 3 introduces dynamic fees and a modified version of the London Hard Fork from Ethereum (nil = no fork, 0 = already activated)
-	OdyPhase3BlockTimestamp *uint64 `json:"odyPhase3BlockTimestamp,omitempty"`
-	// Ody Phase 4 introduces the notion of a block fee to the dynamic fee algorithm (nil = no fork, 0 = already activated)
-	OdyPhase4BlockTimestamp *uint64 `json:"odyPhase4BlockTimestamp,omitempty"`
-	// Ody Phase 5 introduces a batch of atomic transactions with a maximum atomic gas limit per block. (nil = no fork, 0 = already activated)
-	OdyPhase5BlockTimestamp *uint64 `json:"odyPhase5BlockTimestamp,omitempty"`
-	// Ody Phase Pre-6 deprecates the NativeAssetCall precompile (soft). (nil = no fork, 0 = already activated)
-	OdyPhasePre6BlockTimestamp *uint64 `json:"odyPhasePre6BlockTimestamp,omitempty"`
-	// Ody Phase 6 deprecates the NativeAssetBalance and NativeAssetCall precompiles. (nil = no fork, 0 = already activated)
-	OdyPhase6BlockTimestamp *uint64 `json:"odyPhase6BlockTimestamp,omitempty"`
-	// Ody Phase Post-6 deprecates the NativeAssetCall precompile (soft). (nil = no fork, 0 = already activated)
-	OdyPhasePost6BlockTimestamp *uint64 `json:"odyPhasePost6BlockTimestamp,omitempty"`
-	// Banff restricts import/export transactions to DIONE. (nil = no fork, 0 = already activated)
+	// Avalanche Network Upgrades
+	ApricotPhase1BlockTimestamp *uint64 `json:"apricotPhase1BlockTimestamp,omitempty"` // Apricot Phase 1 Block Timestamp (nil = no fork, 0 = already activated)
+	// Apricot Phase 2 Block Timestamp (nil = no fork, 0 = already activated)
+	// Apricot Phase 2 includes a modified version of the Berlin Hard Fork from Ethereum
+	ApricotPhase2BlockTimestamp *uint64 `json:"apricotPhase2BlockTimestamp,omitempty"`
+	// Apricot Phase 3 introduces dynamic fees and a modified version of the London Hard Fork from Ethereum (nil = no fork, 0 = already activated)
+	ApricotPhase3BlockTimestamp *uint64 `json:"apricotPhase3BlockTimestamp,omitempty"`
+	// Apricot Phase 4 introduces the notion of a block fee to the dynamic fee algorithm (nil = no fork, 0 = already activated)
+	ApricotPhase4BlockTimestamp *uint64 `json:"apricotPhase4BlockTimestamp,omitempty"`
+	// Apricot Phase 5 introduces a batch of atomic transactions with a maximum atomic gas limit per block. (nil = no fork, 0 = already activated)
+	ApricotPhase5BlockTimestamp *uint64 `json:"apricotPhase5BlockTimestamp,omitempty"`
+	// Apricot Phase Pre-6 deprecates the NativeAssetCall precompile (soft). (nil = no fork, 0 = already activated)
+	ApricotPhasePre6BlockTimestamp *uint64 `json:"apricotPhasePre6BlockTimestamp,omitempty"`
+	// Apricot Phase 6 deprecates the NativeAssetBalance and NativeAssetCall precompiles. (nil = no fork, 0 = already activated)
+	ApricotPhase6BlockTimestamp *uint64 `json:"apricotPhase6BlockTimestamp,omitempty"`
+	// Apricot Phase Post-6 deprecates the NativeAssetCall precompile (soft). (nil = no fork, 0 = already activated)
+	ApricotPhasePost6BlockTimestamp *uint64 `json:"apricotPhasePost6BlockTimestamp,omitempty"`
+	// Banff restricts import/export transactions to AVAX. (nil = no fork, 0 = already activated)
 	BanffBlockTimestamp *uint64 `json:"banffBlockTimestamp,omitempty"`
 	// Cortina increases the block gas limit to 15M. (nil = no fork, 0 = already activated)
 	CortinaBlockTimestamp *uint64 `json:"cortinaBlockTimestamp,omitempty"`
@@ -576,12 +535,10 @@ type ChainConfig struct {
 	DUpgradeBlockTimestamp *uint64 `json:"dUpgradeBlockTimestamp,omitempty"`
 	// Cancun activates the Cancun upgrade from Ethereum. (nil = no fork, 0 = already activated)
 	CancunTime *uint64 `json:"cancunTime,omitempty"`
-	// Ody Phase 7 Enables new rewarding calculation based on the provided timestamp. (nil = no fork, 0 = already activated)
-	OdyPhase7BlockTimestamp *uint64 `json:"odyPhase7BlockTimestamp,omitempty"`
 }
 
-// OdysseyContext provides Odyssey specific context directly into the EVM.
-type OdysseyContext struct {
+// AvalancheContext provides Avalanche specific context directly into the EVM.
+type AvalancheContext struct {
 	BlockchainID common.Hash
 }
 
@@ -610,19 +567,18 @@ func (c *ChainConfig) Description() string {
 	if c.MuirGlacierBlock != nil {
 		banner += fmt.Sprintf(" - Muir Glacier:                #%-8v (https://github.com/ethereum/execution-specs/blob/master/network-upgrades/mainnet-upgrades/muir-glacier.md)\n", c.MuirGlacierBlock)
 	}
-	banner += fmt.Sprintf(" - Ody Phase 1 Timestamp:        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.3.0)\n", c.OdyPhase1BlockTimestamp)
-	banner += fmt.Sprintf(" - Ody Phase 2 Timestamp:        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.4.0)\n", c.OdyPhase2BlockTimestamp)
-	banner += fmt.Sprintf(" - Ody Phase 3 Timestamp:        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.5.0)\n", c.OdyPhase3BlockTimestamp)
-	banner += fmt.Sprintf(" - Ody Phase 4 Timestamp:        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.6.0)\n", c.OdyPhase4BlockTimestamp)
-	banner += fmt.Sprintf(" - Ody Phase 5 Timestamp:        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.7.0)\n", c.OdyPhase5BlockTimestamp)
-	banner += fmt.Sprintf(" - Ody Phase P6 Timestamp        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.8.0)\n", c.OdyPhasePre6BlockTimestamp)
-	banner += fmt.Sprintf(" - Ody Phase 6 Timestamp:        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.8.0)\n", c.OdyPhase6BlockTimestamp)
-	banner += fmt.Sprintf(" - Ody Phase Post-6 Timestamp:   #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.8.0\n", c.OdyPhasePost6BlockTimestamp)
-	banner += fmt.Sprintf(" - Banff Timestamp:              #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.9.0)\n", c.BanffBlockTimestamp)
-	banner += fmt.Sprintf(" - Cortina Timestamp:            #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.10.0)\n", c.CortinaBlockTimestamp)
-	banner += fmt.Sprintf(" - DUpgrade Timestamp:           #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.11.0)\n", c.DUpgradeBlockTimestamp)
-	banner += fmt.Sprintf(" - Cancun Timestamp:             #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.11.0)\n", c.DUpgradeBlockTimestamp)
-	banner += fmt.Sprintf(" - Ody Phase 7 Timestamp:  		#%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.12.0\n", c.OdyPhase7BlockTimestamp)
+	banner += fmt.Sprintf(" - Apricot Phase 1 Timestamp:        #%-8v (https://github.com/ava-labs/avalanchego/releases/tag/v1.3.0)\n", c.ApricotPhase1BlockTimestamp)
+	banner += fmt.Sprintf(" - Apricot Phase 2 Timestamp:        #%-8v (https://github.com/ava-labs/avalanchego/releases/tag/v1.4.0)\n", c.ApricotPhase2BlockTimestamp)
+	banner += fmt.Sprintf(" - Apricot Phase 3 Timestamp:        #%-8v (https://github.com/ava-labs/avalanchego/releases/tag/v1.5.0)\n", c.ApricotPhase3BlockTimestamp)
+	banner += fmt.Sprintf(" - Apricot Phase 4 Timestamp:        #%-8v (https://github.com/ava-labs/avalanchego/releases/tag/v1.6.0)\n", c.ApricotPhase4BlockTimestamp)
+	banner += fmt.Sprintf(" - Apricot Phase 5 Timestamp:        #%-8v (https://github.com/ava-labs/avalanchego/releases/tag/v1.7.0)\n", c.ApricotPhase5BlockTimestamp)
+	banner += fmt.Sprintf(" - Apricot Phase P6 Timestamp        #%-8v (https://github.com/ava-labs/avalanchego/releases/tag/v1.8.0)\n", c.ApricotPhasePre6BlockTimestamp)
+	banner += fmt.Sprintf(" - Apricot Phase 6 Timestamp:        #%-8v (https://github.com/ava-labs/avalanchego/releases/tag/v1.8.0)\n", c.ApricotPhase6BlockTimestamp)
+	banner += fmt.Sprintf(" - Apricot Phase Post-6 Timestamp:   #%-8v (https://github.com/ava-labs/avalanchego/releases/tag/v1.8.0\n", c.ApricotPhasePost6BlockTimestamp)
+	banner += fmt.Sprintf(" - Banff Timestamp:                  #%-8v (https://github.com/ava-labs/avalanchego/releases/tag/v1.9.0)\n", c.BanffBlockTimestamp)
+	banner += fmt.Sprintf(" - Cortina Timestamp:                #%-8v (https://github.com/ava-labs/avalanchego/releases/tag/v1.10.0)\n", c.CortinaBlockTimestamp)
+	banner += fmt.Sprintf(" - DUpgrade Timestamp:               #%-8v (https://github.com/ava-labs/avalanchego/releases/tag/v1.11.0)\n", c.DUpgradeBlockTimestamp)
+	banner += fmt.Sprintf(" - Cancun Timestamp:                 #%-8v (https://github.com/ava-labs/avalanchego/releases/tag/v1.11.0)\n", c.DUpgradeBlockTimestamp)
 	banner += "\n"
 	return banner
 }
@@ -679,60 +635,54 @@ func (c *ChainConfig) IsIstanbul(num *big.Int) bool {
 	return utils.IsBlockForked(c.IstanbulBlock, num)
 }
 
-// Odyssey Upgrades:
+// Avalanche Upgrades:
 
-// IsOdyPhase1 returns whether [time] represents a block
-// with a timestamp after the Ody Phase 1 upgrade time.
-func (c *ChainConfig) IsOdyPhase1(time uint64) bool {
-	return utils.IsTimestampForked(c.OdyPhase1BlockTimestamp, time)
+// IsApricotPhase1 returns whether [time] represents a block
+// with a timestamp after the Apricot Phase 1 upgrade time.
+func (c *ChainConfig) IsApricotPhase1(time uint64) bool {
+	return utils.IsTimestampForked(c.ApricotPhase1BlockTimestamp, time)
 }
 
-// IsOdyPhase2 returns whether [time] represents a block
-// with a timestamp after the Ody Phase 2 upgrade time.
-func (c *ChainConfig) IsOdyPhase2(time uint64) bool {
-	return utils.IsTimestampForked(c.OdyPhase2BlockTimestamp, time)
+// IsApricotPhase2 returns whether [time] represents a block
+// with a timestamp after the Apricot Phase 2 upgrade time.
+func (c *ChainConfig) IsApricotPhase2(time uint64) bool {
+	return utils.IsTimestampForked(c.ApricotPhase2BlockTimestamp, time)
 }
 
-// IsOdyPhase3 returns whether [time] represents a block
-// with a timestamp after the Ody Phase 3 upgrade time.
-func (c *ChainConfig) IsOdyPhase3(time uint64) bool {
-	return utils.IsTimestampForked(c.OdyPhase3BlockTimestamp, time)
+// IsApricotPhase3 returns whether [time] represents a block
+// with a timestamp after the Apricot Phase 3 upgrade time.
+func (c *ChainConfig) IsApricotPhase3(time uint64) bool {
+	return utils.IsTimestampForked(c.ApricotPhase3BlockTimestamp, time)
 }
 
-// IsOdyPhase4 returns whether [time] represents a block
-// with a timestamp after the Ody Phase 4 upgrade time.
-func (c *ChainConfig) IsOdyPhase4(time uint64) bool {
-	return utils.IsTimestampForked(c.OdyPhase4BlockTimestamp, time)
+// IsApricotPhase4 returns whether [time] represents a block
+// with a timestamp after the Apricot Phase 4 upgrade time.
+func (c *ChainConfig) IsApricotPhase4(time uint64) bool {
+	return utils.IsTimestampForked(c.ApricotPhase4BlockTimestamp, time)
 }
 
-// IsOdyPhase5 returns whether [time] represents a block
-// with a timestamp after the Ody Phase 5 upgrade time.
-func (c *ChainConfig) IsOdyPhase5(time uint64) bool {
-	return utils.IsTimestampForked(c.OdyPhase5BlockTimestamp, time)
+// IsApricotPhase5 returns whether [time] represents a block
+// with a timestamp after the Apricot Phase 5 upgrade time.
+func (c *ChainConfig) IsApricotPhase5(time uint64) bool {
+	return utils.IsTimestampForked(c.ApricotPhase5BlockTimestamp, time)
 }
 
-// IsOdyPhasePre6 returns whether [time] represents a block
-// with a timestamp after the Ody Phase Pre 6 upgrade time.
-func (c *ChainConfig) IsOdyPhasePre6(time uint64) bool {
-	return utils.IsTimestampForked(c.OdyPhasePre6BlockTimestamp, time)
+// IsApricotPhasePre6 returns whether [time] represents a block
+// with a timestamp after the Apricot Phase Pre 6 upgrade time.
+func (c *ChainConfig) IsApricotPhasePre6(time uint64) bool {
+	return utils.IsTimestampForked(c.ApricotPhasePre6BlockTimestamp, time)
 }
 
-// IsOdyPhase6 returns whether [time] represents a block
-// with a timestamp after the Ody Phase 6 upgrade time.
-func (c *ChainConfig) IsOdyPhase6(time uint64) bool {
-	return utils.IsTimestampForked(c.OdyPhase6BlockTimestamp, time)
+// IsApricotPhase6 returns whether [time] represents a block
+// with a timestamp after the Apricot Phase 6 upgrade time.
+func (c *ChainConfig) IsApricotPhase6(time uint64) bool {
+	return utils.IsTimestampForked(c.ApricotPhase6BlockTimestamp, time)
 }
 
-// IsOdyPhasePost6 returns whether [time] represents a block
-// with a timestamp after the Ody Phase 6 Post upgrade time.
-func (c *ChainConfig) IsOdyPhasePost6(time uint64) bool {
-	return utils.IsTimestampForked(c.OdyPhasePost6BlockTimestamp, time)
-}
-
-// IsOdyPhas7 returns whether [time] represents a block
-// with a timestamp after the Ody Phase 7 upgrade time.
-func (c *ChainConfig) IsOdyPhase7(time uint64) bool {
-	return utils.IsTimestampForked(c.OdyPhase7BlockTimestamp, time)
+// IsApricotPhasePost6 returns whether [time] represents a block
+// with a timestamp after the Apricot Phase 6 Post upgrade time.
+func (c *ChainConfig) IsApricotPhasePost6(time uint64) bool {
+	return utils.IsTimestampForked(c.ApricotPhasePost6BlockTimestamp, time)
 }
 
 // IsBanff returns whether [time] represents a block
@@ -790,7 +740,7 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 	type fork struct {
 		name      string
 		block     *big.Int // some go-ethereum forks use block numbers
-		timestamp *uint64  // Odyssey forks use timestamps
+		timestamp *uint64  // Avalanche forks use timestamps
 		optional  bool     // if true, the fork may be nil and next fork is still allowed
 	}
 	var lastFork fork
@@ -828,23 +778,22 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 		}
 	}
 
-	// Note: OdyPhase1 and OdyPhase2 override the rules set by block number
-	// hard forks. In Odyssey, hard forks must take place via block timestamps instead
+	// Note: ApricotPhase1 and ApricotPhase2 override the rules set by block number
+	// hard forks. In Avalanche, hard forks must take place via block timestamps instead
 	// of block numbers since blocks are produced asynchronously. Therefore, we do not
-	// check that the block timestamps for Ody Phase1 and Phase2 in the same way as for
+	// check that the block timestamps for Apricot Phase1 and Phase2 in the same way as for
 	// the block number forks since it would not be a meaningful comparison.
-	// Instead, we check only that Ody Phases are enabled in order.
+	// Instead, we check only that Apricot Phases are enabled in order.
 	lastFork = fork{}
 	for _, cur := range []fork{
-		{name: "odyPhase1BlockTimestamp", timestamp: c.OdyPhase1BlockTimestamp},
-		{name: "odyPhase2BlockTimestamp", timestamp: c.OdyPhase2BlockTimestamp},
-		{name: "odyPhase3BlockTimestamp", timestamp: c.OdyPhase3BlockTimestamp},
-		{name: "odyPhase4BlockTimestamp", timestamp: c.OdyPhase4BlockTimestamp},
-		{name: "odyPhase5BlockTimestamp", timestamp: c.OdyPhase5BlockTimestamp},
-		{name: "odyPhasePre6BlockTimestamp", timestamp: c.OdyPhasePre6BlockTimestamp},
-		{name: "odyPhase6BlockTimestamp", timestamp: c.OdyPhase6BlockTimestamp},
-		{name: "odyPhasePost6BlockTimestamp", timestamp: c.OdyPhasePost6BlockTimestamp},
-		{name: "odyPhase7BlockTimestamp", timestamp: c.OdyPhase7BlockTimestamp},
+		{name: "apricotPhase1BlockTimestamp", timestamp: c.ApricotPhase1BlockTimestamp},
+		{name: "apricotPhase2BlockTimestamp", timestamp: c.ApricotPhase2BlockTimestamp},
+		{name: "apricotPhase3BlockTimestamp", timestamp: c.ApricotPhase3BlockTimestamp},
+		{name: "apricotPhase4BlockTimestamp", timestamp: c.ApricotPhase4BlockTimestamp},
+		{name: "apricotPhase5BlockTimestamp", timestamp: c.ApricotPhase5BlockTimestamp},
+		{name: "apricotPhasePre6BlockTimestamp", timestamp: c.ApricotPhasePre6BlockTimestamp},
+		{name: "apricotPhase6BlockTimestamp", timestamp: c.ApricotPhase6BlockTimestamp},
+		{name: "apricotPhasePost6BlockTimestamp", timestamp: c.ApricotPhasePost6BlockTimestamp},
 		{name: "banffBlockTimestamp", timestamp: c.BanffBlockTimestamp},
 		{name: "cortinaBlockTimestamp", timestamp: c.CortinaBlockTimestamp},
 		{name: "dUpgradeBlockTimestamp", timestamp: c.DUpgradeBlockTimestamp},
@@ -868,7 +817,7 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 			lastFork = cur
 		}
 	}
-	// TODO(aaronbuchwald) check that odyssey block timestamps are at least possible with the other rule set changes
+	// TODO(aaronbuchwald) check that avalanche block timestamps are at least possible with the other rule set changes
 	// additional change: require that block number hard forks are either 0 or nil since they should not
 	// be enabled at a specific block number.
 
@@ -916,32 +865,29 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, height *big.Int, time
 	if isForkBlockIncompatible(c.MuirGlacierBlock, newcfg.MuirGlacierBlock, height) {
 		return newBlockCompatError("Muir Glacier fork block", c.MuirGlacierBlock, newcfg.MuirGlacierBlock)
 	}
-	if isForkTimestampIncompatible(c.OdyPhase1BlockTimestamp, newcfg.OdyPhase1BlockTimestamp, time) {
-		return newTimestampCompatError("OdyPhase1 fork block timestamp", c.OdyPhase1BlockTimestamp, newcfg.OdyPhase1BlockTimestamp)
+	if isForkTimestampIncompatible(c.ApricotPhase1BlockTimestamp, newcfg.ApricotPhase1BlockTimestamp, time) {
+		return newTimestampCompatError("ApricotPhase1 fork block timestamp", c.ApricotPhase1BlockTimestamp, newcfg.ApricotPhase1BlockTimestamp)
 	}
-	if isForkTimestampIncompatible(c.OdyPhase2BlockTimestamp, newcfg.OdyPhase2BlockTimestamp, time) {
-		return newTimestampCompatError("OdyPhase2 fork block timestamp", c.OdyPhase2BlockTimestamp, newcfg.OdyPhase2BlockTimestamp)
+	if isForkTimestampIncompatible(c.ApricotPhase2BlockTimestamp, newcfg.ApricotPhase2BlockTimestamp, time) {
+		return newTimestampCompatError("ApricotPhase2 fork block timestamp", c.ApricotPhase2BlockTimestamp, newcfg.ApricotPhase2BlockTimestamp)
 	}
-	if isForkTimestampIncompatible(c.OdyPhase3BlockTimestamp, newcfg.OdyPhase3BlockTimestamp, time) {
-		return newTimestampCompatError("OdyPhase3 fork block timestamp", c.OdyPhase3BlockTimestamp, newcfg.OdyPhase3BlockTimestamp)
+	if isForkTimestampIncompatible(c.ApricotPhase3BlockTimestamp, newcfg.ApricotPhase3BlockTimestamp, time) {
+		return newTimestampCompatError("ApricotPhase3 fork block timestamp", c.ApricotPhase3BlockTimestamp, newcfg.ApricotPhase3BlockTimestamp)
 	}
-	if isForkTimestampIncompatible(c.OdyPhase4BlockTimestamp, newcfg.OdyPhase4BlockTimestamp, time) {
-		return newTimestampCompatError("OdyPhase4 fork block timestamp", c.OdyPhase4BlockTimestamp, newcfg.OdyPhase4BlockTimestamp)
+	if isForkTimestampIncompatible(c.ApricotPhase4BlockTimestamp, newcfg.ApricotPhase4BlockTimestamp, time) {
+		return newTimestampCompatError("ApricotPhase4 fork block timestamp", c.ApricotPhase4BlockTimestamp, newcfg.ApricotPhase4BlockTimestamp)
 	}
-	if isForkTimestampIncompatible(c.OdyPhase5BlockTimestamp, newcfg.OdyPhase5BlockTimestamp, time) {
-		return newTimestampCompatError("OdyPhase5 fork block timestamp", c.OdyPhase5BlockTimestamp, newcfg.OdyPhase5BlockTimestamp)
+	if isForkTimestampIncompatible(c.ApricotPhase5BlockTimestamp, newcfg.ApricotPhase5BlockTimestamp, time) {
+		return newTimestampCompatError("ApricotPhase5 fork block timestamp", c.ApricotPhase5BlockTimestamp, newcfg.ApricotPhase5BlockTimestamp)
 	}
-	if isForkTimestampIncompatible(c.OdyPhasePre6BlockTimestamp, newcfg.OdyPhasePre6BlockTimestamp, time) {
-		return newTimestampCompatError("OdyPhasePre6 fork block timestamp", c.OdyPhasePre6BlockTimestamp, newcfg.OdyPhasePre6BlockTimestamp)
+	if isForkTimestampIncompatible(c.ApricotPhasePre6BlockTimestamp, newcfg.ApricotPhasePre6BlockTimestamp, time) {
+		return newTimestampCompatError("ApricotPhasePre6 fork block timestamp", c.ApricotPhasePre6BlockTimestamp, newcfg.ApricotPhasePre6BlockTimestamp)
 	}
-	if isForkTimestampIncompatible(c.OdyPhase6BlockTimestamp, newcfg.OdyPhase6BlockTimestamp, time) {
-		return newTimestampCompatError("OdyPhase6 fork block timestamp", c.OdyPhase6BlockTimestamp, newcfg.OdyPhase6BlockTimestamp)
+	if isForkTimestampIncompatible(c.ApricotPhase6BlockTimestamp, newcfg.ApricotPhase6BlockTimestamp, time) {
+		return newTimestampCompatError("ApricotPhase6 fork block timestamp", c.ApricotPhase6BlockTimestamp, newcfg.ApricotPhase6BlockTimestamp)
 	}
-	if isForkTimestampIncompatible(c.OdyPhasePost6BlockTimestamp, newcfg.OdyPhasePost6BlockTimestamp, time) {
-		return newTimestampCompatError("OdyPhasePost6 fork block timestamp", c.OdyPhasePost6BlockTimestamp, newcfg.OdyPhasePost6BlockTimestamp)
-	}
-	if isForkTimestampIncompatible(c.OdyPhase7BlockTimestamp, newcfg.OdyPhase7BlockTimestamp, time) {
-		return newTimestampCompatError("OdyPhase7 fork block timestamp", c.OdyPhase7BlockTimestamp, newcfg.OdyPhase7BlockTimestamp)
+	if isForkTimestampIncompatible(c.ApricotPhasePost6BlockTimestamp, newcfg.ApricotPhasePost6BlockTimestamp, time) {
+		return newTimestampCompatError("ApricotPhasePost6 fork block timestamp", c.ApricotPhasePost6BlockTimestamp, newcfg.ApricotPhasePost6BlockTimestamp)
 	}
 	if isForkTimestampIncompatible(c.BanffBlockTimestamp, newcfg.BanffBlockTimestamp, time) {
 		return newTimestampCompatError("Banff fork block timestamp", c.BanffBlockTimestamp, newcfg.BanffBlockTimestamp)
@@ -1071,9 +1017,9 @@ type Rules struct {
 	IsByzantium, IsConstantinople, IsPetersburg, IsIstanbul bool
 	IsCancun                                                bool
 
-	// Rules for Odyssey releases
-	IsOdyPhase1, IsOdyPhase2, IsOdyPhase3, IsOdyPhase4, IsOdyPhase5 					bool
-	IsOdyPhasePre6, IsOdyPhase6, IsOdyPhasePost6, IsOdyPhase7                           bool
+	// Rules for Avalanche releases
+	IsApricotPhase1, IsApricotPhase2, IsApricotPhase3, IsApricotPhase4, IsApricotPhase5 bool
+	IsApricotPhasePre6, IsApricotPhase6, IsApricotPhasePost6                            bool
 	IsBanff                                                                             bool
 	IsCortina                                                                           bool
 	IsDUpgrade                                                                          bool
@@ -1105,20 +1051,19 @@ func (c *ChainConfig) rules(num *big.Int, timestamp uint64) Rules {
 	}
 }
 
-// OdysseyRules returns the Odyssey modified rules to support Odyssey
+// AvalancheRules returns the Avalanche modified rules to support Avalanche
 // network upgrades
-func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
+func (c *ChainConfig) AvalancheRules(blockNum *big.Int, timestamp uint64) Rules {
 	rules := c.rules(blockNum, timestamp)
 
-	rules.IsOdyPhase1 = c.IsOdyPhase1(timestamp)
-	rules.IsOdyPhase2 = c.IsOdyPhase2(timestamp)
-	rules.IsOdyPhase3 = c.IsOdyPhase3(timestamp)
-	rules.IsOdyPhase4 = c.IsOdyPhase4(timestamp)
-	rules.IsOdyPhase5 = c.IsOdyPhase5(timestamp)
-	rules.IsOdyPhasePre6 = c.IsOdyPhasePre6(timestamp)
-	rules.IsOdyPhase6 = c.IsOdyPhase6(timestamp)
-	rules.IsOdyPhasePost6 = c.IsOdyPhasePost6(timestamp)
-	rules.IsOdyPhase7 = c.IsOdyPhase7(timestamp)
+	rules.IsApricotPhase1 = c.IsApricotPhase1(timestamp)
+	rules.IsApricotPhase2 = c.IsApricotPhase2(timestamp)
+	rules.IsApricotPhase3 = c.IsApricotPhase3(timestamp)
+	rules.IsApricotPhase4 = c.IsApricotPhase4(timestamp)
+	rules.IsApricotPhase5 = c.IsApricotPhase5(timestamp)
+	rules.IsApricotPhasePre6 = c.IsApricotPhasePre6(timestamp)
+	rules.IsApricotPhase6 = c.IsApricotPhase6(timestamp)
+	rules.IsApricotPhasePost6 = c.IsApricotPhasePost6(timestamp)
 	rules.IsBanff = c.IsBanff(timestamp)
 	rules.IsCortina = c.IsCortina(timestamp)
 	rules.IsDUpgrade = c.IsDUpgrade(timestamp)

@@ -37,17 +37,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DioneProtocol/coreth/consensus/dummy"
-	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/bloombits"
-	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/core/vm"
-	"github.com/DioneProtocol/coreth/ethdb"
-	"github.com/DioneProtocol/coreth/interfaces"
-	"github.com/DioneProtocol/coreth/internal/ethapi"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/rpc"
+	"github.com/ava-labs/coreth/consensus/dummy"
+	"github.com/ava-labs/coreth/core"
+	"github.com/ava-labs/coreth/core/bloombits"
+	"github.com/ava-labs/coreth/core/rawdb"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/core/vm"
+	"github.com/ava-labs/coreth/ethdb"
+	"github.com/ava-labs/coreth/interfaces"
+	"github.com/ava-labs/coreth/internal/ethapi"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/stretchr/testify/require"
@@ -223,7 +223,7 @@ func TestBlockSubscription(t *testing.T) {
 		api          = NewFilterAPI(sys)
 		genesis      = &core.Genesis{
 			Config:  params.TestChainConfig,
-			BaseFee: big.NewInt(params.OdyPhase4MinBaseFee),
+			BaseFee: big.NewInt(params.ApricotPhase4MinBaseFee),
 		}
 		_, chain, _, _ = core.GenerateChainWithGenesis(genesis, dummy.NewFaker(), 10, 10, func(i int, b *core.BlockGen) {})
 		chainEvents    = []core.ChainEvent{}

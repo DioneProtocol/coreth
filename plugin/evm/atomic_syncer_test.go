@@ -11,15 +11,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/DioneProtocol/odysseygo/database/memdb"
-	"github.com/DioneProtocol/odysseygo/database/versiondb"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/database/versiondb"
 
-	"github.com/DioneProtocol/coreth/ethdb/memorydb"
-	"github.com/DioneProtocol/coreth/plugin/evm/message"
-	syncclient "github.com/DioneProtocol/coreth/sync/client"
-	"github.com/DioneProtocol/coreth/sync/handlers"
-	handlerstats "github.com/DioneProtocol/coreth/sync/handlers/stats"
-	"github.com/DioneProtocol/coreth/trie"
+	"github.com/ava-labs/coreth/ethdb/memorydb"
+	"github.com/ava-labs/coreth/plugin/evm/message"
+	syncclient "github.com/ava-labs/coreth/sync/client"
+	"github.com/ava-labs/coreth/sync/handlers"
+	handlerstats "github.com/ava-labs/coreth/sync/handlers/stats"
+	"github.com/ava-labs/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
 )
 

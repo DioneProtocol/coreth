@@ -31,12 +31,12 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/DioneProtocol/coreth/consensus/dummy"
-	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/core/state"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/core/vm"
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/coreth/consensus/dummy"
+	"github.com/ava-labs/coreth/core/rawdb"
+	"github.com/ava-labs/coreth/core/state"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/core/vm"
+	"github.com/ava-labs/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
@@ -87,7 +87,7 @@ func executeStateTransitionTest(t *testing.T, st stateTransitionTest) {
 					Nonce:   0,
 				},
 			},
-			GasLimit: params.OdyPhase1GasLimit,
+			GasLimit: params.ApricotPhase1GasLimit,
 		}
 		genesis       = gspec.ToBlock()
 		engine        = dummy.NewFaker()
@@ -127,19 +127,19 @@ func TestNativeAssetContractCall(t *testing.T) {
 
 	phase6Tests := map[string]stateTransitionTest{
 		"phase5": {
-			config:  params.TestOdyPhase5Config,
+			config:  params.TestApricotPhase5Config,
 			txs:     txs,
 			gasUsed: []uint64{132091, 41618},
 			want:    "",
 		},
 		"prePhase6": {
-			config:  params.TestOdyPhasePre6Config,
+			config:  params.TestApricotPhasePre6Config,
 			txs:     txs,
 			gasUsed: []uint64{132091, 21618},
 			want:    "",
 		},
 		"phase6": {
-			config:  params.TestOdyPhase6Config,
+			config:  params.TestApricotPhase6Config,
 			txs:     txs,
 			gasUsed: []uint64{132091, 41618},
 			want:    "",
@@ -171,19 +171,19 @@ func TestNativeAssetContractConstructor(t *testing.T) {
 
 	phase6Tests := map[string]stateTransitionTest{
 		"phase5": {
-			config:  params.TestOdyPhase5Config,
+			config:  params.TestApricotPhase5Config,
 			txs:     txs,
 			gasUsed: []uint64{92046},
 			want:    "",
 		},
 		"prePhase6": {
-			config:  params.TestOdyPhasePre6Config,
+			config:  params.TestApricotPhasePre6Config,
 			txs:     txs,
 			gasUsed: []uint64{72046},
 			want:    "",
 		},
 		"phase6": {
-			config:  params.TestOdyPhase6Config,
+			config:  params.TestApricotPhase6Config,
 			txs:     txs,
 			gasUsed: []uint64{92046},
 			want:    "",
@@ -210,7 +210,7 @@ func TestNativeAssetDirectEOACall(t *testing.T) {
 
 	phase6Tests := map[string]stateTransitionTest{
 		"phase5": {
-			config:  params.TestOdyPhase5Config,
+			config:  params.TestApricotPhase5Config,
 			txs:     txs,
 			gasUsed: []uint64{41000},
 			want:    "",
@@ -221,13 +221,13 @@ func TestNativeAssetDirectEOACall(t *testing.T) {
 		// Therefore, there is no need for an error to be returned in this test case even though a soft error would have been
 		// returned during PrePhase6.
 		"prePhase6": {
-			config:  params.TestOdyPhasePre6Config,
+			config:  params.TestApricotPhasePre6Config,
 			txs:     txs,
 			gasUsed: []uint64{21000},
 			want:    "",
 		},
 		"phase6": {
-			config:  params.TestOdyPhase6Config,
+			config:  params.TestApricotPhase6Config,
 			txs:     txs,
 			gasUsed: []uint64{41000},
 			want:    "",

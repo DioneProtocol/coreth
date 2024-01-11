@@ -27,9 +27,9 @@
 package trie
 
 import (
-	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/ethdb"
-	"github.com/DioneProtocol/coreth/trie/triedb/hashdb"
+	"github.com/ava-labs/coreth/core/rawdb"
+	"github.com/ava-labs/coreth/ethdb"
+	"github.com/ava-labs/coreth/trie/triedb/hashdb"
 )
 
 // newTestDatabase initializes the trie database with specified scheme.

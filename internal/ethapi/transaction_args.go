@@ -33,10 +33,10 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/rpc"
+	"github.com/ava-labs/coreth/core"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -168,9 +168,9 @@ func (args *TransactionArgs) setFeeDefaults(ctx context.Context, b feeBackend) e
 	}
 	// Now attempt to fill in default value depending on whether London is active or not.
 	head := b.CurrentHeader()
-	if b.ChainConfig().IsOdyPhase3(head.Time) {
+	if b.ChainConfig().IsApricotPhase3(head.Time) {
 		// London is active, set maxPriorityFeePerGas and maxFeePerGas.
-		if err := args.setOdyPhase3FeeDefault(ctx, head, b); err != nil {
+		if err := args.setApricotPhase3FeeDefault(ctx, head, b); err != nil {
 			return err
 		}
 	} else {
@@ -188,8 +188,8 @@ func (args *TransactionArgs) setFeeDefaults(ctx context.Context, b feeBackend) e
 	return nil
 }
 
-// setOdyPhase3FeeDefault fills in reasonable default fee values for unspecified fields.
-func (args *TransactionArgs) setOdyPhase3FeeDefault(ctx context.Context, head *types.Header, b feeBackend) error {
+// setApricotPhase3FeeDefault fills in reasonable default fee values for unspecified fields.
+func (args *TransactionArgs) setApricotPhase3FeeDefault(ctx context.Context, head *types.Header, b feeBackend) error {
 	// Set maxPriorityFeePerGas if it is missing.
 	if args.MaxPriorityFeePerGas == nil {
 		tip, err := b.SuggestGasTipCap(ctx)

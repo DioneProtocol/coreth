@@ -7,14 +7,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/coreth/params"
 
-	"github.com/DioneProtocol/odysseygo/ids"
-	"github.com/DioneProtocol/odysseygo/utils"
-	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
-	"github.com/DioneProtocol/odysseygo/vms/components/dione"
-	"github.com/DioneProtocol/odysseygo/vms/components/chain"
-	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/chain"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -26,8 +26,8 @@ func TestMempoolAddLocallyCreateAtomicTx(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			assert := assert.New(t)
 
-			// we use OP3 genesis here to not trip any block fees
-			issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONOdyPhase3, "", "")
+			// we use AP3 genesis here to not trip any block fees
+			issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONApricotPhase3, "", "")
 			defer func() {
 				err := vm.Shutdown(context.Background())
 				assert.NoError(err)
@@ -122,15 +122,15 @@ func createImportTx(t *testing.T, vm *VM, txID ids.ID, feeAmount uint64) *Tx {
 	var importAmount uint64 = 10000000
 	importTx := &UnsignedImportTx{
 		NetworkID:    testNetworkID,
-		BlockchainID: testDChainID,
-		SourceChain:  testAChainID,
-		ImportedInputs: []*dione.TransferableInput{
+		BlockchainID: testCChainID,
+		SourceChain:  testXChainID,
+		ImportedInputs: []*avax.TransferableInput{
 			{
-				UTXOID: dione.UTXOID{
+				UTXOID: avax.UTXOID{
 					TxID:        txID,
 					OutputIndex: uint32(0),
 				},
-				Asset: dione.Asset{ID: testDioneAssetID},
+				Asset: avax.Asset{ID: testAvaxAssetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: importAmount,
 					Input: secp256k1fx.Input{
@@ -139,11 +139,11 @@ func createImportTx(t *testing.T, vm *VM, txID ids.ID, feeAmount uint64) *Tx {
 				},
 			},
 			{
-				UTXOID: dione.UTXOID{
+				UTXOID: avax.UTXOID{
 					TxID:        txID,
 					OutputIndex: uint32(1),
 				},
-				Asset: dione.Asset{ID: testDioneAssetID},
+				Asset: avax.Asset{ID: testAvaxAssetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: importAmount,
 					Input: secp256k1fx.Input{
@@ -156,12 +156,12 @@ func createImportTx(t *testing.T, vm *VM, txID ids.ID, feeAmount uint64) *Tx {
 			{
 				Address: testEthAddrs[0],
 				Amount:  importAmount - feeAmount,
-				AssetID: testDioneAssetID,
+				AssetID: testAvaxAssetID,
 			},
 			{
 				Address: testEthAddrs[1],
 				Amount:  importAmount,
-				AssetID: testDioneAssetID,
+				AssetID: testAvaxAssetID,
 			},
 		},
 	}
@@ -183,8 +183,8 @@ func createImportTx(t *testing.T, vm *VM, txID ids.ID, feeAmount uint64) *Tx {
 func TestMempoolPriorityDrop(t *testing.T) {
 	assert := assert.New(t)
 
-	// we use OP3 genesis here to not trip any block fees
-	_, vm, _, _, _ := GenesisVM(t, true, genesisJSONOdyPhase3, "", "")
+	// we use AP3 genesis here to not trip any block fees
+	_, vm, _, _, _ := GenesisVM(t, true, genesisJSONApricotPhase3, "", "")
 	defer func() {
 		err := vm.Shutdown(context.Background())
 		assert.NoError(err)
@@ -192,14 +192,14 @@ func TestMempoolPriorityDrop(t *testing.T) {
 	mempool := vm.mempool
 	mempool.maxSize = 1
 
-	tx1 := createImportTx(t, vm, ids.ID{1}, params.OdysseyAtomicTxFee)
+	tx1 := createImportTx(t, vm, ids.ID{1}, params.AvalancheAtomicTxFee)
 	assert.NoError(mempool.AddTx(tx1))
 	assert.True(mempool.has(tx1.ID()))
-	tx2 := createImportTx(t, vm, ids.ID{2}, params.OdysseyAtomicTxFee)
+	tx2 := createImportTx(t, vm, ids.ID{2}, params.AvalancheAtomicTxFee)
 	assert.ErrorIs(mempool.AddTx(tx2), errInsufficientAtomicTxFee)
 	assert.True(mempool.has(tx1.ID()))
 	assert.False(mempool.has(tx2.ID()))
-	tx3 := createImportTx(t, vm, ids.ID{3}, 2*params.OdysseyAtomicTxFee)
+	tx3 := createImportTx(t, vm, ids.ID{3}, 2*params.AvalancheAtomicTxFee)
 	assert.NoError(mempool.AddTx(tx3))
 	assert.False(mempool.has(tx1.ID()))
 	assert.False(mempool.has(tx2.ID()))

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/utils"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/utils"
 )
 
 type mockGasPriceSetter struct {
@@ -61,9 +61,9 @@ func TestUpdateGasPriceShutsDown(t *testing.T) {
 	shutdownChan := make(chan struct{})
 	wg := &sync.WaitGroup{}
 	config := *params.TestChainConfig
-	// Set OdyPhase3BlockTime one hour in the future so that it will
+	// Set ApricotPhase3BlockTime one hour in the future so that it will
 	// create a goroutine waiting for an hour before updating the gas price
-	config.OdyPhase3BlockTimestamp = utils.TimeToNewUint64(time.Now().Add(time.Hour))
+	config.ApricotPhase3BlockTimestamp = utils.TimeToNewUint64(time.Now().Add(time.Hour))
 	gpu := &gasPriceUpdater{
 		setter:       &mockGasPriceSetter{price: big.NewInt(1)},
 		chainConfig:  &config,
@@ -94,10 +94,10 @@ func TestUpdateGasPriceInitializesPrice(t *testing.T) {
 	attemptAwait(t, wg, time.Millisecond)
 
 	if gpu.setter.(*mockGasPriceSetter).price.Cmp(big.NewInt(0)) != 0 {
-		t.Fatalf("Expected price to match minimum base fee for ody phase3")
+		t.Fatalf("Expected price to match minimum base fee for apricot phase3")
 	}
-	if minFee := gpu.setter.(*mockGasPriceSetter).minFee; minFee == nil || minFee.Cmp(big.NewInt(params.OdyPhase4MinBaseFee)) != 0 {
-		t.Fatalf("Expected min fee to match minimum fee for odyPhase4, but found: %d", minFee)
+	if minFee := gpu.setter.(*mockGasPriceSetter).minFee; minFee == nil || minFee.Cmp(big.NewInt(params.ApricotPhase4MinBaseFee)) != 0 {
+		t.Fatalf("Expected min fee to match minimum fee for apricotPhase4, but found: %d", minFee)
 	}
 }
 
@@ -105,10 +105,10 @@ func TestUpdateGasPriceUpdatesPrice(t *testing.T) {
 	shutdownChan := make(chan struct{})
 	wg := &sync.WaitGroup{}
 	config := *params.TestChainConfig
-	// Set OdyPhase3BlockTime 250ms in the future so that it will
+	// Set ApricotPhase3BlockTime 250ms in the future so that it will
 	// create a goroutine waiting for the time to update the gas price
-	config.OdyPhase3BlockTimestamp = utils.TimeToNewUint64(time.Now().Add(250 * time.Millisecond))
-	config.OdyPhase4BlockTimestamp = utils.TimeToNewUint64(time.Now().Add(3 * time.Second))
+	config.ApricotPhase3BlockTimestamp = utils.TimeToNewUint64(time.Now().Add(250 * time.Millisecond))
+	config.ApricotPhase4BlockTimestamp = utils.TimeToNewUint64(time.Now().Add(3 * time.Second))
 	gpu := &gasPriceUpdater{
 		setter:       &mockGasPriceSetter{price: big.NewInt(1)},
 		chainConfig:  &config,
@@ -118,25 +118,25 @@ func TestUpdateGasPriceUpdatesPrice(t *testing.T) {
 
 	gpu.start()
 
-	// With OdyPhase3 set slightly in the future, the gas price updater should create a
+	// With ApricotPhase3 set slightly in the future, the gas price updater should create a
 	// goroutine to sleep until its time to update and mark the wait group as done when it has
 	// completed the update.
 	time.Sleep(1 * time.Second)
 	price, minFee := gpu.setter.(*mockGasPriceSetter).GetStatus()
 	if price.Cmp(big.NewInt(0)) != 0 {
-		t.Fatalf("Expected price to match minimum base fee for ody phase3")
+		t.Fatalf("Expected price to match minimum base fee for apricot phase3")
 	}
-	if minFee == nil || minFee.Cmp(big.NewInt(params.OdyPhase3MinBaseFee)) != 0 {
-		t.Fatalf("Expected min fee to match minimum fee for odyPhase3, but found: %d", minFee)
+	if minFee == nil || minFee.Cmp(big.NewInt(params.ApricotPhase3MinBaseFee)) != 0 {
+		t.Fatalf("Expected min fee to match minimum fee for apricotPhase3, but found: %d", minFee)
 	}
 
-	// Confirm OdyPhase4 settings are applied at the very end.
+	// Confirm ApricotPhase4 settings are applied at the very end.
 	attemptAwait(t, wg, 5*time.Second)
 	price, minFee = gpu.setter.(*mockGasPriceSetter).GetStatus()
 	if price.Cmp(big.NewInt(0)) != 0 {
-		t.Fatalf("Expected price to match minimum base fee for ody phase4")
+		t.Fatalf("Expected price to match minimum base fee for apricot phase4")
 	}
-	if minFee == nil || minFee.Cmp(big.NewInt(params.OdyPhase4MinBaseFee)) != 0 {
-		t.Fatalf("Expected min fee to match minimum fee for odyPhase4, but found: %d", minFee)
+	if minFee == nil || minFee.Cmp(big.NewInt(params.ApricotPhase4MinBaseFee)) != 0 {
+		t.Fatalf("Expected min fee to match minimum fee for apricotPhase4, but found: %d", minFee)
 	}
 }

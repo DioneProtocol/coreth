@@ -30,8 +30,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/vmerrs"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/vmerrs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/holiman/uint256"
 )
@@ -161,16 +161,16 @@ func enable2929(jt *JumpTable) {
 	jt[SELFDESTRUCT].dynamicGas = gasSelfdestructEIP2929
 }
 
-// enableOP1 disables gas refunds for SSTORE and SELFDESTRUCT. It is very
+// enableAP1 disables gas refunds for SSTORE and SELFDESTRUCT. It is very
 // similar to EIP-3298: Removal of Refunds [DRAFT]
 // (https://eips.ethereum.org/EIPS/eip-3298).
-func enableOP1(jt *JumpTable) {
-	jt[SSTORE].dynamicGas = gasSStoreOP1
-	jt[SELFDESTRUCT].dynamicGas = gasSelfdestructOP1
-	jt[CALLEX].dynamicGas = gasCallExpertOP1
+func enableAP1(jt *JumpTable) {
+	jt[SSTORE].dynamicGas = gasSStoreAP1
+	jt[SELFDESTRUCT].dynamicGas = gasSelfdestructAP1
+	jt[CALLEX].dynamicGas = gasCallExpertAP1
 }
 
-func enableOP2(jt *JumpTable) {
+func enableAP2(jt *JumpTable) {
 	jt[BALANCEMC] = &operation{execute: opUndefined, maxStack: maxStack(0, 0)}
 	jt[CALLEX] = &operation{execute: opUndefined, maxStack: maxStack(0, 0)}
 }

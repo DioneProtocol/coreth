@@ -34,13 +34,13 @@ import (
 	"sort"
 	"time"
 
-	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/core/state/snapshot"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/metrics"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/trie"
-	"github.com/DioneProtocol/coreth/trie/trienode"
+	"github.com/ava-labs/coreth/core/rawdb"
+	"github.com/ava-labs/coreth/core/state/snapshot"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/metrics"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/trie"
+	"github.com/ava-labs/coreth/trie/trienode"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
@@ -396,8 +396,8 @@ func (s *StateDB) GetCommittedState(addr common.Address, hash common.Hash) commo
 	return common.Hash{}
 }
 
-// GetCommittedStateOP1 retrieves a value from the given account's committed storage trie.
-func (s *StateDB) GetCommittedStateOP1(addr common.Address, hash common.Hash) common.Hash {
+// GetCommittedStateAP1 retrieves a value from the given account's committed storage trie.
+func (s *StateDB) GetCommittedStateAP1(addr common.Address, hash common.Hash) common.Hash {
 	stateObject := s.getStateObject(addr)
 	if stateObject != nil {
 		NormalizeStateKey(&hash)
@@ -1164,18 +1164,18 @@ func (s *StateDB) commit(deleteEmptyObjects bool, snaps *snapshot.Tree, blockHas
 // Prepare handles the preparatory steps for executing a state transition with.
 // This method must be invoked before state transition.
 //
-// Berlin fork (aka OdyPhase2):
+// Berlin fork (aka ApricotPhase2):
 // - Add sender to access list (2929)
 // - Add destination to access list (2929)
 // - Add precompiles to access list (2929)
 // - Add the contents of the optional tx access list (2930)
 //
 // Potential EIPs:
-// - Reset access list (Berlin/OdyPhase2)
+// - Reset access list (Berlin/ApricotPhase2)
 // - Add coinbase to access list (EIP-3651/DUpgrade)
 // - Reset transient storage (EIP-1153)
 func (s *StateDB) Prepare(rules params.Rules, sender, coinbase common.Address, dst *common.Address, precompiles []common.Address, list types.AccessList) {
-	if rules.IsOdyPhase2 {
+	if rules.IsApricotPhase2 {
 		// Clear out any leftover from previous executions
 		al := newAccessList()
 		s.accessList = al

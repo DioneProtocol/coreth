@@ -36,14 +36,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/DioneProtocol/odysseygo/utils/timer/mockable"
-	"github.com/DioneProtocol/odysseygo/utils/units"
-	"github.com/DioneProtocol/coreth/consensus"
-	"github.com/DioneProtocol/coreth/consensus/dummy"
-	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/state"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/ava-labs/coreth/consensus"
+	"github.com/ava-labs/coreth/consensus/dummy"
+	"github.com/ava-labs/coreth/core"
+	"github.com/ava-labs/coreth/core/state"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
@@ -132,12 +132,12 @@ func (w *worker) commitNewWork() (*types.Block, error) {
 	var gasLimit uint64
 	if w.chainConfig.IsCortina(timestamp) {
 		gasLimit = params.CortinaGasLimit
-	} else if w.chainConfig.IsOdyPhase1(timestamp) {
-		gasLimit = params.OdyPhase1GasLimit
+	} else if w.chainConfig.IsApricotPhase1(timestamp) {
+		gasLimit = params.ApricotPhase1GasLimit
 	} else {
-		// The gas limit is set in phase1 to OdyPhase1GasLimit because the ceiling and floor were set to the same value
+		// The gas limit is set in phase1 to ApricotPhase1GasLimit because the ceiling and floor were set to the same value
 		// such that the gas limit converged to it. Since this is hardbaked now, we remove the ability to configure it.
-		gasLimit = core.CalcGasLimit(parent.GasUsed, parent.GasLimit, params.OdyPhase1GasLimit, params.OdyPhase1GasLimit)
+		gasLimit = core.CalcGasLimit(parent.GasUsed, parent.GasLimit, params.ApricotPhase1GasLimit, params.ApricotPhase1GasLimit)
 	}
 	header := &types.Header{
 		ParentHash: parent.Hash(),
@@ -146,8 +146,8 @@ func (w *worker) commitNewWork() (*types.Block, error) {
 		Extra:      nil,
 		Time:       timestamp,
 	}
-	// Set BaseFee and Extra data field if we are post OdyPhase3
-	if w.chainConfig.IsOdyPhase3(timestamp) {
+	// Set BaseFee and Extra data field if we are post ApricotPhase3
+	if w.chainConfig.IsApricotPhase3(timestamp) {
 		var err error
 		header.Extra, header.BaseFee, err = dummy.CalcBaseFee(w.chainConfig, parent, timestamp)
 		if err != nil {
@@ -352,7 +352,7 @@ func copyReceipts(receipts []*types.Receipt) []*types.Receipt {
 }
 
 // totalFees computes total consumed miner fees in Wei. Block transactions and receipts have to have the same order.
-func totalFees(block *types.Block, receipts []*types.Receipt) *big.Int { // @HERE
+func totalFees(block *types.Block, receipts []*types.Receipt) *big.Int {
 	feesWei := new(big.Int)
 	for i, tx := range block.Transactions() {
 		var minerFee *big.Int

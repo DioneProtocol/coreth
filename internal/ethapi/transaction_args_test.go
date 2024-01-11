@@ -33,9 +33,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/utils"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
@@ -228,7 +228,7 @@ func newBackendMock() *backendMock {
 		PetersburgBlock:             big.NewInt(0),
 		IstanbulBlock:               big.NewInt(0),
 		MuirGlacierBlock:            big.NewInt(0),
-		OdyPhase3BlockTimestamp: utils.NewUint64(1000),
+		ApricotPhase3BlockTimestamp: utils.NewUint64(1000),
 	}
 	return &backendMock{
 		current: &types.Header{

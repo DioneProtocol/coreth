@@ -8,9 +8,9 @@ import (
 )
 
 var (
-	//go:embed odyt_ext_data_hashes.json
-	rawOdytExtDataHashes []byte
-	odytExtDataHashes    map[common.Hash]common.Hash
+	//go:embed fuji_ext_data_hashes.json
+	rawFujiExtDataHashes []byte
+	fujiExtDataHashes    map[common.Hash]common.Hash
 
 	//go:embed mainnet_ext_data_hashes.json
 	rawMainnetExtDataHashes []byte
@@ -18,10 +18,10 @@ var (
 )
 
 func init() {
-	if err := json.Unmarshal(rawOdytExtDataHashes, &odytExtDataHashes); err != nil {
+	if err := json.Unmarshal(rawFujiExtDataHashes, &fujiExtDataHashes); err != nil {
 		panic(err)
 	}
-	rawOdytExtDataHashes = nil
+	rawFujiExtDataHashes = nil
 	if err := json.Unmarshal(rawMainnetExtDataHashes, &mainnetExtDataHashes); err != nil {
 		panic(err)
 	}

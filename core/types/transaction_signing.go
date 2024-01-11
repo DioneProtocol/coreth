@@ -32,7 +32,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -51,9 +51,9 @@ func MakeSigner(config *params.ChainConfig, blockNumber *big.Int, blockTime uint
 	switch {
 	case config.IsCancun(blockTime):
 		return NewCancunSigner(config.ChainID)
-	case config.IsOdyPhase3(blockTime):
+	case config.IsApricotPhase3(blockTime):
 		return NewLondonSigner(config.ChainID)
-	case config.IsOdyPhase2(blockTime):
+	case config.IsApricotPhase2(blockTime):
 		return NewEIP2930Signer(config.ChainID)
 	case config.IsEIP155(blockNumber):
 		return NewEIP155Signer(config.ChainID)
@@ -76,10 +76,10 @@ func LatestSigner(config *params.ChainConfig) Signer {
 		if config.CancunTime != nil {
 			return NewCancunSigner(config.ChainID)
 		}
-		if config.OdyPhase3BlockTimestamp != nil {
+		if config.ApricotPhase3BlockTimestamp != nil {
 			return NewLondonSigner(config.ChainID)
 		}
-		if config.OdyPhase2BlockTimestamp != nil {
+		if config.ApricotPhase2BlockTimestamp != nil {
 			return NewEIP2930Signer(config.ChainID)
 		}
 		if config.EIP155Block != nil {

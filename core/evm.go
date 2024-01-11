@@ -29,9 +29,9 @@ package core
 import (
 	"math/big"
 
-	"github.com/DioneProtocol/coreth/consensus"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/ava-labs/coreth/consensus"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/core/vm"
 	"github.com/ethereum/go-ethereum/common"
 	//"github.com/ethereum/go-ethereum/log"
 )

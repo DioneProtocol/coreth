@@ -13,11 +13,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/coreth/params"
 
-	"github.com/DioneProtocol/odysseygo/chains/atomic"
-	"github.com/DioneProtocol/odysseygo/ids"
-	"github.com/DioneProtocol/odysseygo/snow"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
 )
 
 func TestCalculateDynamicFee(t *testing.T) {
@@ -90,7 +90,7 @@ type atomicTxTest struct {
 	// Whether or not the VM should be considered to still be bootstrapping
 	bootstrapping bool
 	// genesisJSON to use for the VM genesis (also defines the rule set that will be used in verification)
-	// If this is left empty, [genesisJSONOdyPhase0], will be used
+	// If this is left empty, [genesisJSONApricotPhase0], will be used
 	genesisJSON string
 
 	// passed directly into GenesisVM
@@ -100,7 +100,7 @@ type atomicTxTest struct {
 func executeTxTest(t *testing.T, test atomicTxTest) {
 	genesisJSON := test.genesisJSON
 	if len(genesisJSON) == 0 {
-		genesisJSON = genesisJSONOdyPhase0
+		genesisJSON = genesisJSONApricotPhase0
 	}
 	issuer, vm, _, sharedMemory, _ := GenesisVM(t, !test.bootstrapping, genesisJSON, test.configJSON, test.upgradeJSON)
 	rules := vm.currentRules()
@@ -108,9 +108,9 @@ func executeTxTest(t *testing.T, test atomicTxTest) {
 	tx := test.setup(t, vm, sharedMemory)
 
 	var baseFee *big.Int
-	// If OdyPhase3 is active, use the initial base fee for the atomic transaction
+	// If ApricotPhase3 is active, use the initial base fee for the atomic transaction
 	switch {
-	case rules.IsOdyPhase3:
+	case rules.IsApricotPhase3:
 		baseFee = initialBaseFee
 	}
 

@@ -38,16 +38,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/DioneProtocol/coreth/consensus"
-	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/state"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/core/vm"
-	"github.com/DioneProtocol/coreth/eth/tracers/logger"
-	"github.com/DioneProtocol/coreth/ethdb"
-	"github.com/DioneProtocol/coreth/internal/ethapi"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/rpc"
+	"github.com/ava-labs/coreth/consensus"
+	"github.com/ava-labs/coreth/core"
+	"github.com/ava-labs/coreth/core/state"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/core/vm"
+	"github.com/ava-labs/coreth/eth/tracers/logger"
+	"github.com/ava-labs/coreth/ethdb"
+	"github.com/ava-labs/coreth/internal/ethapi"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/log"
@@ -1040,33 +1040,33 @@ func overrideConfig(original *params.ChainConfig, override *params.ChainConfig) 
 	canon := true
 
 	// Apply network upgrades (after Berlin) to the copy.
-	// Note in coreth, OdyPhase2 is the "equivalent" to Berlin.
-	if timestamp := override.OdyPhase2BlockTimestamp; timestamp != nil {
-		copy.OdyPhase2BlockTimestamp = timestamp
+	// Note in coreth, ApricotPhase2 is the "equivalent" to Berlin.
+	if timestamp := override.ApricotPhase2BlockTimestamp; timestamp != nil {
+		copy.ApricotPhase2BlockTimestamp = timestamp
 		canon = false
 	}
-	if timestamp := override.OdyPhase3BlockTimestamp; timestamp != nil {
-		copy.OdyPhase3BlockTimestamp = timestamp
+	if timestamp := override.ApricotPhase3BlockTimestamp; timestamp != nil {
+		copy.ApricotPhase3BlockTimestamp = timestamp
 		canon = false
 	}
-	if timestamp := override.OdyPhase4BlockTimestamp; timestamp != nil {
-		copy.OdyPhase4BlockTimestamp = timestamp
+	if timestamp := override.ApricotPhase4BlockTimestamp; timestamp != nil {
+		copy.ApricotPhase4BlockTimestamp = timestamp
 		canon = false
 	}
-	if timestamp := override.OdyPhase5BlockTimestamp; timestamp != nil {
-		copy.OdyPhase5BlockTimestamp = timestamp
+	if timestamp := override.ApricotPhase5BlockTimestamp; timestamp != nil {
+		copy.ApricotPhase5BlockTimestamp = timestamp
 		canon = false
 	}
-	if timestamp := override.OdyPhasePre6BlockTimestamp; timestamp != nil {
-		copy.OdyPhasePre6BlockTimestamp = timestamp
+	if timestamp := override.ApricotPhasePre6BlockTimestamp; timestamp != nil {
+		copy.ApricotPhasePre6BlockTimestamp = timestamp
 		canon = false
 	}
-	if timestamp := override.OdyPhase6BlockTimestamp; timestamp != nil {
-		copy.OdyPhase6BlockTimestamp = timestamp
+	if timestamp := override.ApricotPhase6BlockTimestamp; timestamp != nil {
+		copy.ApricotPhase6BlockTimestamp = timestamp
 		canon = false
 	}
-	if timestamp := override.OdyPhasePost6BlockTimestamp; timestamp != nil {
-		copy.OdyPhasePost6BlockTimestamp = timestamp
+	if timestamp := override.ApricotPhasePost6BlockTimestamp; timestamp != nil {
+		copy.ApricotPhasePost6BlockTimestamp = timestamp
 		canon = false
 	}
 	if timestamp := override.BanffBlockTimestamp; timestamp != nil {

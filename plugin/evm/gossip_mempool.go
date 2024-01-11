@@ -8,14 +8,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ethereum/go-ethereum/log"
 
-	"github.com/DioneProtocol/odysseygo/network/p2p/gossip"
+	"github.com/ava-labs/avalanchego/network/p2p/gossip"
 
-	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/txpool"
-	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/ava-labs/coreth/core"
+	"github.com/ava-labs/coreth/core/txpool"
+	"github.com/ava-labs/coreth/core/types"
 )
 
 var (

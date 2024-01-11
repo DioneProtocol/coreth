@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/DioneProtocol/coreth/rpc"
+	"github.com/ava-labs/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 )
 

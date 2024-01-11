@@ -30,7 +30,7 @@ import (
 	"bytes"
 	"math/big"
 
-	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/ava-labs/coreth/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
 )

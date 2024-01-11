@@ -27,7 +27,7 @@
 package vm
 
 import (
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/coreth/params"
 )
 
 func minSwapStack(n int) int {

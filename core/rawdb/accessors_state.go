@@ -27,7 +27,7 @@
 package rawdb
 
 import (
-	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/ava-labs/coreth/ethdb"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 )

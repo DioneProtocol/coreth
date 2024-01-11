@@ -26,7 +26,7 @@
 
 package rawdb
 
-import "github.com/DioneProtocol/coreth/ethdb"
+import "github.com/ava-labs/coreth/ethdb"
 
 // KeyLengthIterator is a wrapper for a database iterator that ensures only key-value pairs
 // with a specific key length will be returned.

@@ -33,21 +33,21 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DioneProtocol/coreth/accounts/abi"
-	"github.com/DioneProtocol/coreth/consensus"
-	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/core/state"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/core/vm"
-	"github.com/DioneProtocol/coreth/eth/tracers"
-	"github.com/DioneProtocol/coreth/eth/tracers/logger"
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/coreth/accounts/abi"
+	"github.com/ava-labs/coreth/consensus"
+	"github.com/ava-labs/coreth/core"
+	"github.com/ava-labs/coreth/core/rawdb"
+	"github.com/ava-labs/coreth/core/state"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/core/vm"
+	"github.com/ava-labs/coreth/eth/tracers"
+	"github.com/ava-labs/coreth/eth/tracers/logger"
+	"github.com/ava-labs/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/asm"
 
 	// force-load js tracers to trigger registration
-	_ "github.com/DioneProtocol/coreth/eth/tracers/js"
+	_ "github.com/ava-labs/coreth/eth/tracers/js"
 )
 
 func TestDefaults(t *testing.T) {

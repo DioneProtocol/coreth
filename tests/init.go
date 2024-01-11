@@ -31,8 +31,8 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/utils"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/utils"
 )
 
 // Forks table defines supported forks and their chain config.
@@ -165,7 +165,7 @@ var Forks = map[string]*params.ChainConfig{
 		PetersburgBlock:     big.NewInt(0),
 		IstanbulBlock:       big.NewInt(5),
 	},
-	"OdyPhase1": {
+	"ApricotPhase1": {
 		ChainID:                     big.NewInt(1),
 		HomesteadBlock:              big.NewInt(0),
 		EIP150Block:                 big.NewInt(0),
@@ -175,9 +175,9 @@ var Forks = map[string]*params.ChainConfig{
 		ConstantinopleBlock:         big.NewInt(0),
 		PetersburgBlock:             big.NewInt(0),
 		IstanbulBlock:               big.NewInt(0),
-		OdyPhase1BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase1BlockTimestamp: utils.NewUint64(0),
 	},
-	"OdyPhase2": {
+	"ApricotPhase2": {
 		ChainID:                     big.NewInt(1),
 		HomesteadBlock:              big.NewInt(0),
 		EIP150Block:                 big.NewInt(0),
@@ -188,10 +188,10 @@ var Forks = map[string]*params.ChainConfig{
 		PetersburgBlock:             big.NewInt(0),
 		IstanbulBlock:               big.NewInt(0),
 		MuirGlacierBlock:            big.NewInt(0),
-		OdyPhase1BlockTimestamp: utils.NewUint64(0),
-		OdyPhase2BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase1BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp: utils.NewUint64(0),
 	},
-	"OdyPhase3": {
+	"ApricotPhase3": {
 		ChainID:                     big.NewInt(1),
 		HomesteadBlock:              big.NewInt(0),
 		EIP150Block:                 big.NewInt(0),
@@ -202,11 +202,11 @@ var Forks = map[string]*params.ChainConfig{
 		PetersburgBlock:             big.NewInt(0),
 		IstanbulBlock:               big.NewInt(0),
 		MuirGlacierBlock:            big.NewInt(0),
-		OdyPhase1BlockTimestamp: utils.NewUint64(0),
-		OdyPhase2BlockTimestamp: utils.NewUint64(0),
-		OdyPhase3BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase1BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp: utils.NewUint64(0),
 	},
-	"OdyPhase4": {
+	"ApricotPhase4": {
 		ChainID:                     big.NewInt(1),
 		HomesteadBlock:              big.NewInt(0),
 		EIP150Block:                 big.NewInt(0),
@@ -217,12 +217,12 @@ var Forks = map[string]*params.ChainConfig{
 		PetersburgBlock:             big.NewInt(0),
 		IstanbulBlock:               big.NewInt(0),
 		MuirGlacierBlock:            big.NewInt(0),
-		OdyPhase1BlockTimestamp: utils.NewUint64(0),
-		OdyPhase2BlockTimestamp: utils.NewUint64(0),
-		OdyPhase3BlockTimestamp: utils.NewUint64(0),
-		OdyPhase4BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase1BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp: utils.NewUint64(0),
 	},
-	"OdyPhase5": {
+	"ApricotPhase5": {
 		ChainID:                     big.NewInt(1),
 		HomesteadBlock:              big.NewInt(0),
 		EIP150Block:                 big.NewInt(0),
@@ -232,11 +232,11 @@ var Forks = map[string]*params.ChainConfig{
 		ConstantinopleBlock:         big.NewInt(0),
 		PetersburgBlock:             big.NewInt(0),
 		IstanbulBlock:               big.NewInt(0),
-		OdyPhase1BlockTimestamp: utils.NewUint64(0),
-		OdyPhase2BlockTimestamp: utils.NewUint64(0),
-		OdyPhase3BlockTimestamp: utils.NewUint64(0),
-		OdyPhase4BlockTimestamp: utils.NewUint64(0),
-		OdyPhase5BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase1BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp: utils.NewUint64(0),
 	},
 	"Banff": {
 		ChainID:                     big.NewInt(1),
@@ -248,11 +248,11 @@ var Forks = map[string]*params.ChainConfig{
 		ConstantinopleBlock:         big.NewInt(0),
 		PetersburgBlock:             big.NewInt(0),
 		IstanbulBlock:               big.NewInt(0),
-		OdyPhase1BlockTimestamp: utils.NewUint64(0),
-		OdyPhase2BlockTimestamp: utils.NewUint64(0),
-		OdyPhase3BlockTimestamp: utils.NewUint64(0),
-		OdyPhase4BlockTimestamp: utils.NewUint64(0),
-		OdyPhase5BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase1BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:         utils.NewUint64(0),
 	},
 	"Cortina": {
@@ -265,11 +265,11 @@ var Forks = map[string]*params.ChainConfig{
 		ConstantinopleBlock:         big.NewInt(0),
 		PetersburgBlock:             big.NewInt(0),
 		IstanbulBlock:               big.NewInt(0),
-		OdyPhase1BlockTimestamp: utils.NewUint64(0),
-		OdyPhase2BlockTimestamp: utils.NewUint64(0),
-		OdyPhase3BlockTimestamp: utils.NewUint64(0),
-		OdyPhase4BlockTimestamp: utils.NewUint64(0),
-		OdyPhase5BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase1BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:         utils.NewUint64(0),
 		CortinaBlockTimestamp:       utils.NewUint64(0),
 	},
@@ -283,11 +283,11 @@ var Forks = map[string]*params.ChainConfig{
 		ConstantinopleBlock:         big.NewInt(0),
 		PetersburgBlock:             big.NewInt(0),
 		IstanbulBlock:               big.NewInt(0),
-		OdyPhase1BlockTimestamp: utils.NewUint64(0),
-		OdyPhase2BlockTimestamp: utils.NewUint64(0),
-		OdyPhase3BlockTimestamp: utils.NewUint64(0),
-		OdyPhase4BlockTimestamp: utils.NewUint64(0),
-		OdyPhase5BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase1BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp: utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:         utils.NewUint64(0),
 		CortinaBlockTimestamp:       utils.NewUint64(0),
 		DUpgradeBlockTimestamp:      utils.NewUint64(0),

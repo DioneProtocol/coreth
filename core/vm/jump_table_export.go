@@ -17,7 +17,7 @@
 package vm
 
 import (
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/coreth/params"
 )
 
 // LookupInstructionSet returns the instructionset for the fork configured by
@@ -26,15 +26,15 @@ func LookupInstructionSet(rules params.Rules) (JumpTable, error) {
 	switch {
 	case rules.IsDUpgrade:
 		return newDUpgradeInstructionSet(), nil
-	case rules.IsOdyPhase3, rules.IsOdyPhase4,
-		rules.IsOdyPhase5, rules.IsOdyPhasePre6,
-		rules.IsOdyPhase6, rules.IsOdyPhasePost6,
+	case rules.IsApricotPhase3, rules.IsApricotPhase4,
+		rules.IsApricotPhase5, rules.IsApricotPhasePre6,
+		rules.IsApricotPhase6, rules.IsApricotPhasePost6,
 		rules.IsBanff, rules.IsCortina:
-		return newOdyPhase3InstructionSet(), nil
-	case rules.IsOdyPhase2:
-		return newOdyPhase2InstructionSet(), nil
-	case rules.IsOdyPhase1:
-		return newOdyPhase1InstructionSet(), nil
+		return newApricotPhase3InstructionSet(), nil
+	case rules.IsApricotPhase2:
+		return newApricotPhase2InstructionSet(), nil
+	case rules.IsApricotPhase1:
+		return newApricotPhase1InstructionSet(), nil
 	case rules.IsIstanbul:
 		return newIstanbulInstructionSet(), nil
 	case rules.IsConstantinople:

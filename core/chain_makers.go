@@ -30,15 +30,15 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/DioneProtocol/coreth/consensus"
-	"github.com/DioneProtocol/coreth/consensus/dummy"
-	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/core/state"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/core/vm"
-	"github.com/DioneProtocol/coreth/ethdb"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/trie"
+	"github.com/ava-labs/coreth/consensus"
+	"github.com/ava-labs/coreth/consensus/dummy"
+	"github.com/ava-labs/coreth/core/rawdb"
+	"github.com/ava-labs/coreth/core/state"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/core/vm"
+	"github.com/ava-labs/coreth/ethdb"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -312,8 +312,8 @@ func makeHeader(chain consensus.ChainReader, config *params.ChainConfig, parent 
 	var gasLimit uint64
 	if config.IsCortina(time) {
 		gasLimit = params.CortinaGasLimit
-	} else if config.IsOdyPhase1(time) {
-		gasLimit = params.OdyPhase1GasLimit
+	} else if config.IsApricotPhase1(time) {
+		gasLimit = params.ApricotPhase1GasLimit
 	} else {
 		gasLimit = CalcGasLimit(parent.GasUsed(), parent.GasLimit(), parent.GasLimit(), parent.GasLimit())
 	}
@@ -332,7 +332,7 @@ func makeHeader(chain consensus.ChainReader, config *params.ChainConfig, parent 
 		Number:   new(big.Int).Add(parent.Number(), common.Big1),
 		Time:     time,
 	}
-	if chain.Config().IsOdyPhase3(time) {
+	if chain.Config().IsApricotPhase3(time) {
 		var err error
 		header.Extra, header.BaseFee, err = dummy.CalcBaseFee(chain.Config(), parent.Header(), time)
 		if err != nil {

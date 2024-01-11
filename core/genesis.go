@@ -34,12 +34,12 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/core/state"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/ethdb"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/trie"
+	"github.com/ava-labs/coreth/core/rawdb"
+	"github.com/ava-labs/coreth/core/state"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/ethdb"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -290,11 +290,11 @@ func (g *Genesis) toBlock(db ethdb.Database, triedb *trie.Database) *types.Block
 	if g.Difficulty == nil {
 		head.Difficulty = params.GenesisDifficulty
 	}
-	if g.Config != nil && g.Config.IsOdyPhase3(0) {
+	if g.Config != nil && g.Config.IsApricotPhase3(0) {
 		if g.BaseFee != nil {
 			head.BaseFee = g.BaseFee
 		} else {
-			head.BaseFee = big.NewInt(params.OdyPhase3InitialBaseFee)
+			head.BaseFee = big.NewInt(params.ApricotPhase3InitialBaseFee)
 		}
 	}
 	statedb.Commit(false, false)
@@ -347,7 +347,7 @@ func GenesisBlockForTesting(db ethdb.Database, addr common.Address, balance *big
 	g := Genesis{
 		Config:  params.TestChainConfig,
 		Alloc:   GenesisAlloc{addr: {Balance: balance}},
-		BaseFee: big.NewInt(params.OdyPhase3InitialBaseFee),
+		BaseFee: big.NewInt(params.ApricotPhase3InitialBaseFee),
 	}
 	return g.MustCommit(db)
 }

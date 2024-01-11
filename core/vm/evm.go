@@ -31,10 +31,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/DioneProtocol/coreth/constants"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/precompile"
-	"github.com/DioneProtocol/coreth/vmerrs"
+	"github.com/ava-labs/coreth/constants"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/precompile"
+	"github.com/ava-labs/coreth/vmerrs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
@@ -80,12 +80,12 @@ func (evm *EVM) precompile(addr common.Address) (precompile.StatefulPrecompiledC
 	switch {
 	case evm.chainRules.IsBanff:
 		precompiles = PrecompiledContractsBanff
-	case evm.chainRules.IsOdyPhase6:
-		precompiles = PrecompiledContractsOdyPhase6
-	case evm.chainRules.IsOdyPhasePre6:
-		precompiles = PrecompiledContractsOdyPhasePre6
-	case evm.chainRules.IsOdyPhase2:
-		precompiles = PrecompiledContractsOdyPhase2
+	case evm.chainRules.IsApricotPhase6:
+		precompiles = PrecompiledContractsApricotPhase6
+	case evm.chainRules.IsApricotPhasePre6:
+		precompiles = PrecompiledContractsApricotPhasePre6
+	case evm.chainRules.IsApricotPhase2:
+		precompiles = PrecompiledContractsApricotPhase2
 	case evm.chainRules.IsIstanbul:
 		precompiles = PrecompiledContractsIstanbul
 	case evm.chainRules.IsByzantium:
@@ -191,7 +191,7 @@ func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainConfig
 		StateDB:     statedb,
 		Config:      config,
 		chainConfig: chainConfig,
-		chainRules:  chainConfig.OdysseyRules(blockCtx.BlockNumber, blockCtx.Time),
+		chainRules:  chainConfig.AvalancheRules(blockCtx.BlockNumber, blockCtx.Time),
 	}
 	evm.interpreter = NewEVMInterpreter(evm)
 	return evm
@@ -234,7 +234,7 @@ func (evm *EVM) Interpreter() *EVMInterpreter {
 func (evm *EVM) SetBlockContext(blockCtx BlockContext) {
 	evm.Context = blockCtx
 	num := blockCtx.BlockNumber
-	evm.chainRules = evm.chainConfig.OdysseyRules(num, blockCtx.Time)
+	evm.chainRules = evm.chainConfig.AvalancheRules(num, blockCtx.Time)
 }
 
 // Call executes the contract associated with the addr with the given input as
@@ -592,7 +592,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	evm.StateDB.SetNonce(caller.Address(), nonce+1)
 	// We add this to the access list _before_ taking a snapshot. Even if the creation fails,
 	// the access-list change should not be rolled back
-	if evm.chainRules.IsOdyPhase2 {
+	if evm.chainRules.IsApricotPhase2 {
 		evm.StateDB.AddAddressToAccessList(address)
 	}
 	// Ensure there's no existing contract already at the designated address
@@ -629,7 +629,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	}
 
 	// Reject code starting with 0xEF if EIP-3541 is enabled.
-	if err == nil && len(ret) >= 1 && ret[0] == 0xEF && evm.chainRules.IsOdyPhase3 {
+	if err == nil && len(ret) >= 1 && ret[0] == 0xEF && evm.chainRules.IsApricotPhase3 {
 		err = vmerrs.ErrInvalidCode
 	}
 

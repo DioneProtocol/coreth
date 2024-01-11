@@ -43,7 +43,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/DioneProtocol/coreth/core"
+	"github.com/ava-labs/coreth/core"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 

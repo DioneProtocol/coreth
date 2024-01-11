@@ -9,24 +9,24 @@ import (
 	"sync"
 	"time"
 
-	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/ava-labs/avalanchego/codec"
 
-	"github.com/DioneProtocol/coreth/peer"
+	"github.com/ava-labs/coreth/peer"
 
-	"github.com/DioneProtocol/odysseygo/cache"
-	"github.com/DioneProtocol/odysseygo/ids"
-	"github.com/DioneProtocol/odysseygo/snow"
-	"github.com/DioneProtocol/odysseygo/utils/wrappers"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/state"
-	"github.com/DioneProtocol/coreth/core/txpool"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/ava-labs/coreth/core"
+	"github.com/ava-labs/coreth/core/state"
+	"github.com/ava-labs/coreth/core/txpool"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/plugin/evm/message"
 )
 
 const (
@@ -79,7 +79,7 @@ type pushGossiper struct {
 }
 
 // createGossiper constructs and returns a pushGossiper or noopGossiper
-// based on whether vm.chainConfig.OdyPhase4BlockTimestamp is set
+// based on whether vm.chainConfig.ApricotPhase4BlockTimestamp is set
 func (vm *VM) createGossiper(stats GossipStats) Gossiper {
 	net := &pushGossiper{
 		ctx:                vm.ctx,

@@ -29,7 +29,7 @@ package vm
 import (
 	"fmt"
 
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/coreth/params"
 )
 
 type (
@@ -62,9 +62,9 @@ var (
 	byzantiumInstructionSet        = newByzantiumInstructionSet()
 	constantinopleInstructionSet   = newConstantinopleInstructionSet()
 	istanbulInstructionSet         = newIstanbulInstructionSet()
-	odyPhase1InstructionSet    = newOdyPhase1InstructionSet()
-	odyPhase2InstructionSet    = newOdyPhase2InstructionSet()
-	odyPhase3InstructionSet    = newOdyPhase3InstructionSet()
+	apricotPhase1InstructionSet    = newApricotPhase1InstructionSet()
+	apricotPhase2InstructionSet    = newApricotPhase2InstructionSet()
+	apricotPhase3InstructionSet    = newApricotPhase3InstructionSet()
 	dUpgradeInstructionSet         = newDUpgradeInstructionSet()
 )
 
@@ -90,39 +90,39 @@ func validate(jt JumpTable) JumpTable {
 }
 
 func newDUpgradeInstructionSet() JumpTable {
-	instructionSet := newOdyPhase3InstructionSet()
+	instructionSet := newApricotPhase3InstructionSet()
 	enable3855(&instructionSet) // PUSH0 instruction
 	enable3860(&instructionSet) // Limit and meter initcode
 	return validate(instructionSet)
 }
 
-// newOdyPhase3InstructionSet returns the frontier, homestead, byzantium,
-// constantinople, istanbul, petersburg, odyPhase1, 2, and 3 instructions.
-func newOdyPhase3InstructionSet() JumpTable {
-	instructionSet := newOdyPhase2InstructionSet()
+// newApricotPhase3InstructionSet returns the frontier, homestead, byzantium,
+// constantinople, istanbul, petersburg, apricotPhase1, 2, and 3 instructions.
+func newApricotPhase3InstructionSet() JumpTable {
+	instructionSet := newApricotPhase2InstructionSet()
 	enable3198(&instructionSet) // Base fee opcode https://eips.ethereum.org/EIPS/eip-3198
 	return validate(instructionSet)
 }
 
-// newOdyPhase1InstructionSet returns the frontier,
+// newApricotPhase1InstructionSet returns the frontier,
 // homestead, byzantium, constantinople petersburg,
-// istanbul, and odyPhase1 instructions.
-func newOdyPhase2InstructionSet() JumpTable {
-	instructionSet := newOdyPhase1InstructionSet()
+// istanbul, and apricotPhase1 instructions.
+func newApricotPhase2InstructionSet() JumpTable {
+	instructionSet := newApricotPhase1InstructionSet()
 
 	enable2929(&instructionSet)
-	enableOP2(&instructionSet)
+	enableAP2(&instructionSet)
 
 	return validate(instructionSet)
 }
 
-// newOdyPhase1InstructionSet returns the frontier,
+// newApricotPhase1InstructionSet returns the frontier,
 // homestead, byzantium, constantinople petersburg,
 // and istanbul instructions.
-func newOdyPhase1InstructionSet() JumpTable {
+func newApricotPhase1InstructionSet() JumpTable {
 	instructionSet := newIstanbulInstructionSet()
 
-	enableOP1(&instructionSet)
+	enableAP1(&instructionSet)
 
 	return validate(instructionSet)
 }

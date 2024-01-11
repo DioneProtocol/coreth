@@ -33,10 +33,10 @@ import (
 	"runtime"
 	"runtime/debug"
 
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/ethclient"
-	"github.com/DioneProtocol/coreth/interfaces"
-	"github.com/DioneProtocol/coreth/rpc"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/ethclient"
+	"github.com/ava-labs/coreth/interfaces"
+	"github.com/ava-labs/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )

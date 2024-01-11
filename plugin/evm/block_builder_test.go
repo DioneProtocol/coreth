@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/coreth/params"
 
-	"github.com/DioneProtocol/odysseygo/snow"
+	"github.com/ava-labs/avalanchego/snow"
 )
 
 func TestBlockBuilderShutsDown(t *testing.T) {

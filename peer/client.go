@@ -6,9 +6,9 @@ package peer
 import (
 	"errors"
 
-	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/ava-labs/avalanchego/ids"
 
-	"github.com/DioneProtocol/odysseygo/version"
+	"github.com/ava-labs/avalanchego/version"
 )
 
 var (

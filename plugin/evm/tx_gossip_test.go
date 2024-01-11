@@ -10,16 +10,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DioneProtocol/odysseygo/ids"
-	"github.com/DioneProtocol/odysseygo/network/p2p"
-	"github.com/DioneProtocol/odysseygo/network/p2p/gossip"
-	"github.com/DioneProtocol/odysseygo/proto/pb/sdk"
-	"github.com/DioneProtocol/odysseygo/snow/engine/common"
-	"github.com/DioneProtocol/odysseygo/snow/validators"
-	"github.com/DioneProtocol/odysseygo/utils"
-	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
-	"github.com/DioneProtocol/odysseygo/utils/logging"
-	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/network/p2p"
+	"github.com/ava-labs/avalanchego/network/p2p/gossip"
+	"github.com/ava-labs/avalanchego/proto/pb/sdk"
+	"github.com/ava-labs/avalanchego/snow/engine/common"
+	"github.com/ava-labs/avalanchego/snow/validators"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/set"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
@@ -27,9 +27,9 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/coreth/core"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/params"
 )
 
 func TestEthTxGossip(t *testing.T) {
@@ -47,7 +47,7 @@ func TestEthTxGossip(t *testing.T) {
 	txPoolNewHeads := make(chan core.NewTxPoolHeadEvent)
 	vm.txPool.SubscribeNewHeadEvent(txPoolNewHeads)
 
-	importTx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+	importTx, err := vm.newImportTx(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 	require.NoError(err)
 	require.NoError(vm.issueTx(importTx, true))
 	<-issuer
@@ -158,7 +158,7 @@ func TestAtomicTxGossip(t *testing.T) {
 
 	// set up prefunded address
 	importAmount := uint64(1_000_000_000)
-	issuer, vm, _, _, sender := GenesisVMWithUTXOs(t, true, genesisJSONOdyPhase0, "", "", map[ids.ShortID]uint64{
+	issuer, vm, _, _, sender := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
 
@@ -225,7 +225,7 @@ func TestAtomicTxGossip(t *testing.T) {
 	wg.Wait()
 
 	// issue a new tx to the vm
-	importTx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+	importTx, err := vm.newImportTx(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 	require.NoError(err)
 
 	require.NoError(vm.issueTx(importTx, true /*=local*/))

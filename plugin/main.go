@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/DioneProtocol/odysseygo/utils/logging"
-	"github.com/DioneProtocol/odysseygo/utils/ulimit"
-	"github.com/DioneProtocol/odysseygo/vms/rpcchainvm"
+	"github.com/ava-labs/avalanchego/utils/logging"
+	"github.com/ava-labs/avalanchego/utils/ulimit"
+	"github.com/ava-labs/avalanchego/vms/rpcchainvm"
 
-	"github.com/DioneProtocol/coreth/plugin/evm"
+	"github.com/ava-labs/coreth/plugin/evm"
 )
 
 func main() {

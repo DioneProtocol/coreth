@@ -8,12 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DioneProtocol/coreth/accounts/abi"
-	"github.com/DioneProtocol/coreth/consensus/dummy"
-	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/core/vm"
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/coreth/accounts/abi"
+	"github.com/ava-labs/coreth/consensus/dummy"
+	"github.com/ava-labs/coreth/core/rawdb"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/core/vm"
+	"github.com/ava-labs/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
@@ -43,7 +43,7 @@ func TestAcceptedLogsSubscription(t *testing.T) {
 		gspec   = &Genesis{
 			Config:  params.TestChainConfig,
 			Alloc:   GenesisAlloc{addr1: {Balance: funds}},
-			BaseFee: big.NewInt(params.OdyPhase3InitialBaseFee),
+			BaseFee: big.NewInt(params.ApricotPhase3InitialBaseFee),
 		}
 		contractAddress = crypto.CreateAddress(addr1, 0)
 		signer          = types.LatestSigner(gspec.Config)
@@ -59,13 +59,13 @@ func TestAcceptedLogsSubscription(t *testing.T) {
 		switch i {
 		case 0:
 			// First, we deploy the contract
-			contractTx := types.NewContractCreation(0, common.Big0, 200000, big.NewInt(params.OdyPhase3InitialBaseFee), common.FromHex(callableBin))
+			contractTx := types.NewContractCreation(0, common.Big0, 200000, big.NewInt(params.ApricotPhase3InitialBaseFee), common.FromHex(callableBin))
 			contractSignedTx, err := types.SignTx(contractTx, signer, key1)
 			require.NoError(err)
 			b.AddTx(contractSignedTx)
 		case 1:
 			// In the next block, we call the contract function
-			tx := types.NewTransaction(1, contractAddress, common.Big0, 23000, big.NewInt(params.OdyPhase3InitialBaseFee), packedFunction)
+			tx := types.NewTransaction(1, contractAddress, common.Big0, 23000, big.NewInt(params.ApricotPhase3InitialBaseFee), packedFunction)
 			tx, err := types.SignTx(tx, signer, key1)
 			require.NoError(err)
 			b.AddTx(tx)

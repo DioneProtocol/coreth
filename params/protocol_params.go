@@ -167,14 +167,14 @@ const (
 	BlobTxMinDataGasprice            = 1       // Minimum gas price for data blobs
 	BlobTxDataGaspriceUpdateFraction = 2225652 // Controls the maximum rate of change for data gas price
 
-	// Odyssey Stateful Precompile Params
+	// Avalanche Stateful Precompile Params
 	// Gas price for native asset balance lookup. Based on the cost of an SLOAD operation since native
 	// asset balances are kept in state storage.
-	AssetBalanceOdy uint64 = 2100
+	AssetBalanceApricot uint64 = 2100
 	// Gas price for native asset call. This gas price reflects the additional work done for the native
 	// asset transfer itself, which is a write to state storage. The cost of creating a new account and
 	// normal value transfer is assessed separately from this cost.
-	AssetCallOdy uint64 = 20000
+	AssetCallApricot uint64 = 20000
 )
 
 // Gas discount table for BLS12-381 G1 and G2 multi exponentiation operations

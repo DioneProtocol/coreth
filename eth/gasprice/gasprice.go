@@ -32,12 +32,12 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/DioneProtocol/odysseygo/utils/timer/mockable"
-	"github.com/DioneProtocol/coreth/consensus/dummy"
-	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/rpc"
+	"github.com/ava-labs/avalanchego/utils/timer/mockable"
+	"github.com/ava-labs/coreth/consensus/dummy"
+	"github.com/ava-labs/coreth/core"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/lru"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -64,7 +64,7 @@ const (
 var (
 	DefaultMaxPrice           = big.NewInt(150 * params.GWei)
 	DefaultMinPrice           = big.NewInt(0 * params.GWei)
-	DefaultMinBaseFee         = big.NewInt(params.OdyPhase3InitialBaseFee)
+	DefaultMinBaseFee         = big.NewInt(params.ApricotPhase3InitialBaseFee)
 	DefaultMinGasUsed         = big.NewInt(6_000_000) // block gas limit is 8,000,000
 	DefaultMaxLookbackSeconds = uint64(80)
 )
@@ -208,7 +208,7 @@ func NewOracle(backend OracleBackend, config Config) (*Oracle, error) {
 }
 
 // EstimateBaseFee returns an estimate of what the base fee will be on a block
-// produced at the current time. If OdyPhase3 has not been activated, it may
+// produced at the current time. If ApricotPhase3 has not been activated, it may
 // return a nil value and a nil error.
 func (oracle *Oracle) EstimateBaseFee(ctx context.Context) (*big.Int, error) {
 	_, baseFee, err := oracle.suggestDynamicFees(ctx)

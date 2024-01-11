@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/utils"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/utils"
 )
 
 type gasPriceUpdater struct {
@@ -42,19 +42,19 @@ func (gpu *gasPriceUpdater) start() {
 	// Sets the initial gas price to the launch minimum gas price
 	gpu.setter.SetGasPrice(big.NewInt(params.LaunchMinGasPrice))
 
-	// Updates to the minimum gas price as of OdyPhase1 if it's already in effect or starts a goroutine to enable it at the correct time
-	if disabled := gpu.handleUpdate(gpu.setter.SetGasPrice, gpu.chainConfig.OdyPhase1BlockTimestamp, big.NewInt(params.OdyPhase1MinGasPrice)); disabled {
+	// Updates to the minimum gas price as of ApricotPhase1 if it's already in effect or starts a goroutine to enable it at the correct time
+	if disabled := gpu.handleUpdate(gpu.setter.SetGasPrice, gpu.chainConfig.ApricotPhase1BlockTimestamp, big.NewInt(params.ApricotPhase1MinGasPrice)); disabled {
 		return
 	}
-	// Updates to the minimum gas price as of OdyPhase3 if it's already in effect or starts a goroutine to enable it at the correct time
-	if disabled := gpu.handleUpdate(gpu.setter.SetGasPrice, gpu.chainConfig.OdyPhase3BlockTimestamp, big.NewInt(0)); disabled {
+	// Updates to the minimum gas price as of ApricotPhase3 if it's already in effect or starts a goroutine to enable it at the correct time
+	if disabled := gpu.handleUpdate(gpu.setter.SetGasPrice, gpu.chainConfig.ApricotPhase3BlockTimestamp, big.NewInt(0)); disabled {
 		return
 	}
-	if disabled := gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.OdyPhase3BlockTimestamp, big.NewInt(params.OdyPhase3MinBaseFee)); disabled {
+	if disabled := gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.ApricotPhase3BlockTimestamp, big.NewInt(params.ApricotPhase3MinBaseFee)); disabled {
 		return
 	}
-	// Updates to the minimum gas price as of OdyPhase4 if it's already in effect or starts a goroutine to enable it at the correct time
-	gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.OdyPhase4BlockTimestamp, big.NewInt(params.OdyPhase4MinBaseFee))
+	// Updates to the minimum gas price as of ApricotPhase4 if it's already in effect or starts a goroutine to enable it at the correct time
+	gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.ApricotPhase4BlockTimestamp, big.NewInt(params.ApricotPhase4MinBaseFee))
 }
 
 // handleUpdate handles calling update(price) at the appropriate time based on

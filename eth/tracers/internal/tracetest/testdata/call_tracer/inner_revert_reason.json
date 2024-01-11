@@ -34,9 +34,9 @@
       "muirGlacierBlock": 0,
       "berlinBlock": 0,
       "londonBlock": 0,
-      "odyPhase1BlockTimestamp": 0,
-      "odyPhase2BlockTimestamp": 0,
-      "odyPhase3BlockTimestamp": 0
+      "apricotPhase1BlockTimestamp": 0,
+      "apricotPhase2BlockTimestamp": 0,
+      "apricotPhase3BlockTimestamp": 0
     }
   },
   "context": {

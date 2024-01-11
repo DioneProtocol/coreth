@@ -33,7 +33,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/ava-labs/coreth/core/types"
 )
 
 type blockAndState struct {

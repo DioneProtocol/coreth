@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/DioneProtocol/odysseygo/cache"
-	"github.com/DioneProtocol/odysseygo/ids"
-	"github.com/DioneProtocol/odysseygo/network/p2p/gossip"
+	"github.com/ava-labs/avalanchego/cache"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/network/p2p/gossip"
 
-	"github.com/DioneProtocol/coreth/metrics"
+	"github.com/ava-labs/coreth/metrics"
 	"github.com/ethereum/go-ethereum/log"
 )
 
@@ -50,8 +50,8 @@ func newMempoolMetrics() *mempoolMetrics {
 type Mempool struct {
 	lock sync.RWMutex
 
-	// DIONEAssetID is the fee paying currency of any atomic transaction
-	DIONEAssetID ids.ID
+	// AVAXAssetID is the fee paying currency of any atomic transaction
+	AVAXAssetID ids.ID
 	// maxSize is the maximum number of transactions allowed to be kept in mempool
 	maxSize int
 	// currentTxs is the set of transactions about to be added to a block.
@@ -78,14 +78,14 @@ type Mempool struct {
 }
 
 // NewMempool returns a Mempool with [maxSize]
-func NewMempool(DIONEAssetID ids.ID, maxSize int) (*Mempool, error) {
+func NewMempool(AVAXAssetID ids.ID, maxSize int) (*Mempool, error) {
 	bloom, err := gossip.NewBloomFilter(txGossipBloomMaxItems, txGossipBloomFalsePositiveRate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize bloom filter: %w", err)
 	}
 
 	return &Mempool{
-		DIONEAssetID:  DIONEAssetID,
+		AVAXAssetID:  AVAXAssetID,
 		issuedTxs:    make(map[ids.ID]*Tx),
 		discardedTxs: &cache.LRU[ids.ID, *Tx]{Size: discardedTxsCacheSize},
 		currentTxs:   make(map[ids.ID]*Tx),
@@ -119,7 +119,7 @@ func (m *Mempool) has(txID ids.ID) bool {
 }
 
 // atomicTxGasPrice is the [gasPrice] paid by a transaction to burn a given
-// amount of [DIONEAssetID] given the value of [gasUsed].
+// amount of [AVAXAssetID] given the value of [gasUsed].
 func (m *Mempool) atomicTxGasPrice(tx *Tx) (uint64, error) {
 	gasUsed, err := tx.GasUsed(true)
 	if err != nil {
@@ -128,7 +128,7 @@ func (m *Mempool) atomicTxGasPrice(tx *Tx) (uint64, error) {
 	if gasUsed == 0 {
 		return 0, errNoGasUsed
 	}
-	burned, err := tx.Burned(m.DIONEAssetID)
+	burned, err := tx.Burned(m.AVAXAssetID)
 	if err != nil {
 		return 0, err
 	}

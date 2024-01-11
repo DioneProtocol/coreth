@@ -7,10 +7,10 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/core/state"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/vmerrs"
+	"github.com/ava-labs/coreth/core/rawdb"
+	"github.com/ava-labs/coreth/core/state"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/vmerrs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/stretchr/testify/assert"
@@ -125,7 +125,7 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       NativeAssetBalanceAddr,
 			input:                PackNativeAssetBalanceInput(userAddr1, assetID),
 			value:                big0,
-			gasInput:             params.AssetBalanceOdy,
+			gasInput:             params.AssetBalanceApricot,
 			expectedGasRemaining: 0,
 			expectedErr:          nil,
 			expectedResult:       zeroBytes,
@@ -151,7 +151,7 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       NativeAssetBalanceAddr,
 			input:                PackNativeAssetBalanceInput(userAddr1, assetID),
 			value:                big0,
-			gasInput:             params.AssetBalanceOdy,
+			gasInput:             params.AssetBalanceApricot,
 			expectedGasRemaining: 0,
 			expectedErr:          nil,
 			expectedResult:       zeroBytes,
@@ -176,7 +176,7 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       NativeAssetBalanceAddr,
 			input:                PackNativeAssetBalanceInput(userAddr1, assetID),
 			value:                big0,
-			gasInput:             params.AssetBalanceOdy,
+			gasInput:             params.AssetBalanceApricot,
 			expectedGasRemaining: 0,
 			expectedErr:          nil,
 			expectedResult:       oneHundredBytes,
@@ -194,7 +194,7 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       NativeAssetBalanceAddr,
 			input:                nil,
 			value:                big0,
-			gasInput:             params.AssetBalanceOdy,
+			gasInput:             params.AssetBalanceApricot,
 			expectedGasRemaining: 0,
 			expectedErr:          vmerrs.ErrExecutionReverted,
 			expectedResult:       nil,
@@ -212,7 +212,7 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       NativeAssetBalanceAddr,
 			input:                PackNativeAssetBalanceInput(userAddr1, assetID),
 			value:                big0,
-			gasInput:             params.AssetBalanceOdy - 1,
+			gasInput:             params.AssetBalanceApricot - 1,
 			expectedGasRemaining: 0,
 			expectedErr:          vmerrs.ErrOutOfGas,
 			expectedResult:       nil,
@@ -230,8 +230,8 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       NativeAssetBalanceAddr,
 			input:                PackNativeAssetBalanceInput(userAddr1, assetID),
 			value:                bigHundred,
-			gasInput:             params.AssetBalanceOdy,
-			expectedGasRemaining: params.AssetBalanceOdy,
+			gasInput:             params.AssetBalanceApricot,
+			expectedGasRemaining: params.AssetBalanceApricot,
 			expectedErr:          vmerrs.ErrInsufficientBalance,
 			expectedResult:       nil,
 			name:                 "native asset balance: non-zero value with insufficient funds reverts before running pre-compile",
@@ -251,7 +251,7 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       NativeAssetCallAddr,
 			input:                PackNativeAssetCallInput(userAddr2, assetID, big.NewInt(50), nil),
 			value:                big0,
-			gasInput:             params.AssetCallOdy + params.CallNewAccountGas,
+			gasInput:             params.AssetCallApricot + params.CallNewAccountGas,
 			expectedGasRemaining: 0,
 			expectedErr:          nil,
 			expectedResult:       nil,
@@ -284,7 +284,7 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       NativeAssetCallAddr,
 			input:                PackNativeAssetCallInput(userAddr2, assetID, big.NewInt(50), nil),
 			value:                big.NewInt(49),
-			gasInput:             params.AssetCallOdy + params.CallNewAccountGas,
+			gasInput:             params.AssetCallApricot + params.CallNewAccountGas,
 			expectedGasRemaining: 0,
 			expectedErr:          nil,
 			expectedResult:       nil,
@@ -319,7 +319,7 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       NativeAssetCallAddr,
 			input:                PackNativeAssetCallInput(userAddr2, assetID, big.NewInt(51), nil),
 			value:                big.NewInt(50),
-			gasInput:             params.AssetCallOdy,
+			gasInput:             params.AssetCallApricot,
 			expectedGasRemaining: 0,
 			expectedErr:          vmerrs.ErrInsufficientBalance,
 			expectedResult:       nil,
@@ -351,8 +351,8 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       NativeAssetCallAddr,
 			input:                PackNativeAssetCallInput(userAddr2, assetID, big.NewInt(50), nil),
 			value:                big.NewInt(51),
-			gasInput:             params.AssetCallOdy,
-			expectedGasRemaining: params.AssetCallOdy,
+			gasInput:             params.AssetCallApricot,
+			expectedGasRemaining: params.AssetCallApricot,
 			expectedErr:          vmerrs.ErrInsufficientBalance,
 			expectedResult:       nil,
 			name:                 "native asset call: insufficient funds",
@@ -383,7 +383,7 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       NativeAssetCallAddr,
 			input:                PackNativeAssetCallInput(userAddr2, assetID, big.NewInt(50), nil),
 			value:                big.NewInt(50),
-			gasInput:             params.AssetCallOdy - 1,
+			gasInput:             params.AssetCallApricot - 1,
 			expectedGasRemaining: 0,
 			expectedErr:          vmerrs.ErrOutOfGas,
 			expectedResult:       nil,
@@ -404,7 +404,7 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       NativeAssetCallAddr,
 			input:                PackNativeAssetCallInput(userAddr2, assetID, big.NewInt(50), nil),
 			value:                big.NewInt(50),
-			gasInput:             params.AssetCallOdy + params.CallNewAccountGas - 1,
+			gasInput:             params.AssetCallApricot + params.CallNewAccountGas - 1,
 			expectedGasRemaining: 0,
 			expectedErr:          vmerrs.ErrOutOfGas,
 			expectedResult:       nil,
@@ -436,7 +436,7 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       NativeAssetCallAddr,
 			input:                make([]byte, 24),
 			value:                big.NewInt(50),
-			gasInput:             params.AssetCallOdy + params.CallNewAccountGas,
+			gasInput:             params.AssetCallApricot + params.CallNewAccountGas,
 			expectedGasRemaining: params.CallNewAccountGas,
 			expectedErr:          vmerrs.ErrExecutionReverted,
 			expectedResult:       nil,
@@ -457,8 +457,8 @@ func TestStatefulPrecompile(t *testing.T) {
 			precompileAddr:       genesisContractAddr,
 			input:                PackNativeAssetCallInput(userAddr2, assetID, big.NewInt(50), nil),
 			value:                big0,
-			gasInput:             params.AssetCallOdy + params.CallNewAccountGas,
-			expectedGasRemaining: params.AssetCallOdy + params.CallNewAccountGas,
+			gasInput:             params.AssetCallApricot + params.CallNewAccountGas,
+			expectedGasRemaining: params.AssetCallApricot + params.CallNewAccountGas,
 			expectedErr:          vmerrs.ErrExecutionReverted,
 			expectedResult:       nil,
 			name:                 "deprecated contract",
@@ -467,8 +467,8 @@ func TestStatefulPrecompile(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			stateDB := test.setupStateDB()
-			// Create EVM with BlockNumber and Time initialized to 0 to enable Ody Rules.
-			evm := NewEVM(vmCtx, TxContext{}, stateDB, params.TestOdyPhase5Config, Config{}) // Use OdyPhase5Config because these precompiles are deprecated in OdyPhase6.
+			// Create EVM with BlockNumber and Time initialized to 0 to enable Apricot Rules.
+			evm := NewEVM(vmCtx, TxContext{}, stateDB, params.TestApricotPhase5Config, Config{}) // Use ApricotPhase5Config because these precompiles are deprecated in ApricotPhase6.
 			ret, gasRemaining, err := evm.Call(AccountRef(test.from), test.precompileAddr, test.input, test.gasInput, test.value)
 			// Place gas remaining check before error check, so that it is not skipped when there is an error
 			assert.Equal(t, test.expectedGasRemaining, gasRemaining, "unexpected gas remaining")

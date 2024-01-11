@@ -19,7 +19,7 @@ package misc
 import (
 	"math/big"
 
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/coreth/params"
 )
 
 var (

@@ -30,14 +30,14 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/DioneProtocol/coreth/consensus"
-	"github.com/DioneProtocol/coreth/consensus/dummy"
-	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/core/vm"
-	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/trie"
-	"github.com/DioneProtocol/coreth/utils"
+	"github.com/ava-labs/coreth/consensus"
+	"github.com/ava-labs/coreth/consensus/dummy"
+	"github.com/ava-labs/coreth/core/rawdb"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/core/vm"
+	"github.com/ava-labs/coreth/params"
+	"github.com/ava-labs/coreth/trie"
+	"github.com/ava-labs/coreth/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"golang.org/x/crypto/sha3"
@@ -230,8 +230,8 @@ func TestStateProcessorErrors(t *testing.T) {
 					PetersburgBlock:             big.NewInt(0),
 					IstanbulBlock:               big.NewInt(0),
 					MuirGlacierBlock:            big.NewInt(0),
-					OdyPhase1BlockTimestamp: utils.NewUint64(0),
-					OdyPhase2BlockTimestamp: utils.NewUint64(0),
+					ApricotPhase1BlockTimestamp: utils.NewUint64(0),
+					ApricotPhase2BlockTimestamp: utils.NewUint64(0),
 				},
 				Alloc: GenesisAlloc{
 					common.HexToAddress("0x71562b71999873DB5b286dF957af199Ec94617F7"): GenesisAccount{
@@ -239,7 +239,7 @@ func TestStateProcessorErrors(t *testing.T) {
 						Nonce:   0,
 					},
 				},
-				GasLimit: params.OdyPhase1GasLimit,
+				GasLimit: params.ApricotPhase1GasLimit,
 			}
 			blockchain, _ = NewBlockChain(db, DefaultCacheConfig, gspec, dummy.NewFaker(), vm.Config{}, common.Hash{}, false)
 		)
@@ -324,14 +324,14 @@ func TestStateProcessorErrors(t *testing.T) {
 					PetersburgBlock:                 big.NewInt(0),
 					IstanbulBlock:                   big.NewInt(0),
 					MuirGlacierBlock:                big.NewInt(0),
-					OdyPhase1BlockTimestamp:     utils.NewUint64(0),
-					OdyPhase2BlockTimestamp:     utils.NewUint64(0),
-					OdyPhase3BlockTimestamp:     utils.NewUint64(0),
-					OdyPhase4BlockTimestamp:     utils.NewUint64(0),
-					OdyPhase5BlockTimestamp:     utils.NewUint64(0),
-					OdyPhasePre6BlockTimestamp:  utils.NewUint64(0),
-					OdyPhase6BlockTimestamp:     utils.NewUint64(0),
-					OdyPhasePost6BlockTimestamp: utils.NewUint64(0),
+					ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+					ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+					ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+					ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+					ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+					ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+					ApricotPhase6BlockTimestamp:     utils.NewUint64(0),
+					ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 					BanffBlockTimestamp:             utils.NewUint64(0),
 					CortinaBlockTimestamp:           utils.NewUint64(0),
 					DUpgradeBlockTimestamp:          utils.NewUint64(0),
@@ -355,13 +355,13 @@ func TestStateProcessorErrors(t *testing.T) {
 		}{
 			{ // ErrMaxInitCodeSizeExceeded
 				txs: []*types.Transaction{
-					mkDynamicCreationTx(0, 500000, common.Big0, big.NewInt(params.OdyPhase3InitialBaseFee), tooBigInitCode[:]),
+					mkDynamicCreationTx(0, 500000, common.Big0, big.NewInt(params.ApricotPhase3InitialBaseFee), tooBigInitCode[:]),
 				},
 				want: "could not apply tx 0 [0x18a05f40f29ff16d5287f6f88b21c9f3c7fbc268f707251144996294552c4cd6]: max initcode size exceeded: code size 49153 limit 49152",
 			},
 			{ // ErrIntrinsicGas: Not enough gas to cover init code
 				txs: []*types.Transaction{
-					mkDynamicCreationTx(0, 54299, common.Big0, big.NewInt(params.OdyPhase3InitialBaseFee), smallInitCode[:]),
+					mkDynamicCreationTx(0, 54299, common.Big0, big.NewInt(params.ApricotPhase3InitialBaseFee), smallInitCode[:]),
 				},
 				want: "could not apply tx 0 [0x849278f616d51ab56bba399551317213ce7a10e4d9cbc3d14bb663e50cb7ab99]: intrinsic gas too low: have 54299, want 54300",
 			},
@@ -397,10 +397,10 @@ func GenerateBadBlock(parent *types.Block, engine consensus.Engine, txs types.Tr
 		Time:      parent.Time() + 10,
 		UncleHash: types.EmptyUncleHash,
 	}
-	if config.IsOdyPhase3(header.Time) {
+	if config.IsApricotPhase3(header.Time) {
 		header.Extra, header.BaseFee, _ = dummy.CalcBaseFee(config, parent.Header(), header.Time)
 	}
-	if config.IsOdyPhase4(header.Time) {
+	if config.IsApricotPhase4(header.Time) {
 		header.BlockGasCost = big.NewInt(0)
 		header.ExtDataGasUsed = big.NewInt(0)
 	}

@@ -27,7 +27,7 @@
 package vm
 
 import (
-	"github.com/DioneProtocol/coreth/vmerrs"
+	"github.com/ava-labs/coreth/vmerrs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -79,12 +79,12 @@ func NewEVMInterpreter(evm *EVM) *EVMInterpreter {
 	switch {
 	case evm.chainRules.IsDUpgrade:
 		table = &dUpgradeInstructionSet
-	case evm.chainRules.IsOdyPhase3:
-		table = &odyPhase3InstructionSet
-	case evm.chainRules.IsOdyPhase2:
-		table = &odyPhase2InstructionSet
-	case evm.chainRules.IsOdyPhase1:
-		table = &odyPhase1InstructionSet
+	case evm.chainRules.IsApricotPhase3:
+		table = &apricotPhase3InstructionSet
+	case evm.chainRules.IsApricotPhase2:
+		table = &apricotPhase2InstructionSet
+	case evm.chainRules.IsApricotPhase1:
+		table = &apricotPhase1InstructionSet
 	case evm.chainRules.IsIstanbul:
 		table = &istanbulInstructionSet
 	case evm.chainRules.IsConstantinople:
@@ -124,11 +124,11 @@ func NewEVMInterpreter(evm *EVM) *EVMInterpreter {
 // considered a revert-and-consume-all-gas operation except for
 // ErrExecutionReverted which means revert-and-keep-gas-left.
 func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (ret []byte, err error) {
-	// Deprecate special handling of [BuiltinAddr] as of OdyPhase2.
-	// In OdyPhase2, the contract deployed in the genesis is overridden by a deprecated precompiled
+	// Deprecate special handling of [BuiltinAddr] as of ApricotPhase2.
+	// In ApricotPhase2, the contract deployed in the genesis is overridden by a deprecated precompiled
 	// contract which will return an error immediately if its ever called. Therefore, this function should
-	// never be called after OdyPhase2 with [BuiltinAddr] as the contract address.
-	if !in.evm.chainRules.IsOdyPhase2 && contract.Address() == BuiltinAddr {
+	// never be called after ApricotPhase2 with [BuiltinAddr] as the contract address.
+	if !in.evm.chainRules.IsApricotPhase2 && contract.Address() == BuiltinAddr {
 		self := AccountRef(contract.Caller())
 		if _, ok := contract.caller.(*Contract); ok {
 			contract = contract.AsDelegate()

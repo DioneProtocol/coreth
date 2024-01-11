@@ -9,21 +9,21 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/DioneProtocol/coreth/core/state"
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/ava-labs/coreth/core/state"
+	"github.com/ava-labs/coreth/params"
 
-	"github.com/DioneProtocol/odysseygo/chains/atomic"
-	"github.com/DioneProtocol/odysseygo/ids"
-	"github.com/DioneProtocol/odysseygo/snow"
-	"github.com/DioneProtocol/odysseygo/utils"
-	"github.com/DioneProtocol/odysseygo/utils/constants"
-	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
-	"github.com/DioneProtocol/odysseygo/utils/math"
-	"github.com/DioneProtocol/odysseygo/utils/set"
-	"github.com/DioneProtocol/odysseygo/utils/wrappers"
-	"github.com/DioneProtocol/odysseygo/vms/components/dione"
-	"github.com/DioneProtocol/odysseygo/vms/components/verify"
-	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/snow"
+	"github.com/ava-labs/avalanchego/utils"
+	"github.com/ava-labs/avalanchego/utils/constants"
+	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
+	"github.com/ava-labs/avalanchego/utils/math"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/ava-labs/avalanchego/vms/components/avax"
+	"github.com/ava-labs/avalanchego/vms/components/verify"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 )
@@ -31,13 +31,13 @@ import (
 var (
 	_                           UnsignedAtomicTx       = &UnsignedExportTx{}
 	_                           secp256k1fx.UnsignedTx = &UnsignedExportTx{}
-	errExportNonDIONEInputBanff                         = errors.New("export input cannot contain non-DIONE in Banff")
-	errExportNonDIONEOutputBanff                        = errors.New("export output cannot contain non-DIONE in Banff")
+	errExportNonAVAXInputBanff                         = errors.New("export input cannot contain non-AVAX in Banff")
+	errExportNonAVAXOutputBanff                        = errors.New("export output cannot contain non-AVAX in Banff")
 )
 
 // UnsignedExportTx is an unsigned ExportTx
 type UnsignedExportTx struct {
-	dione.Metadata
+	avax.Metadata
 	// ID of the network on which this tx was issued
 	NetworkID uint32 `serialize:"true" json:"networkID"`
 	// ID of this blockchain.
@@ -47,7 +47,7 @@ type UnsignedExportTx struct {
 	// Inputs
 	Ins []EVMInput `serialize:"true" json:"inputs"`
 	// Outputs that are exported to the chain
-	ExportedOutputs []*dione.TransferableOutput `serialize:"true" json:"exportedOutputs"`
+	ExportedOutputs []*avax.TransferableOutput `serialize:"true" json:"exportedOutputs"`
 }
 
 // InputUTXOs returns a set of all the hash(address:nonce) exporting funds.
@@ -82,14 +82,14 @@ func (utx *UnsignedExportTx) Verify(
 	}
 
 	// Make sure that the tx has a valid peer chain ID
-	if rules.IsOdyPhase5 {
+	if rules.IsApricotPhase5 {
 		// Note that SameSubnet verifies that [tx.DestinationChain] isn't this
 		// chain's ID
 		if err := verify.SameSubnet(context.TODO(), ctx, utx.DestinationChain); err != nil {
 			return errWrongChainID
 		}
 	} else {
-		if utx.DestinationChain != ctx.AChainID {
+		if utx.DestinationChain != ctx.XChainID {
 			return errWrongChainID
 		}
 	}
@@ -98,8 +98,8 @@ func (utx *UnsignedExportTx) Verify(
 		if err := in.Verify(); err != nil {
 			return err
 		}
-		if rules.IsBanff && in.AssetID != ctx.DIONEAssetID {
-			return errExportNonDIONEInputBanff
+		if rules.IsBanff && in.AssetID != ctx.AVAXAssetID {
+			return errExportNonAVAXInputBanff
 		}
 	}
 
@@ -108,17 +108,17 @@ func (utx *UnsignedExportTx) Verify(
 			return err
 		}
 		assetID := out.AssetID()
-		if assetID != ctx.DIONEAssetID && utx.DestinationChain == constants.OmegaChainID {
+		if assetID != ctx.AVAXAssetID && utx.DestinationChain == constants.PlatformChainID {
 			return errWrongChainID
 		}
-		if rules.IsBanff && assetID != ctx.DIONEAssetID {
-			return errExportNonDIONEOutputBanff
+		if rules.IsBanff && assetID != ctx.AVAXAssetID {
+			return errExportNonAVAXOutputBanff
 		}
 	}
-	if !dione.IsSortedTransferableOutputs(utx.ExportedOutputs, Codec) {
+	if !avax.IsSortedTransferableOutputs(utx.ExportedOutputs, Codec) {
 		return errOutputsNotSorted
 	}
-	if rules.IsOdyPhase1 && !utils.IsSortedAndUnique(utx.Ins) {
+	if rules.IsApricotPhase1 && !utils.IsSortedAndUnique(utx.Ins) {
 		return errInputsNotSortedUnique
 	}
 
@@ -186,11 +186,11 @@ func (utx *UnsignedExportTx) SemanticVerify(
 	}
 
 	// Check the transaction consumes and produces the right amounts
-	fc := dione.NewFlowChecker()
+	fc := avax.NewFlowChecker()
 	switch {
-	// Apply dynamic fees to export transactions as of Ody Phase 3
-	case rules.IsOdyPhase3:
-		gasUsed, err := stx.GasUsed(rules.IsOdyPhase5)
+	// Apply dynamic fees to export transactions as of Apricot Phase 3
+	case rules.IsApricotPhase3:
+		gasUsed, err := stx.GasUsed(rules.IsApricotPhase5)
 		if err != nil {
 			return err
 		}
@@ -198,10 +198,10 @@ func (utx *UnsignedExportTx) SemanticVerify(
 		if err != nil {
 			return err
 		}
-		fc.Produce(vm.ctx.DIONEAssetID, txFee)
-	// Apply fees to export transactions before Ody Phase 3
+		fc.Produce(vm.ctx.AVAXAssetID, txFee)
+	// Apply fees to export transactions before Apricot Phase 3
 	default:
-		fc.Produce(vm.ctx.DIONEAssetID, params.OdysseyAtomicTxFee)
+		fc.Produce(vm.ctx.AVAXAssetID, params.AvalancheAtomicTxFee)
 	}
 	for _, out := range utx.ExportedOutputs {
 		fc.Produce(out.AssetID(), out.Output().Amount())
@@ -248,12 +248,12 @@ func (utx *UnsignedExportTx) AtomicOps() (ids.ID, *atomic.Requests, error) {
 
 	elems := make([]*atomic.Element, len(utx.ExportedOutputs))
 	for i, out := range utx.ExportedOutputs {
-		utxo := &dione.UTXO{
-			UTXOID: dione.UTXOID{
+		utxo := &avax.UTXO{
+			UTXOID: avax.UTXOID{
 				TxID:        txID,
 				OutputIndex: uint32(i),
 			},
-			Asset: dione.Asset{ID: out.AssetID()},
+			Asset: avax.Asset{ID: out.AssetID()},
 			Out:   out.Out,
 		}
 
@@ -266,7 +266,7 @@ func (utx *UnsignedExportTx) AtomicOps() (ids.ID, *atomic.Requests, error) {
 			Key:   utxoID[:],
 			Value: utxoBytes,
 		}
-		if out, ok := utxo.Out.(dione.Addressable); ok {
+		if out, ok := utxo.Out.(avax.Addressable); ok {
 			elem.Traits = out.Addresses()
 		}
 
@@ -282,11 +282,11 @@ func (vm *VM) newExportTx(
 	amount uint64, // Amount of tokens to export
 	chainID ids.ID, // Chain to send the UTXOs to
 	to ids.ShortID, // Address of chain recipient
-	baseFee *big.Int, // fee to use post-OP3
+	baseFee *big.Int, // fee to use post-AP3
 	keys []*secp256k1.PrivateKey, // Pay the fee and provide the tokens
 ) (*Tx, error) {
-	outs := []*dione.TransferableOutput{{
-		Asset: dione.Asset{ID: assetID},
+	outs := []*avax.TransferableOutput{{
+		Asset: avax.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: amount,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -298,25 +298,25 @@ func (vm *VM) newExportTx(
 	}}
 
 	var (
-		dioneNeeded           uint64 = 0
-		ins, dioneIns         []EVMInput
-		signers, dioneSigners [][]*secp256k1.PrivateKey
+		avaxNeeded           uint64 = 0
+		ins, avaxIns         []EVMInput
+		signers, avaxSigners [][]*secp256k1.PrivateKey
 		err                  error
 	)
 
-	// consume non-DIONE
-	if assetID != vm.ctx.DIONEAssetID {
+	// consume non-AVAX
+	if assetID != vm.ctx.AVAXAssetID {
 		ins, signers, err = vm.GetSpendableFunds(keys, assetID, amount)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't generate tx inputs/signers: %w", err)
 		}
 	} else {
-		dioneNeeded = amount
+		avaxNeeded = amount
 	}
 
 	rules := vm.currentRules()
 	switch {
-	case rules.IsOdyPhase3:
+	case rules.IsApricotPhase3:
 		utx := &UnsignedExportTx{
 			NetworkID:        vm.ctx.NetworkID,
 			BlockchainID:     vm.ctx.ChainID,
@@ -330,27 +330,27 @@ func (vm *VM) newExportTx(
 		}
 
 		var cost uint64
-		cost, err = tx.GasUsed(rules.IsOdyPhase5)
+		cost, err = tx.GasUsed(rules.IsApricotPhase5)
 		if err != nil {
 			return nil, err
 		}
 
-		dioneIns, dioneSigners, err = vm.GetSpendableDIONEWithFee(keys, dioneNeeded, cost, baseFee)
+		avaxIns, avaxSigners, err = vm.GetSpendableAVAXWithFee(keys, avaxNeeded, cost, baseFee)
 	default:
-		var newDioneNeeded uint64
-		newDioneNeeded, err = math.Add64(dioneNeeded, params.OdysseyAtomicTxFee)
+		var newAvaxNeeded uint64
+		newAvaxNeeded, err = math.Add64(avaxNeeded, params.AvalancheAtomicTxFee)
 		if err != nil {
 			return nil, errOverflowExport
 		}
-		dioneIns, dioneSigners, err = vm.GetSpendableFunds(keys, vm.ctx.DIONEAssetID, newDioneNeeded)
+		avaxIns, avaxSigners, err = vm.GetSpendableFunds(keys, vm.ctx.AVAXAssetID, newAvaxNeeded)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate tx inputs/signers: %w", err)
 	}
-	ins = append(ins, dioneIns...)
-	signers = append(signers, dioneSigners...)
+	ins = append(ins, avaxIns...)
+	signers = append(signers, avaxSigners...)
 
-	dione.SortTransferableOutputs(outs, vm.codec)
+	avax.SortTransferableOutputs(outs, vm.codec)
 	SortEVMInputsAndSigners(ins, signers)
 
 	// Create the transaction
@@ -372,9 +372,9 @@ func (vm *VM) newExportTx(
 func (utx *UnsignedExportTx) EVMStateTransfer(ctx *snow.Context, state *state.StateDB) error {
 	addrs := map[[20]byte]uint64{}
 	for _, from := range utx.Ins {
-		if from.AssetID == ctx.DIONEAssetID {
-			log.Debug("crosschain", "dest", utx.DestinationChain, "addr", from.Address, "amount", from.Amount, "assetID", "DIONE")
-			// We multiply the input amount by x2cRate to convert DIONE back to the appropriate
+		if from.AssetID == ctx.AVAXAssetID {
+			log.Debug("crosschain", "dest", utx.DestinationChain, "addr", from.Address, "amount", from.Amount, "assetID", "AVAX")
+			// We multiply the input amount by x2cRate to convert AVAX back to the appropriate
 			// denomination before export.
 			amount := new(big.Int).Mul(
 				new(big.Int).SetUint64(from.Amount), x2cRate)

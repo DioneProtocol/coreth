@@ -33,8 +33,8 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/rpc"
+	"github.com/ava-labs/coreth/core/types"
+	"github.com/ava-labs/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 )
@@ -70,7 +70,7 @@ func (s sortGasAndReward) Less(i, j int) bool {
 
 // processBlock prepares a [slimBlock] from a retrieved block and list of
 // receipts. This slimmed block can be cached and used for future calls.
-func processBlock(block *types.Block, receipts types.Receipts) *slimBlock { // @here
+func processBlock(block *types.Block, receipts types.Receipts) *slimBlock {
 	var sb slimBlock
 	if sb.BaseFee = block.BaseFee(); sb.BaseFee == nil {
 		sb.BaseFee = new(big.Int)
@@ -89,7 +89,7 @@ func processBlock(block *types.Block, receipts types.Receipts) *slimBlock { // @
 
 // processPercentiles returns baseFee, gasUsedRatio, and optionally reward percentiles (if any are
 // requested)
-func (sb *slimBlock) processPercentiles(percentiles []float64) ([]*big.Int, *big.Int, float64) { // @here
+func (sb *slimBlock) processPercentiles(percentiles []float64) ([]*big.Int, *big.Int, float64) {
 	gasUsedRatio := float64(sb.GasUsed) / float64(sb.GasLimit)
 	if len(percentiles) == 0 {
 		// rewards were not requested

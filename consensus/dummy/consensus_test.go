@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/ava-labs/coreth/core/types"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -179,10 +179,10 @@ func TestVerifyBlockFee(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			blockGasCost := calcBlockGasCost(
-				OdyPhase4TargetBlockRate,
-				OdyPhase4MinBlockGasCost,
-				OdyPhase4MaxBlockGasCost,
-				OdyPhase4BlockGasCostStep,
+				ApricotPhase4TargetBlockRate,
+				ApricotPhase4MinBlockGasCost,
+				ApricotPhase4MaxBlockGasCost,
+				ApricotPhase4BlockGasCostStep,
 				test.parentBlockGasCost,
 				test.parentTime, test.currentTime,
 			)

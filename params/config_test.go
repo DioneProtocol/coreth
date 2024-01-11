@@ -33,7 +33,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DioneProtocol/coreth/utils"
+	"github.com/ava-labs/coreth/utils"
 )
 
 func TestCheckCompatible(t *testing.T) {
@@ -111,11 +111,11 @@ func TestCheckCompatible(t *testing.T) {
 		},
 		{
 			stored:        TestChainConfig,
-			new:           TestOdyPhase4Config,
+			new:           TestApricotPhase4Config,
 			headBlock:     0,
 			headTimestamp: 0,
 			wantErr: &ConfigCompatError{
-				What:         "OdyPhase5 fork block timestamp",
+				What:         "ApricotPhase5 fork block timestamp",
 				StoredTime:   utils.NewUint64(0),
 				NewTime:      nil,
 				RewindToTime: 0,
@@ -123,11 +123,11 @@ func TestCheckCompatible(t *testing.T) {
 		},
 		{
 			stored:        TestChainConfig,
-			new:           TestOdyPhase4Config,
+			new:           TestApricotPhase4Config,
 			headBlock:     10,
 			headTimestamp: 100,
 			wantErr: &ConfigCompatError{
-				What:         "OdyPhase5 fork block timestamp",
+				What:         "ApricotPhase5 fork block timestamp",
 				StoredTime:   utils.NewUint64(0),
 				NewTime:      nil,
 				RewindToTime: 0,
@@ -148,15 +148,15 @@ func TestConfigRules(t *testing.T) {
 		CortinaBlockTimestamp: utils.NewUint64(500),
 	}
 	var stamp uint64
-	if r := c.OdysseyRules(big.NewInt(0), stamp); r.IsCortina {
+	if r := c.AvalancheRules(big.NewInt(0), stamp); r.IsCortina {
 		t.Errorf("expected %v to not be cortina", stamp)
 	}
 	stamp = 500
-	if r := c.OdysseyRules(big.NewInt(0), stamp); !r.IsCortina {
+	if r := c.AvalancheRules(big.NewInt(0), stamp); !r.IsCortina {
 		t.Errorf("expected %v to be cortina", stamp)
 	}
 	stamp = math.MaxInt64
-	if r := c.OdysseyRules(big.NewInt(0), stamp); !r.IsCortina {
+	if r := c.AvalancheRules(big.NewInt(0), stamp); !r.IsCortina {
 		t.Errorf("expected %v to be cortina", stamp)
 	}
 }

@@ -10,20 +10,20 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/DioneProtocol/odysseygo/chains/atomic"
-	"github.com/DioneProtocol/odysseygo/database"
-	"github.com/DioneProtocol/odysseygo/database/prefixdb"
-	"github.com/DioneProtocol/odysseygo/database/versiondb"
+	"github.com/ava-labs/avalanchego/chains/atomic"
+	"github.com/ava-labs/avalanchego/database"
+	"github.com/ava-labs/avalanchego/database/prefixdb"
+	"github.com/ava-labs/avalanchego/database/versiondb"
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/DioneProtocol/odysseygo/codec"
-	"github.com/DioneProtocol/odysseygo/utils/set"
-	"github.com/DioneProtocol/odysseygo/utils/wrappers"
+	"github.com/ava-labs/avalanchego/codec"
+	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/ava-labs/avalanchego/utils/wrappers"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/DioneProtocol/odysseygo/database/memdb"
-	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/ava-labs/avalanchego/database/memdb"
+	"github.com/ava-labs/avalanchego/ids"
 )
 
 // addTxs writes [txsPerHeight] txs for heights ranging in [fromHeight, toHeight) directly to [acceptedAtomicTxDB],
@@ -210,7 +210,7 @@ func TestAtomicRepositoryReadWriteMultipleTxs(t *testing.T) {
 	verifyTxs(t, repo, txMap)
 }
 
-func TestAtomicRepositoryPreOP5Migration(t *testing.T) {
+func TestAtomicRepositoryPreAP5Migration(t *testing.T) {
 	db := versiondb.New(memdb.New())
 	codec := testTxCodec()
 
@@ -235,7 +235,7 @@ func TestAtomicRepositoryPreOP5Migration(t *testing.T) {
 	verifyTxs(t, repo, txMap)
 }
 
-func TestAtomicRepositoryPostOP5Migration(t *testing.T) {
+func TestAtomicRepositoryPostAP5Migration(t *testing.T) {
 	db := versiondb.New(memdb.New())
 	codec := testTxCodec()
 

@@ -31,7 +31,7 @@ package rawdb
 import (
 	"errors"
 
-	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/ava-labs/coreth/ethdb"
 )
 
 // Pebble is unsuported on 32bit architecture
