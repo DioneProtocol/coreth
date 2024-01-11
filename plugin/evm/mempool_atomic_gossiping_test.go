@@ -7,14 +7,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ava-labs/coreth/params"
+	"github.com/DioneProtocol/coreth/params"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils"
-	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/components/chain"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/vms/components/chain"
+	"github.com/DioneProtocol/odysseygo/vms/components/dione"
+	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -124,13 +124,13 @@ func createImportTx(t *testing.T, vm *VM, txID ids.ID, feeAmount uint64) *Tx {
 		NetworkID:    testNetworkID,
 		BlockchainID: testCChainID,
 		SourceChain:  testXChainID,
-		ImportedInputs: []*avax.TransferableInput{
+		ImportedInputs: []*dione.TransferableInput{
 			{
-				UTXOID: avax.UTXOID{
+				UTXOID: dione.UTXOID{
 					TxID:        txID,
 					OutputIndex: uint32(0),
 				},
-				Asset: avax.Asset{ID: testAvaxAssetID},
+				Asset: dione.Asset{ID: testDioneAssetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: importAmount,
 					Input: secp256k1fx.Input{
@@ -139,11 +139,11 @@ func createImportTx(t *testing.T, vm *VM, txID ids.ID, feeAmount uint64) *Tx {
 				},
 			},
 			{
-				UTXOID: avax.UTXOID{
+				UTXOID: dione.UTXOID{
 					TxID:        txID,
 					OutputIndex: uint32(1),
 				},
-				Asset: avax.Asset{ID: testAvaxAssetID},
+				Asset: dione.Asset{ID: testDioneAssetID},
 				In: &secp256k1fx.TransferInput{
 					Amt: importAmount,
 					Input: secp256k1fx.Input{
@@ -156,12 +156,12 @@ func createImportTx(t *testing.T, vm *VM, txID ids.ID, feeAmount uint64) *Tx {
 			{
 				Address: testEthAddrs[0],
 				Amount:  importAmount - feeAmount,
-				AssetID: testAvaxAssetID,
+				AssetID: testDioneAssetID,
 			},
 			{
 				Address: testEthAddrs[1],
 				Amount:  importAmount,
-				AssetID: testAvaxAssetID,
+				AssetID: testDioneAssetID,
 			},
 		},
 	}
@@ -192,14 +192,14 @@ func TestMempoolPriorityDrop(t *testing.T) {
 	mempool := vm.mempool
 	mempool.maxSize = 1
 
-	tx1 := createImportTx(t, vm, ids.ID{1}, params.AvalancheAtomicTxFee)
+	tx1 := createImportTx(t, vm, ids.ID{1}, params.OdysseyAtomicTxFee)
 	assert.NoError(mempool.AddTx(tx1))
 	assert.True(mempool.has(tx1.ID()))
-	tx2 := createImportTx(t, vm, ids.ID{2}, params.AvalancheAtomicTxFee)
+	tx2 := createImportTx(t, vm, ids.ID{2}, params.OdysseyAtomicTxFee)
 	assert.ErrorIs(mempool.AddTx(tx2), errInsufficientAtomicTxFee)
 	assert.True(mempool.has(tx1.ID()))
 	assert.False(mempool.has(tx2.ID()))
-	tx3 := createImportTx(t, vm, ids.ID{3}, 2*params.AvalancheAtomicTxFee)
+	tx3 := createImportTx(t, vm, ids.ID{3}, 2*params.OdysseyAtomicTxFee)
 	assert.NoError(mempool.AddTx(tx3))
 	assert.False(mempool.has(tx1.ID()))
 	assert.False(mempool.has(tx2.ID()))

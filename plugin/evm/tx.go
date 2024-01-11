@@ -14,19 +14,19 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/ava-labs/coreth/core/state"
-	"github.com/ava-labs/coreth/params"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/params"
 
-	"github.com/ava-labs/avalanchego/chains/atomic"
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
-	"github.com/ava-labs/avalanchego/utils/hashing"
-	"github.com/ava-labs/avalanchego/utils/set"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
-	"github.com/ava-labs/avalanchego/vms/components/verify"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/snow"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/hashing"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
+	"github.com/DioneProtocol/odysseygo/vms/components/verify"
+	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 )
 
 var (
@@ -178,11 +178,11 @@ func (tx *Tx) Sign(c codec.Manager, signers [][]*secp256k1.PrivateKey) error {
 	return nil
 }
 
-// BlockFeeContribution calculates how much AVAX towards the block fee contribution was paid
-// for via this transaction denominated in [avaxAssetID] with [baseFee] used to calculate the
+// BlockFeeContribution calculates how much DIONE towards the block fee contribution was paid
+// for via this transaction denominated in [dioneAssetID] with [baseFee] used to calculate the
 // cost of this transaction. This function also returns the [gasUsed] by the
 // transaction for inclusion in the [baseFee] algorithm.
-func (tx *Tx) BlockFeeContribution(fixedFee bool, avaxAssetID ids.ID, baseFee *big.Int) (*big.Int, *big.Int, error) {
+func (tx *Tx) BlockFeeContribution(fixedFee bool, dioneAssetID ids.ID, baseFee *big.Int) (*big.Int, *big.Int, error) {
 	if baseFee == nil {
 		return nil, nil, errNilBaseFee
 	}
@@ -197,16 +197,16 @@ func (tx *Tx) BlockFeeContribution(fixedFee bool, avaxAssetID ids.ID, baseFee *b
 	if err != nil {
 		return nil, nil, err
 	}
-	burned, err := tx.Burned(avaxAssetID)
+	burned, err := tx.Burned(dioneAssetID)
 	if err != nil {
 		return nil, nil, err
 	}
 	if txFee > burned {
-		return nil, nil, fmt.Errorf("insufficient AVAX burned (%d) to cover import tx fee (%d)", burned, txFee)
+		return nil, nil, fmt.Errorf("insufficient DIONE burned (%d) to cover import tx fee (%d)", burned, txFee)
 	}
 	excessBurned := burned - txFee
 
-	// Calculate the amount of AVAX that has been burned above the required fee denominated
+	// Calculate the amount of DIONE that has been burned above the required fee denominated
 	// in C-Chain native 18 decimal places
 	blockFeeContribution := new(big.Int).Mul(new(big.Int).SetUint64(excessBurned), x2cRate)
 	return blockFeeContribution, new(big.Int).SetUint64(gasUsed), nil
@@ -238,7 +238,7 @@ func SortEVMInputsAndSigners(inputs []EVMInput, signers [][]*secp256k1.PrivateKe
 	sort.Sort(&innerSortInputsAndSigners{inputs: inputs, signers: signers})
 }
 
-// calculates the amount of AVAX that must be burned by an atomic transaction
+// calculates the amount of DIONE that must be burned by an atomic transaction
 // that consumes [cost] at [baseFee].
 func CalculateDynamicFee(cost uint64, baseFee *big.Int) (uint64, error) {
 	if baseFee == nil {
@@ -247,12 +247,12 @@ func CalculateDynamicFee(cost uint64, baseFee *big.Int) (uint64, error) {
 	bigCost := new(big.Int).SetUint64(cost)
 	fee := new(big.Int).Mul(bigCost, baseFee)
 	feeToRoundUp := new(big.Int).Add(fee, x2cRateMinus1)
-	feeInNAVAX := new(big.Int).Div(feeToRoundUp, x2cRate)
-	if !feeInNAVAX.IsUint64() {
+	feeInNDIONE := new(big.Int).Div(feeToRoundUp, x2cRate)
+	if !feeInNDIONE.IsUint64() {
 		// the fee is more than can fit in a uint64
 		return 0, errFeeOverflow
 	}
-	return feeInNAVAX.Uint64(), nil
+	return feeInNDIONE.Uint64(), nil
 }
 
 func calcBytesCost(len int) uint64 {

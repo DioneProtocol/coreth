@@ -31,8 +31,8 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/ava-labs/avalanchego/utils/wrappers"
-	"github.com/ava-labs/coreth/metrics"
+	"github.com/DioneProtocol/coreth/metrics"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )

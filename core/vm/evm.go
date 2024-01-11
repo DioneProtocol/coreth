@@ -31,10 +31,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ava-labs/coreth/constants"
-	"github.com/ava-labs/coreth/params"
-	"github.com/ava-labs/coreth/precompile"
-	"github.com/ava-labs/coreth/vmerrs"
+	"github.com/DioneProtocol/coreth/constants"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/precompile"
+	"github.com/DioneProtocol/coreth/vmerrs"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/holiman/uint256"
@@ -191,7 +191,7 @@ func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainConfig
 		StateDB:     statedb,
 		Config:      config,
 		chainConfig: chainConfig,
-		chainRules:  chainConfig.AvalancheRules(blockCtx.BlockNumber, blockCtx.Time),
+		chainRules:  chainConfig.OdysseyRules(blockCtx.BlockNumber, blockCtx.Time),
 	}
 	evm.interpreter = NewEVMInterpreter(evm)
 	return evm
@@ -234,7 +234,7 @@ func (evm *EVM) Interpreter() *EVMInterpreter {
 func (evm *EVM) SetBlockContext(blockCtx BlockContext) {
 	evm.Context = blockCtx
 	num := blockCtx.BlockNumber
-	evm.chainRules = evm.chainConfig.AvalancheRules(num, blockCtx.Time)
+	evm.chainRules = evm.chainConfig.OdysseyRules(num, blockCtx.Time)
 }
 
 // Call executes the contract associated with the addr with the given input as

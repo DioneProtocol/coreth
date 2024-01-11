@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/ava-labs/coreth/vmerrs"
+	"github.com/DioneProtocol/coreth/vmerrs"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -25,6 +25,7 @@ func CalculateFunctionSelector(functionSignature string) []byte {
 }
 
 // deductGas checks if [suppliedGas] is sufficient against [requiredGas] and deducts [requiredGas] from [suppliedGas].
+//
 //nolint:unused,deadcode
 func deductGas(suppliedGas uint64, requiredGas uint64) (uint64, error) {
 	if suppliedGas < requiredGas {

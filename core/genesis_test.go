@@ -32,13 +32,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ava-labs/coreth/consensus/dummy"
-	"github.com/ava-labs/coreth/core/rawdb"
-	"github.com/ava-labs/coreth/core/vm"
-	"github.com/ava-labs/coreth/ethdb"
-	"github.com/ava-labs/coreth/params"
-	"github.com/ava-labs/coreth/trie"
-	"github.com/ava-labs/coreth/utils"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/utils"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
@@ -115,7 +115,7 @@ func TestSetupGenesis(t *testing.T) {
 			wantConfig: customg.Config,
 		},
 		{
-			name: "incompatible config for avalanche fork in DB",
+			name: "incompatible config for odyssey fork in DB",
 			fn: func(db ethdb.Database) (*params.ChainConfig, common.Hash, error) {
 				// Commit the 'old' genesis block with ApricotPhase1 transition at 90.
 				// Advance to block #4, past the ApricotPhase1 transition block of customg.

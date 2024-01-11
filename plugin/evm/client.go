@@ -10,13 +10,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 
-	"github.com/ava-labs/avalanchego/api"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
-	"github.com/ava-labs/avalanchego/utils/formatting"
-	"github.com/ava-labs/avalanchego/utils/formatting/address"
-	"github.com/ava-labs/avalanchego/utils/json"
-	"github.com/ava-labs/avalanchego/utils/rpc"
+	"github.com/DioneProtocol/odysseygo/api"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/formatting"
+	"github.com/DioneProtocol/odysseygo/utils/formatting/address"
+	"github.com/DioneProtocol/odysseygo/utils/json"
+	"github.com/DioneProtocol/odysseygo/utils/rpc"
 )
 
 // Interface compliance
@@ -31,7 +31,7 @@ type Client interface {
 	ExportKey(ctx context.Context, userPass api.UserPass, addr common.Address, options ...rpc.Option) (*secp256k1.PrivateKey, string, error)
 	ImportKey(ctx context.Context, userPass api.UserPass, privateKey *secp256k1.PrivateKey, options ...rpc.Option) (common.Address, error)
 	Import(ctx context.Context, userPass api.UserPass, to common.Address, sourceChain string, options ...rpc.Option) (ids.ID, error)
-	ExportAVAX(ctx context.Context, userPass api.UserPass, amount uint64, to ids.ShortID, targetChain string, options ...rpc.Option) (ids.ID, error)
+	ExportDIONE(ctx context.Context, userPass api.UserPass, amount uint64, to ids.ShortID, targetChain string, options ...rpc.Option) (ids.ID, error)
 	Export(ctx context.Context, userPass api.UserPass, amount uint64, to ids.ShortID, targetChain string, assetID string, options ...rpc.Option) (ids.ID, error)
 	StartCPUProfiler(ctx context.Context, options ...rpc.Option) error
 	StopCPUProfiler(ctx context.Context, options ...rpc.Option) error
@@ -50,7 +50,7 @@ type client struct {
 // NewClient returns a Client for interacting with EVM [chain]
 func NewClient(uri, chain string) Client {
 	return &client{
-		requester:      rpc.NewEndpointRequester(fmt.Sprintf("%s/ext/bc/%s/avax", uri, chain)),
+		requester:      rpc.NewEndpointRequester(fmt.Sprintf("%s/ext/bc/%s/dione", uri, chain)),
 		adminRequester: rpc.NewEndpointRequester(fmt.Sprintf("%s/ext/bc/%s/admin", uri, chain)),
 	}
 }
@@ -67,7 +67,7 @@ func (c *client) IssueTx(ctx context.Context, txBytes []byte, options ...rpc.Opt
 	if err != nil {
 		return res.TxID, fmt.Errorf("problem hex encoding bytes: %w", err)
 	}
-	err = c.requester.SendRequest(ctx, "avax.issueTx", &api.FormattedTx{
+	err = c.requester.SendRequest(ctx, "dione.issueTx", &api.FormattedTx{
 		Tx:       txStr,
 		Encoding: formatting.Hex,
 	}, res, options...)
@@ -77,7 +77,7 @@ func (c *client) IssueTx(ctx context.Context, txBytes []byte, options ...rpc.Opt
 // GetAtomicTxStatus returns the status of [txID]
 func (c *client) GetAtomicTxStatus(ctx context.Context, txID ids.ID, options ...rpc.Option) (Status, error) {
 	res := &GetAtomicTxStatusReply{}
-	err := c.requester.SendRequest(ctx, "avax.getAtomicTxStatus", &api.JSONTxID{
+	err := c.requester.SendRequest(ctx, "dione.getAtomicTxStatus", &api.JSONTxID{
 		TxID: txID,
 	}, res, options...)
 	return res.Status, err
@@ -86,7 +86,7 @@ func (c *client) GetAtomicTxStatus(ctx context.Context, txID ids.ID, options ...
 // GetAtomicTx returns the byte representation of [txID]
 func (c *client) GetAtomicTx(ctx context.Context, txID ids.ID, options ...rpc.Option) ([]byte, error) {
 	res := &api.FormattedTx{}
-	err := c.requester.SendRequest(ctx, "avax.getAtomicTx", &api.GetTxArgs{
+	err := c.requester.SendRequest(ctx, "dione.getAtomicTx", &api.GetTxArgs{
 		TxID:     txID,
 		Encoding: formatting.Hex,
 	}, res, options...)
@@ -101,7 +101,7 @@ func (c *client) GetAtomicTx(ctx context.Context, txID ids.ID, options ...rpc.Op
 // from [sourceChain]
 func (c *client) GetAtomicUTXOs(ctx context.Context, addrs []ids.ShortID, sourceChain string, limit uint32, startAddress ids.ShortID, startUTXOID ids.ID, options ...rpc.Option) ([][]byte, ids.ShortID, ids.ID, error) {
 	res := &api.GetUTXOsReply{}
-	err := c.requester.SendRequest(ctx, "avax.getUTXOs", &api.GetUTXOsArgs{
+	err := c.requester.SendRequest(ctx, "dione.getUTXOs", &api.GetUTXOsArgs{
 		Addresses:   ids.ShortIDsToStrings(addrs),
 		SourceChain: sourceChain,
 		Limit:       json.Uint32(limit),
@@ -132,10 +132,10 @@ func (c *client) GetAtomicUTXOs(ctx context.Context, addrs []ids.ShortID, source
 }
 
 // ExportKey returns the private key corresponding to [addr] controlled by [user]
-// in both Avalanche standard format and hex format
+// in both Odyssey standard format and hex format
 func (c *client) ExportKey(ctx context.Context, user api.UserPass, addr common.Address, options ...rpc.Option) (*secp256k1.PrivateKey, string, error) {
 	res := &ExportKeyReply{}
-	err := c.requester.SendRequest(ctx, "avax.exportKey", &ExportKeyArgs{
+	err := c.requester.SendRequest(ctx, "dione.exportKey", &ExportKeyArgs{
 		UserPass: user,
 		Address:  addr.Hex(),
 	}, res, options...)
@@ -145,7 +145,7 @@ func (c *client) ExportKey(ctx context.Context, user api.UserPass, addr common.A
 // ImportKey imports [privateKey] to [user]
 func (c *client) ImportKey(ctx context.Context, user api.UserPass, privateKey *secp256k1.PrivateKey, options ...rpc.Option) (common.Address, error) {
 	res := &api.JSONAddress{}
-	err := c.requester.SendRequest(ctx, "avax.importKey", &ImportKeyArgs{
+	err := c.requester.SendRequest(ctx, "dione.importKey", &ImportKeyArgs{
 		UserPass:   user,
 		PrivateKey: privateKey,
 	}, res, options...)
@@ -159,7 +159,7 @@ func (c *client) ImportKey(ctx context.Context, user api.UserPass, privateKey *s
 // returns the ID of the newly created transaction
 func (c *client) Import(ctx context.Context, user api.UserPass, to common.Address, sourceChain string, options ...rpc.Option) (ids.ID, error) {
 	res := &api.JSONTxID{}
-	err := c.requester.SendRequest(ctx, "avax.import", &ImportArgs{
+	err := c.requester.SendRequest(ctx, "dione.import", &ImportArgs{
 		UserPass:    user,
 		To:          to,
 		SourceChain: sourceChain,
@@ -167,9 +167,9 @@ func (c *client) Import(ctx context.Context, user api.UserPass, to common.Addres
 	return res.TxID, err
 }
 
-// ExportAVAX sends AVAX from this chain to the address specified by [to].
+// ExportDIONE sends DIONE from this chain to the address specified by [to].
 // Returns the ID of the newly created atomic transaction
-func (c *client) ExportAVAX(
+func (c *client) ExportDIONE(
 	ctx context.Context,
 	user api.UserPass,
 	amount uint64,
@@ -177,11 +177,11 @@ func (c *client) ExportAVAX(
 	targetChain string,
 	options ...rpc.Option,
 ) (ids.ID, error) {
-	return c.Export(ctx, user, amount, to, targetChain, "AVAX", options...)
+	return c.Export(ctx, user, amount, to, targetChain, "DIONE", options...)
 }
 
 // Export sends an asset from this chain to the P/C-Chain.
-// After this tx is accepted, the AVAX must be imported to the P/C-chain with an importTx.
+// After this tx is accepted, the DIONE must be imported to the P/C-chain with an importTx.
 // Returns the ID of the newly created atomic transaction
 func (c *client) Export(
 	ctx context.Context,
@@ -193,8 +193,8 @@ func (c *client) Export(
 	options ...rpc.Option,
 ) (ids.ID, error) {
 	res := &api.JSONTxID{}
-	err := c.requester.SendRequest(ctx, "avax.export", &ExportArgs{
-		ExportAVAXArgs: ExportAVAXArgs{
+	err := c.requester.SendRequest(ctx, "dione.export", &ExportArgs{
+		ExportDIONEArgs: ExportDIONEArgs{
 			UserPass:    user,
 			Amount:      json.Uint64(amount),
 			TargetChain: targetChain,

@@ -16,33 +16,33 @@ import (
 	"sync"
 	"time"
 
-	avalanchegoMetrics "github.com/ava-labs/avalanchego/api/metrics"
-	"github.com/ava-labs/avalanchego/network/p2p"
-	"github.com/ava-labs/avalanchego/network/p2p/gossip"
+	odysseygoMetrics "github.com/DioneProtocol/odysseygo/api/metrics"
+	"github.com/DioneProtocol/odysseygo/network/p2p"
+	"github.com/DioneProtocol/odysseygo/network/p2p/gossip"
 
-	"github.com/ava-labs/coreth/consensus/dummy"
-	corethConstants "github.com/ava-labs/coreth/constants"
-	"github.com/ava-labs/coreth/core"
-	"github.com/ava-labs/coreth/core/rawdb"
-	"github.com/ava-labs/coreth/core/state"
-	"github.com/ava-labs/coreth/core/txpool"
-	"github.com/ava-labs/coreth/core/types"
-	"github.com/ava-labs/coreth/eth"
-	"github.com/ava-labs/coreth/eth/ethconfig"
-	"github.com/ava-labs/coreth/ethdb"
-	corethPrometheus "github.com/ava-labs/coreth/metrics/prometheus"
-	"github.com/ava-labs/coreth/miner"
-	"github.com/ava-labs/coreth/node"
-	"github.com/ava-labs/coreth/params"
-	"github.com/ava-labs/coreth/peer"
-	"github.com/ava-labs/coreth/plugin/evm/message"
-	"github.com/ava-labs/coreth/rpc"
-	statesyncclient "github.com/ava-labs/coreth/sync/client"
-	"github.com/ava-labs/coreth/sync/client/stats"
-	"github.com/ava-labs/coreth/sync/handlers"
-	handlerstats "github.com/ava-labs/coreth/sync/handlers/stats"
-	"github.com/ava-labs/coreth/trie"
-	"github.com/ava-labs/coreth/utils"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	corethConstants "github.com/DioneProtocol/coreth/constants"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/txpool"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/eth"
+	"github.com/DioneProtocol/coreth/eth/ethconfig"
+	"github.com/DioneProtocol/coreth/ethdb"
+	corethPrometheus "github.com/DioneProtocol/coreth/metrics/prometheus"
+	"github.com/DioneProtocol/coreth/miner"
+	"github.com/DioneProtocol/coreth/node"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/peer"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/rpc"
+	statesyncclient "github.com/DioneProtocol/coreth/sync/client"
+	"github.com/DioneProtocol/coreth/sync/client/stats"
+	"github.com/DioneProtocol/coreth/sync/handlers"
+	handlerstats "github.com/DioneProtocol/coreth/sync/handlers/stats"
+	"github.com/DioneProtocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/utils"
 
 	"github.com/prometheus/client_golang/prometheus"
 	// Force-load tracer engine to trigger registration
@@ -50,46 +50,46 @@ import (
 	// We must import this package (not referenced elsewhere) so that the native "callTracer"
 	// is added to a map of client-accessible tracers. In geth, this is done
 	// inside of cmd/geth.
-	_ "github.com/ava-labs/coreth/eth/tracers/js"
-	_ "github.com/ava-labs/coreth/eth/tracers/native"
+	_ "github.com/DioneProtocol/coreth/eth/tracers/js"
+	_ "github.com/DioneProtocol/coreth/eth/tracers/native"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/ava-labs/coreth/metrics"
+	"github.com/DioneProtocol/coreth/metrics"
 
-	avalancheRPC "github.com/gorilla/rpc/v2"
+	odysseyRPC "github.com/gorilla/rpc/v2"
 
-	"github.com/ava-labs/avalanchego/cache"
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/codec/linearcodec"
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/manager"
-	"github.com/ava-labs/avalanchego/database/prefixdb"
-	"github.com/ava-labs/avalanchego/database/versiondb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/snow/consensus/snowman"
-	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
-	"github.com/ava-labs/avalanchego/utils/formatting/address"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/math"
-	"github.com/ava-labs/avalanchego/utils/perms"
-	"github.com/ava-labs/avalanchego/utils/profiler"
-	"github.com/ava-labs/avalanchego/utils/set"
-	"github.com/ava-labs/avalanchego/utils/timer/mockable"
-	"github.com/ava-labs/avalanchego/utils/units"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/components/chain"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/DioneProtocol/odysseygo/cache"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/codec/linearcodec"
+	"github.com/DioneProtocol/odysseygo/database"
+	"github.com/DioneProtocol/odysseygo/database/manager"
+	"github.com/DioneProtocol/odysseygo/database/prefixdb"
+	"github.com/DioneProtocol/odysseygo/database/versiondb"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/snow"
+	"github.com/DioneProtocol/odysseygo/snow/choices"
+	"github.com/DioneProtocol/odysseygo/snow/consensus/snowman"
+	"github.com/DioneProtocol/odysseygo/snow/engine/snowman/block"
+	"github.com/DioneProtocol/odysseygo/utils/constants"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/formatting/address"
+	"github.com/DioneProtocol/odysseygo/utils/logging"
+	"github.com/DioneProtocol/odysseygo/utils/math"
+	"github.com/DioneProtocol/odysseygo/utils/perms"
+	"github.com/DioneProtocol/odysseygo/utils/profiler"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/utils/timer/mockable"
+	"github.com/DioneProtocol/odysseygo/utils/units"
+	"github.com/DioneProtocol/odysseygo/vms/components/chain"
+	"github.com/DioneProtocol/odysseygo/vms/components/dione"
+	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 
-	commonEng "github.com/ava-labs/avalanchego/snow/engine/common"
+	commonEng "github.com/DioneProtocol/odysseygo/snow/engine/common"
 
-	avalancheJSON "github.com/ava-labs/avalanchego/utils/json"
+	odysseyJSON "github.com/DioneProtocol/odysseygo/utils/json"
 )
 
 const (
@@ -103,8 +103,8 @@ const (
 
 var (
 	// x2cRate is the conversion rate between the smallest denomination on the X-Chain
-	// 1 nAVAX and the smallest denomination on the C-Chain 1 wei. Where 1 nAVAX = 1 gWei.
-	// This is only required for AVAX because the denomination of 1 AVAX is 9 decimal
+	// 1 nDIONE and the smallest denomination on the C-Chain 1 wei. Where 1 nDIONE = 1 gWei.
+	// This is only required for DIONE because the denomination of 1 DIONE is 9 decimal
 	// places on the X and P chains, but is 18 decimal places within the EVM.
 	x2cRate       = big.NewInt(x2cRateInt64)
 	x2cRateMinus1 = big.NewInt(x2cRateMinus1Int64)
@@ -167,7 +167,7 @@ var (
 
 // Define the API endpoints for the VM
 const (
-	avaxEndpoint   = "/avax"
+	dioneEndpoint  = "/dione"
 	adminEndpoint  = "/admin"
 	ethRPCEndpoint = "/rpc"
 	ethWSEndpoint  = "/ws"
@@ -205,7 +205,7 @@ var (
 	errConflictingAtomicInputs        = errors.New("invalid block due to conflicting atomic inputs")
 	errUnclesUnsupported              = errors.New("uncles unsupported")
 	errRejectedParent                 = errors.New("rejected parent")
-	errInsufficientFundsForFee        = errors.New("insufficient AVAX funds to pay transaction fee")
+	errInsufficientFundsForFee        = errors.New("insufficient DIONE funds to pay transaction fee")
 	errNoEVMOutputs                   = errors.New("tx has no EVM outputs")
 	errNilBaseFeeApricotPhase3        = errors.New("nil base fee is invalid after apricotPhase3")
 	errNilExtDataGasUsedApricotPhase4 = errors.New("nil extDataGasUsed is invalid after apricotPhase4")
@@ -318,7 +318,7 @@ type VM struct {
 	router     *p2p.Router
 
 	// Metrics
-	multiGatherer avalanchegoMetrics.MultiGatherer
+	multiGatherer odysseygoMetrics.MultiGatherer
 	sdkMetrics    *prometheus.Registry
 
 	bootstrapped bool
@@ -438,23 +438,23 @@ func (vm *VM) Initialize(
 	var extDataHashes map[common.Hash]common.Hash
 	// Set the chain config for mainnet/fuji chain IDs
 	switch {
-	case g.Config.ChainID.Cmp(params.AvalancheMainnetChainID) == 0:
-		g.Config = params.AvalancheMainnetChainConfig
+	case g.Config.ChainID.Cmp(params.OdysseyMainnetChainID) == 0:
+		g.Config = params.OdysseyMainnetChainConfig
 		extDataHashes = mainnetExtDataHashes
-	case g.Config.ChainID.Cmp(params.AvalancheFujiChainID) == 0:
-		g.Config = params.AvalancheFujiChainConfig
+	case g.Config.ChainID.Cmp(params.OdysseyFujiChainID) == 0:
+		g.Config = params.OdysseyFujiChainConfig
 		extDataHashes = fujiExtDataHashes
-	case g.Config.ChainID.Cmp(params.AvalancheLocalChainID) == 0:
-		g.Config = params.AvalancheLocalChainConfig
+	case g.Config.ChainID.Cmp(params.OdysseyLocalChainID) == 0:
+		g.Config = params.OdysseyLocalChainConfig
 	}
-	// Set the Avalanche Context on the ChainConfig
-	g.Config.AvalancheContext = params.AvalancheContext{
+	// Set the Odyssey Context on the ChainConfig
+	g.Config.OdysseyContext = params.OdysseyContext{
 		BlockchainID: common.Hash(chainCtx.ChainID),
 	}
 	vm.syntacticBlockValidator = NewBlockValidator(extDataHashes)
 
 	// Ensure that non-standard commit interval is only allowed for the local network
-	if g.Config.ChainID.Cmp(params.AvalancheLocalChainID) != 0 {
+	if g.Config.ChainID.Cmp(params.OdysseyLocalChainID) != 0 {
 		if vm.config.CommitInterval != defaultCommitInterval {
 			return fmt.Errorf("cannot start non-local network with commit interval %d", vm.config.CommitInterval)
 		}
@@ -541,7 +541,7 @@ func (vm *VM) Initialize(
 	vm.codec = Codec
 
 	// TODO: read size from settings
-	vm.mempool, err = NewMempool(chainCtx.AVAXAssetID, defaultMempoolSize)
+	vm.mempool, err = NewMempool(chainCtx.DIONEAssetID, defaultMempoolSize)
 	if err != nil {
 		return fmt.Errorf("failed to initialize mempool: %w", err)
 	}
@@ -565,7 +565,7 @@ func (vm *VM) Initialize(
 		bonusBlockHeights     map[uint64]ids.ID
 		canonicalBlockHeights []uint64
 	)
-	if vm.chainID.Cmp(params.AvalancheMainnetChainID) == 0 {
+	if vm.chainID.Cmp(params.OdysseyMainnetChainID) == 0 {
 		bonusBlockHeights = bonusBlockMainnetHeights
 		canonicalBlockHeights = canonicalBlockMainnetHeights
 	}
@@ -605,7 +605,7 @@ func (vm *VM) Initialize(
 
 func (vm *VM) initializeMetrics() error {
 	vm.sdkMetrics = prometheus.NewRegistry()
-	vm.multiGatherer = avalanchegoMetrics.NewMultiGatherer()
+	vm.multiGatherer = odysseygoMetrics.NewMultiGatherer()
 	// If metrics are enabled, register the default metrics regitry
 	if metrics.Enabled {
 		gatherer := corethPrometheus.Gatherer(metrics.DefaultRegistry)
@@ -771,7 +771,7 @@ func (vm *VM) preBatchOnFinalizeAndAssemble(header *types.Header, state *state.S
 		// Note: snapshot is taken inside the loop because you cannot revert to the same snapshot more than
 		// once.
 		snapshot := state.Snapshot()
-		rules := vm.chainConfig.AvalancheRules(header.Number, header.Time)
+		rules := vm.chainConfig.OdysseyRules(header.Number, header.Time)
 		if err := vm.verifyTx(tx, header.ParentHash, header.BaseFee, state, rules); err != nil {
 			// Discard the transaction from the mempool on failed verification.
 			log.Debug("discarding tx from mempool on failed verification", "txID", tx.ID(), "err", err)
@@ -790,7 +790,7 @@ func (vm *VM) preBatchOnFinalizeAndAssemble(header *types.Header, state *state.S
 		}
 		var contribution, gasUsed *big.Int
 		if rules.IsApricotPhase4 {
-			contribution, gasUsed, err = tx.BlockFeeContribution(rules.IsApricotPhase5, vm.ctx.AVAXAssetID, header.BaseFee)
+			contribution, gasUsed, err = tx.BlockFeeContribution(rules.IsApricotPhase5, vm.ctx.DIONEAssetID, header.BaseFee)
 			if err != nil {
 				return nil, nil, nil, err
 			}
@@ -813,7 +813,7 @@ func (vm *VM) postBatchOnFinalizeAndAssemble(header *types.Header, state *state.
 		batchAtomicUTXOs  set.Set[ids.ID]
 		batchContribution *big.Int = new(big.Int).Set(common.Big0)
 		batchGasUsed      *big.Int = new(big.Int).Set(common.Big0)
-		rules                      = vm.chainConfig.AvalancheRules(header.Number, header.Time)
+		rules                      = vm.chainConfig.OdysseyRules(header.Number, header.Time)
 		size              int
 	)
 
@@ -838,7 +838,7 @@ func (vm *VM) postBatchOnFinalizeAndAssemble(header *types.Header, state *state.
 		// Note: we do not need to check if we are in at least ApricotPhase4 here because
 		// we assume that this function will only be called when the block is in at least
 		// ApricotPhase5.
-		txContribution, txGasUsed, err = tx.BlockFeeContribution(true, vm.ctx.AVAXAssetID, header.BaseFee)
+		txContribution, txGasUsed, err = tx.BlockFeeContribution(true, vm.ctx.DIONEAssetID, header.BaseFee)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -919,7 +919,7 @@ func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB) (*big
 		batchContribution *big.Int = big.NewInt(0)
 		batchGasUsed      *big.Int = big.NewInt(0)
 		header                     = block.Header()
-		rules                      = vm.chainConfig.AvalancheRules(header.Number, header.Time)
+		rules                      = vm.chainConfig.OdysseyRules(header.Number, header.Time)
 	)
 
 	txs, err := ExtractAtomicTxs(block.ExtData(), rules.IsApricotPhase5, vm.codec)
@@ -955,7 +955,7 @@ func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB) (*big
 		}
 		// If ApricotPhase4 is enabled, calculate the block fee contribution
 		if rules.IsApricotPhase4 {
-			contribution, gasUsed, err := tx.BlockFeeContribution(rules.IsApricotPhase5, vm.ctx.AVAXAssetID, block.BaseFee())
+			contribution, gasUsed, err := tx.BlockFeeContribution(rules.IsApricotPhase5, vm.ctx.DIONEAssetID, block.BaseFee())
 			if err != nil {
 				return nil, nil, err
 			}
@@ -1293,9 +1293,9 @@ func (vm *VM) Version(context.Context) (string, error) {
 //     By default the LockOption is WriteLock
 //     [lockOption] should have either 0 or 1 elements. Elements beside the first are ignored.
 func newHandler(name string, service interface{}, lockOption ...commonEng.LockOption) (*commonEng.HTTPHandler, error) {
-	server := avalancheRPC.NewServer()
-	server.RegisterCodec(avalancheJSON.NewCodec(), "application/json")
-	server.RegisterCodec(avalancheJSON.NewCodec(), "application/json;charset=UTF-8")
+	server := odysseyRPC.NewServer()
+	server.RegisterCodec(odysseyJSON.NewCodec(), "application/json")
+	server.RegisterCodec(odysseyJSON.NewCodec(), "application/json;charset=UTF-8")
 	if err := server.RegisterService(service, name); err != nil {
 		return nil, err
 	}
@@ -1320,12 +1320,12 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]*commonEng.HTTPHandler
 		return nil, fmt.Errorf("failed to get primary alias for chain due to %w", err)
 	}
 	apis := make(map[string]*commonEng.HTTPHandler)
-	avaxAPI, err := newHandler("avax", &AvaxAPI{vm})
+	dioneAPI, err := newHandler("dione", &DioneAPI{vm})
 	if err != nil {
-		return nil, fmt.Errorf("failed to register service for AVAX API due to %w", err)
+		return nil, fmt.Errorf("failed to register service for DIONE API due to %w", err)
 	}
-	enabledAPIs = append(enabledAPIs, "avax")
-	apis[avaxEndpoint] = avaxAPI
+	enabledAPIs = append(enabledAPIs, "dione")
+	apis[dioneEndpoint] = dioneAPI
 
 	if vm.config.AdminAPIEnabled {
 		adminAPI, err := newHandler("admin", NewAdminService(vm, os.ExpandEnv(fmt.Sprintf("%s_coreth_performance_%s", vm.config.AdminAPIDir, primaryAlias))))
@@ -1595,7 +1595,7 @@ func (vm *VM) GetAtomicUTXOs(
 	startAddr ids.ShortID,
 	startUTXOID ids.ID,
 	limit int,
-) ([]*avax.UTXO, ids.ShortID, ids.ID, error) {
+) ([]*dione.UTXO, ids.ShortID, ids.ID, error) {
 	if limit <= 0 || limit > maxUTXOsToFetch {
 		limit = maxUTXOsToFetch
 	}
@@ -1625,9 +1625,9 @@ func (vm *VM) GetAtomicUTXOs(
 		lastUTXOID = ids.Empty
 	}
 
-	utxos := make([]*avax.UTXO, len(allUTXOBytes))
+	utxos := make([]*dione.UTXO, len(allUTXOBytes))
 	for i, utxoBytes := range allUTXOBytes {
-		utxo := &avax.UTXO{}
+		utxo := &dione.UTXO{}
 		if _, err := vm.codec.Unmarshal(utxoBytes, utxo); err != nil {
 			return nil, ids.ShortID{}, ids.ID{}, fmt.Errorf("error parsing UTXO: %w", err)
 		}
@@ -1661,9 +1661,9 @@ func (vm *VM) GetSpendableFunds(
 		}
 		addr := GetEthAddress(key)
 		var balance uint64
-		if assetID == vm.ctx.AVAXAssetID {
-			// If the asset is AVAX, we divide by the x2cRate to convert back to the correct
-			// denomination of AVAX that can be exported.
+		if assetID == vm.ctx.DIONEAssetID {
+			// If the asset is DIONE, we divide by the x2cRate to convert back to the correct
+			// denomination of DIONE that can be exported.
 			balance = new(big.Int).Div(state.GetBalance(addr), x2cRate).Uint64()
 		} else {
 			balance = state.GetBalanceMultiCoin(addr, common.Hash(assetID)).Uint64()
@@ -1695,15 +1695,15 @@ func (vm *VM) GetSpendableFunds(
 	return inputs, signers, nil
 }
 
-// GetSpendableAVAXWithFee returns a list of EVMInputs and keys (in corresponding
-// order) to total [amount] + [fee] of [AVAX] owned by [keys].
+// GetSpendableDIONEWithFee returns a list of EVMInputs and keys (in corresponding
+// order) to total [amount] + [fee] of [DIONE] owned by [keys].
 // This function accounts for the added cost of the additional inputs needed to
 // create the transaction and makes sure to skip any keys with a balance that is
 // insufficient to cover the additional fee.
 // Note: we return [][]*secp256k1.PrivateKey even though each input
 // corresponds to a single key, so that the signers can be passed in to
 // [tx.Sign] which supports multiple keys on a single input.
-func (vm *VM) GetSpendableAVAXWithFee(
+func (vm *VM) GetSpendableDIONEWithFee(
 	keys []*secp256k1.PrivateKey,
 	amount uint64,
 	cost uint64,
@@ -1749,8 +1749,8 @@ func (vm *VM) GetSpendableAVAXWithFee(
 		additionalFee := newFee - prevFee
 
 		addr := GetEthAddress(key)
-		// Since the asset is AVAX, we divide by the x2cRate to convert back to
-		// the correct denomination of AVAX that can be exported.
+		// Since the asset is DIONE, we divide by the x2cRate to convert back to
+		// the correct denomination of DIONE that can be exported.
 		balance := new(big.Int).Div(state.GetBalance(addr), x2cRate).Uint64()
 		// If the balance for [addr] is insufficient to cover the additional cost
 		// of adding an input to the transaction, skip adding the input altogether
@@ -1781,7 +1781,7 @@ func (vm *VM) GetSpendableAVAXWithFee(
 		inputs = append(inputs, EVMInput{
 			Address: addr,
 			Amount:  inputAmount,
-			AssetID: vm.ctx.AVAXAssetID,
+			AssetID: vm.ctx.DIONEAssetID,
 			Nonce:   nonce,
 		})
 		signers = append(signers, []*secp256k1.PrivateKey{key})
@@ -1809,7 +1809,7 @@ func (vm *VM) GetCurrentNonce(address common.Address) (uint64, error) {
 // currentRules returns the chain rules for the current block.
 func (vm *VM) currentRules() params.Rules {
 	header := vm.eth.APIBackend.CurrentHeader()
-	return vm.chainConfig.AvalancheRules(header.Number, header.Time)
+	return vm.chainConfig.OdysseyRules(header.Number, header.Time)
 }
 
 func (vm *VM) startContinuousProfiler() {

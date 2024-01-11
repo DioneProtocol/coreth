@@ -6,10 +6,10 @@ package evm
 import (
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/codec/linearcodec"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/codec/linearcodec"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
+	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 )
 
 // Codec does serialization and deserialization

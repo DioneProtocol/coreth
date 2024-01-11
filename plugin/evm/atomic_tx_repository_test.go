@@ -10,20 +10,20 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/ava-labs/avalanchego/chains/atomic"
-	"github.com/ava-labs/avalanchego/database"
-	"github.com/ava-labs/avalanchego/database/prefixdb"
-	"github.com/ava-labs/avalanchego/database/versiondb"
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/database"
+	"github.com/DioneProtocol/odysseygo/database/prefixdb"
+	"github.com/DioneProtocol/odysseygo/database/versiondb"
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/utils/set"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ava-labs/avalanchego/database/memdb"
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/DioneProtocol/odysseygo/database/memdb"
+	"github.com/DioneProtocol/odysseygo/ids"
 )
 
 // addTxs writes [txsPerHeight] txs for heights ranging in [fromHeight, toHeight) directly to [acceptedAtomicTxDB],

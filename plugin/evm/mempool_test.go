@@ -6,7 +6,7 @@ package evm
 import (
 	"testing"
 
-	"github.com/ava-labs/avalanchego/ids"
+	"github.com/DioneProtocol/odysseygo/ids"
 	"github.com/stretchr/testify/require"
 )
 

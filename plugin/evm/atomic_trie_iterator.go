@@ -7,12 +7,12 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/ava-labs/avalanchego/chains/atomic"
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/wrappers"
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/wrappers"
 
-	"github.com/ava-labs/coreth/trie"
+	"github.com/DioneProtocol/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
 )
 

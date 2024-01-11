@@ -9,12 +9,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/set"
-	"github.com/ava-labs/coreth/core/rawdb"
-	"github.com/ava-labs/coreth/ethdb"
-	"github.com/ava-labs/coreth/params"
-	statesyncclient "github.com/ava-labs/coreth/sync/client"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/params"
+	statesyncclient "github.com/DioneProtocol/coreth/sync/client"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/utils/set"
 	"github.com/ethereum/go-ethereum/common"
 )
 

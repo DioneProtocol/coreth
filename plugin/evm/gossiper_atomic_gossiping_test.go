@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/utils/set"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/snow"
+	"github.com/DioneProtocol/odysseygo/utils/set"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ava-labs/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
 )
 
 // locally issued txs should be gossiped

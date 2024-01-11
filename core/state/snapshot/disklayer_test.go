@@ -30,8 +30,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/ava-labs/coreth/core/rawdb"
-	"github.com/ava-labs/coreth/ethdb/memorydb"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
 )

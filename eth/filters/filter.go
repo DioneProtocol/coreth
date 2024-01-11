@@ -32,9 +32,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ava-labs/coreth/core/bloombits"
-	"github.com/ava-labs/coreth/core/types"
-	"github.com/ava-labs/coreth/rpc"
+	"github.com/DioneProtocol/coreth/core/bloombits"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
 )
 

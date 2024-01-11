@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ava-labs/coreth/core/txpool"
-	"github.com/ava-labs/coreth/eth"
+	"github.com/DioneProtocol/coreth/core/txpool"
+	"github.com/DioneProtocol/coreth/eth"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cast"
 )
@@ -25,7 +25,7 @@ const (
 	defaultSyncableCommitInterval                     = defaultCommitInterval * 4
 	defaultSnapshotWait                               = false
 	defaultRpcGasCap                                  = 50_000_000 // Default to 50M Gas Limit
-	defaultRpcTxFeeCap                                = 100        // 100 AVAX
+	defaultRpcTxFeeCap                                = 100        // 100 DIONE
 	defaultMetricsExpensiveEnabled                    = true
 	defaultApiMaxDuration                             = 0 // Default to no maximum API call duration
 	defaultWsCpuRefillRate                            = 0 // Default to no maximum WS CPU usage

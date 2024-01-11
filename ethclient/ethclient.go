@@ -34,11 +34,11 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/coreth/accounts/abi/bind"
-	"github.com/ava-labs/coreth/core/types"
-	"github.com/ava-labs/coreth/interfaces"
-	"github.com/ava-labs/coreth/rpc"
+	"github.com/DioneProtocol/coreth/accounts/abi/bind"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/interfaces"
+	"github.com/DioneProtocol/coreth/rpc"
+	"github.com/DioneProtocol/odysseygo/ids"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )

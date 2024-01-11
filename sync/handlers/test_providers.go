@@ -4,8 +4,8 @@
 package handlers
 
 import (
-	"github.com/ava-labs/coreth/core/state/snapshot"
-	"github.com/ava-labs/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/state/snapshot"
+	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/ethereum/go-ethereum/common"
 )
 

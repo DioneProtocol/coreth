@@ -34,11 +34,11 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/ava-labs/coreth/consensus/dummy"
-	"github.com/ava-labs/coreth/core/rawdb"
-	"github.com/ava-labs/coreth/core/types"
-	"github.com/ava-labs/coreth/core/vm"
-	"github.com/ava-labs/coreth/params"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
+	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 )
 

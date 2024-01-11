@@ -31,9 +31,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ava-labs/coreth/accounts"
-	"github.com/ava-labs/coreth/accounts/external"
-	"github.com/ava-labs/coreth/accounts/keystore"
+	"github.com/DioneProtocol/coreth/accounts"
+	"github.com/DioneProtocol/coreth/accounts/external"
+	"github.com/DioneProtocol/coreth/accounts/keystore"
 	"github.com/ethereum/go-ethereum/log"
 )
 
@@ -66,7 +66,7 @@ type Config struct {
 // ExtRPCEnabled returns the indicator whether node enables the external
 // RPC(http, ws or graphql).
 func (c *Config) ExtRPCEnabled() bool {
-	// In avalanche, we always disable the external RPC.
+	// In odyssey, we always disable the external RPC.
 	return false
 }
 

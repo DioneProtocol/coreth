@@ -1,10 +1,10 @@
-module github.com/ava-labs/coreth
+module github.com/DioneProtocol/coreth
 
 go 1.20
 
 require (
+	github.com/DioneProtocol/odysseygo v1.10.10-rc.4
 	github.com/VictoriaMetrics/fastcache v1.10.0
-	github.com/ava-labs/avalanchego v1.10.10-rc.4
 	github.com/cespare/cp v0.1.0
 	github.com/cockroachdb/pebble v0.0.0-20230209160836-829675f94811
 	github.com/davecgh/go-spew v1.1.1
@@ -141,3 +141,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
+
+replace github.com/DioneProtocol/odysseygo => ../odysseygo

@@ -15,34 +15,34 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/chains/atomic"
-	"github.com/ava-labs/avalanchego/database/manager"
-	"github.com/ava-labs/avalanchego/database/prefixdb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	commonEng "github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/avalanchego/snow/engine/snowman/block"
-	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
-	"github.com/ava-labs/avalanchego/utils/set"
-	"github.com/ava-labs/avalanchego/utils/units"
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/database/manager"
+	"github.com/DioneProtocol/odysseygo/database/prefixdb"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/snow"
+	"github.com/DioneProtocol/odysseygo/snow/choices"
+	commonEng "github.com/DioneProtocol/odysseygo/snow/engine/common"
+	"github.com/DioneProtocol/odysseygo/snow/engine/snowman/block"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/utils/units"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/ava-labs/coreth/accounts/keystore"
-	"github.com/ava-labs/coreth/consensus/dummy"
-	"github.com/ava-labs/coreth/constants"
-	"github.com/ava-labs/coreth/core"
-	"github.com/ava-labs/coreth/core/rawdb"
-	"github.com/ava-labs/coreth/core/types"
-	"github.com/ava-labs/coreth/ethdb"
-	"github.com/ava-labs/coreth/metrics"
-	"github.com/ava-labs/coreth/params"
-	statesyncclient "github.com/ava-labs/coreth/sync/client"
-	"github.com/ava-labs/coreth/sync/statesync"
-	"github.com/ava-labs/coreth/trie"
+	"github.com/DioneProtocol/coreth/accounts/keystore"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/constants"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/rawdb"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/params"
+	statesyncclient "github.com/DioneProtocol/coreth/sync/client"
+	"github.com/DioneProtocol/coreth/sync/statesync"
+	"github.com/DioneProtocol/coreth/trie"
 )
 
 func TestSkipStateSync(t *testing.T) {
@@ -264,7 +264,7 @@ func TestVMShutdownWhileSyncing(t *testing.T) {
 func createSyncServerAndClientVMs(t *testing.T, test syncTest) *syncVMSetup {
 	var (
 		require      = require.New(t)
-		importAmount = 2000000 * units.Avax // 2M avax
+		importAmount = 2000000 * units.Dione // 2M dione
 		alloc        = map[ids.ShortID]uint64{
 			testShortIDAddrs[0]: importAmount,
 		}
@@ -291,7 +291,7 @@ func createSyncServerAndClientVMs(t *testing.T, test syncTest) *syncVMSetup {
 		case 1:
 			// export some of the imported UTXOs to test exportTx is properly synced
 			exportTx, err = serverVM.newExportTx(
-				serverVM.ctx.AVAXAssetID,
+				serverVM.ctx.DIONEAssetID,
 				importAmount/2,
 				serverVM.ctx.XChainID,
 				testShortIDAddrs[0],

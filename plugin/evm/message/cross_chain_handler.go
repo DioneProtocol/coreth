@@ -7,10 +7,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/ava-labs/avalanchego/codec"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/coreth/internal/ethapi"
-	"github.com/ava-labs/coreth/rpc"
+	"github.com/DioneProtocol/coreth/internal/ethapi"
+	"github.com/DioneProtocol/coreth/rpc"
+	"github.com/DioneProtocol/odysseygo/codec"
+	"github.com/DioneProtocol/odysseygo/ids"
 	"github.com/ethereum/go-ethereum/log"
 )
 

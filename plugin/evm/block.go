@@ -13,10 +13,10 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/ava-labs/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/types"
 
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow/choices"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/snow/choices"
 )
 
 var (
@@ -221,7 +221,7 @@ func (b *Block) syntacticVerify() error {
 	}
 
 	header := b.ethBlock.Header()
-	rules := b.vm.chainConfig.AvalancheRules(header.Number, header.Time)
+	rules := b.vm.chainConfig.OdysseyRules(header.Number, header.Time)
 	return b.vm.syntacticBlockValidator.SyntacticVerify(b, rules)
 }
 

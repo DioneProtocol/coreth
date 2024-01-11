@@ -24,48 +24,48 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/ava-labs/coreth/eth/filters"
-	"github.com/ava-labs/coreth/internal/ethapi"
-	"github.com/ava-labs/coreth/metrics"
-	"github.com/ava-labs/coreth/plugin/evm/message"
-	"github.com/ava-labs/coreth/trie"
-	"github.com/ava-labs/coreth/utils"
+	"github.com/DioneProtocol/coreth/eth/filters"
+	"github.com/DioneProtocol/coreth/internal/ethapi"
+	"github.com/DioneProtocol/coreth/metrics"
+	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/trie"
+	"github.com/DioneProtocol/coreth/utils"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ava-labs/avalanchego/api/keystore"
-	"github.com/ava-labs/avalanchego/chains/atomic"
-	"github.com/ava-labs/avalanchego/database/manager"
-	"github.com/ava-labs/avalanchego/database/prefixdb"
-	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/snow"
-	"github.com/ava-labs/avalanchego/snow/choices"
-	"github.com/ava-labs/avalanchego/snow/validators"
-	"github.com/ava-labs/avalanchego/utils/cb58"
-	"github.com/ava-labs/avalanchego/utils/constants"
-	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
-	"github.com/ava-labs/avalanchego/utils/formatting"
-	"github.com/ava-labs/avalanchego/utils/hashing"
-	"github.com/ava-labs/avalanchego/utils/logging"
-	"github.com/ava-labs/avalanchego/utils/set"
-	"github.com/ava-labs/avalanchego/utils/units"
-	"github.com/ava-labs/avalanchego/version"
-	"github.com/ava-labs/avalanchego/vms/components/avax"
-	"github.com/ava-labs/avalanchego/vms/components/chain"
-	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	"github.com/DioneProtocol/odysseygo/api/keystore"
+	"github.com/DioneProtocol/odysseygo/chains/atomic"
+	"github.com/DioneProtocol/odysseygo/database/manager"
+	"github.com/DioneProtocol/odysseygo/database/prefixdb"
+	"github.com/DioneProtocol/odysseygo/ids"
+	"github.com/DioneProtocol/odysseygo/snow"
+	"github.com/DioneProtocol/odysseygo/snow/choices"
+	"github.com/DioneProtocol/odysseygo/snow/validators"
+	"github.com/DioneProtocol/odysseygo/utils/cb58"
+	"github.com/DioneProtocol/odysseygo/utils/constants"
+	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/formatting"
+	"github.com/DioneProtocol/odysseygo/utils/hashing"
+	"github.com/DioneProtocol/odysseygo/utils/logging"
+	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/utils/units"
+	"github.com/DioneProtocol/odysseygo/version"
+	"github.com/DioneProtocol/odysseygo/vms/components/chain"
+	"github.com/DioneProtocol/odysseygo/vms/components/dione"
+	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 
-	engCommon "github.com/ava-labs/avalanchego/snow/engine/common"
+	engCommon "github.com/DioneProtocol/odysseygo/snow/engine/common"
 
-	"github.com/ava-labs/coreth/consensus/dummy"
-	"github.com/ava-labs/coreth/core"
-	"github.com/ava-labs/coreth/core/types"
-	"github.com/ava-labs/coreth/eth"
-	"github.com/ava-labs/coreth/params"
-	"github.com/ava-labs/coreth/rpc"
+	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/eth"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/rpc"
 
-	"github.com/ava-labs/coreth/accounts/abi"
-	accountKeystore "github.com/ava-labs/coreth/accounts/keystore"
+	"github.com/DioneProtocol/coreth/accounts/abi"
+	accountKeystore "github.com/DioneProtocol/coreth/accounts/keystore"
 )
 
 var (
@@ -76,10 +76,10 @@ var (
 	testKeys         []*secp256k1.PrivateKey
 	testEthAddrs     []common.Address // testEthAddrs[i] corresponds to testKeys[i]
 	testShortIDAddrs []ids.ShortID
-	testAvaxAssetID  = ids.ID{1, 2, 3}
+	testDioneAssetID = ids.ID{1, 2, 3}
 	username         = "Johns"
 	password         = "CjasdjhiPeirbSenfeI13" // #nosec G101
-	// Use chainId: 43111, so that it does not overlap with any Avalanche ChainIDs, which may have their
+	// Use chainId: 43111, so that it does not overlap with any Odyssey ChainIDs, which may have their
 	// config overridden in vm.Initialize.
 	genesisJSONApricotPhase0 = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
 	genesisJSONApricotPhase1 = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"apricotPhase1BlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
@@ -148,7 +148,7 @@ func NewContext() *snow.Context {
 	ctx.NodeID = ids.GenerateTestNodeID()
 	ctx.NetworkID = testNetworkID
 	ctx.ChainID = testCChainID
-	ctx.AVAXAssetID = testAvaxAssetID
+	ctx.DIONEAssetID = testDioneAssetID
 	ctx.XChainID = testXChainID
 	ctx.SharedMemory = testSharedMemory()
 	aliaser := ctx.BCLookup.(ids.Aliaser)
@@ -257,13 +257,13 @@ func GenesisVM(t *testing.T,
 	return issuer, vm, dbManager, m, appSender
 }
 
-func addUTXO(sharedMemory *atomic.Memory, ctx *snow.Context, txID ids.ID, index uint32, assetID ids.ID, amount uint64, addr ids.ShortID) (*avax.UTXO, error) {
-	utxo := &avax.UTXO{
-		UTXOID: avax.UTXOID{
+func addUTXO(sharedMemory *atomic.Memory, ctx *snow.Context, txID ids.ID, index uint32, assetID ids.ID, amount uint64, addr ids.ShortID) (*dione.UTXO, error) {
+	utxo := &dione.UTXO{
+		UTXOID: dione.UTXOID{
 			TxID:        txID,
 			OutputIndex: index,
 		},
-		Asset: avax.Asset{ID: assetID},
+		Asset: dione.Asset{ID: assetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: amount,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -292,17 +292,17 @@ func addUTXO(sharedMemory *atomic.Memory, ctx *snow.Context, txID ids.ID, index 
 	return utxo, nil
 }
 
-// GenesisVMWithUTXOs creates a GenesisVM and generates UTXOs in the X-Chain Shared Memory containing AVAX based on the [utxos] map
+// GenesisVMWithUTXOs creates a GenesisVM and generates UTXOs in the X-Chain Shared Memory containing DIONE based on the [utxos] map
 // Generates UTXOIDs by using a hash of the address in the [utxos] map such that the UTXOs will be generated deterministically.
 // If [genesisJSON] is empty, defaults to using [genesisJSONLatest]
 func GenesisVMWithUTXOs(t *testing.T, finishBootstrapping bool, genesisJSON string, configJSON string, upgradeJSON string, utxos map[ids.ShortID]uint64) (chan engCommon.Message, *VM, manager.Manager, *atomic.Memory, *engCommon.SenderTest) {
 	issuer, vm, dbManager, sharedMemory, sender := GenesisVM(t, finishBootstrapping, genesisJSON, configJSON, upgradeJSON)
-	for addr, avaxAmount := range utxos {
+	for addr, dioneAmount := range utxos {
 		txID, err := ids.ToID(hashing.ComputeHash256(addr.Bytes()))
 		if err != nil {
 			t.Fatalf("Failed to generate txID from addr: %s", err)
 		}
-		if _, err := addUTXO(sharedMemory, vm.ctx, txID, 0, vm.ctx.AVAXAssetID, avaxAmount, addr); err != nil {
+		if _, err := addUTXO(sharedMemory, vm.ctx, txID, 0, vm.ctx.DIONEAssetID, dioneAmount, addr); err != nil {
 			t.Fatalf("Failed to add UTXO to shared memory: %s", err)
 		}
 	}
@@ -758,7 +758,7 @@ func TestIssueAtomicTxs(t *testing.T) {
 		t.Fatal("Expected logs to be non-nil")
 	}
 
-	exportTx, err := vm.newExportTx(vm.ctx.AVAXAssetID, importAmount-(2*params.AvalancheAtomicTxFee), vm.ctx.XChainID, testShortIDAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+	exportTx, err := vm.newExportTx(vm.ctx.DIONEAssetID, importAmount-(2*params.OdysseyAtomicTxFee), vm.ctx.XChainID, testShortIDAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1156,15 +1156,15 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 
 	for name, issueTxs := range map[string]func(t *testing.T, vm *VM, sharedMemory *atomic.Memory) (issued []*Tx, discarded []*Tx){
 		"single UTXO override": func(t *testing.T, vm *VM, sharedMemory *atomic.Memory) (issued []*Tx, evicted []*Tx) {
-			utxo, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.AVAXAssetID, units.Avax, testShortIDAddrs[0])
+			utxo, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
-			tx1, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, kc, []*avax.UTXO{utxo})
+			tx1, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, kc, []*dione.UTXO{utxo})
 			if err != nil {
 				t.Fatal(err)
 			}
-			tx2, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], new(big.Int).Mul(common.Big2, initialBaseFee), kc, []*avax.UTXO{utxo})
+			tx2, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], new(big.Int).Mul(common.Big2, initialBaseFee), kc, []*dione.UTXO{utxo})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1179,19 +1179,19 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 			return []*Tx{tx2}, []*Tx{tx1}
 		},
 		"one of two UTXOs overrides": func(t *testing.T, vm *VM, sharedMemory *atomic.Memory) (issued []*Tx, evicted []*Tx) {
-			utxo1, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.AVAXAssetID, units.Avax, testShortIDAddrs[0])
+			utxo1, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
-			utxo2, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.AVAXAssetID, units.Avax, testShortIDAddrs[0])
+			utxo2, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
-			tx1, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, kc, []*avax.UTXO{utxo1, utxo2})
+			tx1, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, kc, []*dione.UTXO{utxo1, utxo2})
 			if err != nil {
 				t.Fatal(err)
 			}
-			tx2, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], new(big.Int).Mul(common.Big2, initialBaseFee), kc, []*avax.UTXO{utxo1})
+			tx2, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], new(big.Int).Mul(common.Big2, initialBaseFee), kc, []*dione.UTXO{utxo1})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1206,26 +1206,26 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 			return []*Tx{tx2}, []*Tx{tx1}
 		},
 		"hola": func(t *testing.T, vm *VM, sharedMemory *atomic.Memory) (issued []*Tx, evicted []*Tx) {
-			utxo1, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.AVAXAssetID, units.Avax, testShortIDAddrs[0])
+			utxo1, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
-			utxo2, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.AVAXAssetID, units.Avax, testShortIDAddrs[0])
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			importTx1, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, kc, []*avax.UTXO{utxo1})
+			utxo2, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			importTx2, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], new(big.Int).Mul(big.NewInt(3), initialBaseFee), kc, []*avax.UTXO{utxo2})
+			importTx1, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, kc, []*dione.UTXO{utxo1})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			reissuanceTx1, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], new(big.Int).Mul(big.NewInt(2), initialBaseFee), kc, []*avax.UTXO{utxo1, utxo2})
+			importTx2, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], new(big.Int).Mul(big.NewInt(3), initialBaseFee), kc, []*dione.UTXO{utxo2})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			reissuanceTx1, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], new(big.Int).Mul(big.NewInt(2), initialBaseFee), kc, []*dione.UTXO{utxo1, utxo2})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1245,7 +1245,7 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 			assert.True(t, vm.mempool.has(importTx2.ID()))
 			assert.False(t, vm.mempool.has(reissuanceTx1.ID()))
 
-			reissuanceTx2, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], new(big.Int).Mul(big.NewInt(4), initialBaseFee), kc, []*avax.UTXO{utxo1, utxo2})
+			reissuanceTx2, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], new(big.Int).Mul(big.NewInt(4), initialBaseFee), kc, []*dione.UTXO{utxo1, utxo2})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1680,11 +1680,11 @@ func TestBonusBlocksTxs(t *testing.T) {
 	}()
 
 	importAmount := uint64(10000000)
-	utxoID := avax.UTXOID{TxID: ids.GenerateTestID()}
+	utxoID := dione.UTXOID{TxID: ids.GenerateTestID()}
 
-	utxo := &avax.UTXO{
+	utxo := &dione.UTXO{
 		UTXOID: utxoID,
-		Asset:  avax.Asset{ID: vm.ctx.AVAXAssetID},
+		Asset:  dione.Asset{ID: vm.ctx.DIONEAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: importAmount,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -3312,14 +3312,14 @@ func TestBuildInvalidBlockHead(t *testing.T) {
 		BlockchainID: vm.ctx.ChainID,
 		Outs: []EVMOutput{{
 			Address: common.Address(addr0),
-			Amount:  1 * units.Avax,
-			AssetID: vm.ctx.AVAXAssetID,
+			Amount:  1 * units.Dione,
+			AssetID: vm.ctx.DIONEAssetID,
 		}},
-		ImportedInputs: []*avax.TransferableInput{
+		ImportedInputs: []*dione.TransferableInput{
 			{
-				Asset: avax.Asset{ID: vm.ctx.AVAXAssetID},
+				Asset: dione.Asset{ID: vm.ctx.DIONEAssetID},
 				In: &secp256k1fx.TransferInput{
-					Amt: 1 * units.Avax,
+					Amt: 1 * units.Dione,
 					Input: secp256k1fx.Input{
 						SigIndices: []uint32{0},
 					},
@@ -3450,11 +3450,11 @@ func TestBuildApricotPhase4Block(t *testing.T) {
 	address := testEthAddrs[0]
 
 	importAmount := uint64(1000000000)
-	utxoID := avax.UTXOID{TxID: ids.GenerateTestID()}
+	utxoID := dione.UTXOID{TxID: ids.GenerateTestID()}
 
-	utxo := &avax.UTXO{
+	utxo := &dione.UTXO{
 		UTXOID: utxoID,
-		Asset:  avax.Asset{ID: vm.ctx.AVAXAssetID},
+		Asset:  dione.Asset{ID: vm.ctx.DIONEAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: importAmount,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -3632,11 +3632,11 @@ func TestBuildApricotPhase5Block(t *testing.T) {
 	address := testEthAddrs[0]
 
 	importAmount := uint64(1000000000)
-	utxoID := avax.UTXOID{TxID: ids.GenerateTestID()}
+	utxoID := dione.UTXOID{TxID: ids.GenerateTestID()}
 
-	utxo := &avax.UTXO{
+	utxo := &dione.UTXO{
 		UTXOID: utxoID,
-		Asset:  avax.Asset{ID: vm.ctx.AVAXAssetID},
+		Asset:  dione.Asset{ID: vm.ctx.DIONEAssetID},
 		Out: &secp256k1fx.TransferOutput{
 			Amt: importAmount,
 			OutputOwners: secp256k1fx.OutputOwners{
@@ -3935,10 +3935,10 @@ func TestBuildBlockDoesNotExceedAtomicGasLimit(t *testing.T) {
 
 	mempoolTxs := 200
 	for i := 0; i < mempoolTxs; i++ {
-		utxo, err := addUTXO(sharedMemory, vm.ctx, txID, uint32(i), vm.ctx.AVAXAssetID, importAmount, testShortIDAddrs[0])
+		utxo, err := addUTXO(sharedMemory, vm.ctx, txID, uint32(i), vm.ctx.DIONEAssetID, importAmount, testShortIDAddrs[0])
 		assert.NoError(t, err)
 
-		importTx, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, kc, []*avax.UTXO{utxo})
+		importTx, err := vm.newImportTxWithUTXOs(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, kc, []*dione.UTXO{utxo})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -3988,10 +3988,10 @@ func TestExtraStateChangeAtomicGasLimitExceeded(t *testing.T) {
 	// Add enough UTXOs, such that the created import transaction will attempt to consume more gas than allowed
 	// in ApricotPhase5.
 	for i := 0; i < 100; i++ {
-		_, err := addUTXO(sharedMemory1, vm1.ctx, txID, uint32(i), vm1.ctx.AVAXAssetID, importAmount, testShortIDAddrs[0])
+		_, err := addUTXO(sharedMemory1, vm1.ctx, txID, uint32(i), vm1.ctx.DIONEAssetID, importAmount, testShortIDAddrs[0])
 		assert.NoError(t, err)
 
-		_, err = addUTXO(sharedMemory2, vm2.ctx, txID, uint32(i), vm2.ctx.AVAXAssetID, importAmount, testShortIDAddrs[0])
+		_, err = addUTXO(sharedMemory2, vm2.ctx, txID, uint32(i), vm2.ctx.DIONEAssetID, importAmount, testShortIDAddrs[0])
 		assert.NoError(t, err)
 	}
 

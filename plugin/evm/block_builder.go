@@ -7,13 +7,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ava-labs/avalanchego/utils/timer"
-	"github.com/ava-labs/coreth/core/txpool"
-	"github.com/ava-labs/coreth/params"
+	"github.com/DioneProtocol/coreth/core/txpool"
+	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/odysseygo/utils/timer"
 
-	"github.com/ava-labs/avalanchego/snow"
-	commonEng "github.com/ava-labs/avalanchego/snow/engine/common"
-	"github.com/ava-labs/coreth/core"
+	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/odysseygo/snow"
+	commonEng "github.com/DioneProtocol/odysseygo/snow/engine/common"
 	"github.com/ethereum/go-ethereum/log"
 )
 

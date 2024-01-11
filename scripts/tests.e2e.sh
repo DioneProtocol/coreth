@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# Run AvalancheGo e2e tests from the target version against the current state of coreth.
+# Run OdysseyGo e2e tests from the target version against the current state of coreth.
 
 # e.g.,
 # ./scripts/tests.e2e.sh
@@ -16,7 +16,7 @@ fi
 CORETH_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )"; cd .. && pwd )
 
 # Allow configuring the clone path to point to an existing clone
-AVALANCHEGO_CLONE_PATH="${AVALANCHEGO_CLONE_PATH:-avalanchego}"
+AVALANCHEGO_CLONE_PATH="${AVALANCHEGO_CLONE_PATH:-odysseygo}"
 
 # Load the version
 source "$CORETH_PATH"/scripts/versions.sh
@@ -27,26 +27,26 @@ function cleanup {
 }
 trap cleanup EXIT
 
-echo "checking out target AvalancheGo version ${avalanche_version}"
+echo "checking out target OdysseyGo version ${odyssey_version}"
 if [[ -d "${AVALANCHEGO_CLONE_PATH}" ]]; then
   echo "updating existing clone"
   cd "${AVALANCHEGO_CLONE_PATH}"
   git fetch
-  git checkout -B "${avalanche_version}"
+  git checkout -B "${odyssey_version}"
 else
   echo "creating new clone"
-  git clone -b "${avalanche_version}"\
-      --single-branch https://github.com/ava-labs/avalanchego.git\
+  git clone -b "${odyssey_version}"\
+      --single-branch https://github.com/DioneProtocol/odysseygo.git\
       "${AVALANCHEGO_CLONE_PATH}"
   cd "${AVALANCHEGO_CLONE_PATH}"
 fi
 
 echo "updating coreth dependency to point to ${CORETH_PATH}"
-go mod edit -replace "github.com/ava-labs/coreth=${CORETH_PATH}"
+go mod edit -replace "github.com/DioneProtocol/coreth=${CORETH_PATH}"
 go mod tidy
 
-echo "building avalanchego"
+echo "building odysseygo"
 ./scripts/build.sh -r
 
-echo "running AvalancheGo e2e tests"
-./scripts/tests.e2e.sh ./build/avalanchego
+echo "running OdysseyGo e2e tests"
+./scripts/tests.e2e.sh ./build/odysseygo
