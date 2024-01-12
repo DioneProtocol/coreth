@@ -41,8 +41,8 @@ import (
 var (
 	// OdysseyMainnetChainID ...
 	OdysseyMainnetChainID = big.NewInt(43114)
-	// OdysseyFujiChainID ...
-	OdysseyFujiChainID = big.NewInt(43113)
+	// OdysseyTestnetChainID ...
+	OdysseyTestnetChainID = big.NewInt(43113)
 	// OdysseyLocalChainID ...
 	OdysseyLocalChainID = big.NewInt(43112)
 
@@ -77,9 +77,9 @@ var (
 		// TODO Add DUpgrade timestamp
 	}
 
-	// OdysseyFujiChainConfig is the configuration for the Fuji Test Network
-	OdysseyFujiChainConfig = &ChainConfig{
-		ChainID:                         OdysseyFujiChainID,
+	// OdysseyTestnetChainConfig is the configuration for the Testnet Test Network
+	OdysseyTestnetChainConfig = &ChainConfig{
+		ChainID:                         OdysseyTestnetChainID,
 		HomesteadBlock:                  big.NewInt(0),
 		DAOForkBlock:                    big.NewInt(0),
 		DAOForkSupport:                  true,

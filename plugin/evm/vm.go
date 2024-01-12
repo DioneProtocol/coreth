@@ -436,14 +436,14 @@ func (vm *VM) Initialize(
 	}
 
 	var extDataHashes map[common.Hash]common.Hash
-	// Set the chain config for mainnet/fuji chain IDs
+	// Set the chain config for mainnet/testnet chain IDs
 	switch {
 	case g.Config.ChainID.Cmp(params.OdysseyMainnetChainID) == 0:
 		g.Config = params.OdysseyMainnetChainConfig
 		extDataHashes = mainnetExtDataHashes
-	case g.Config.ChainID.Cmp(params.OdysseyFujiChainID) == 0:
-		g.Config = params.OdysseyFujiChainConfig
-		extDataHashes = fujiExtDataHashes
+	case g.Config.ChainID.Cmp(params.OdysseyTestnetChainID) == 0:
+		g.Config = params.OdysseyTestnetChainConfig
+		extDataHashes = testnetExtDataHashes
 	case g.Config.ChainID.Cmp(params.OdysseyLocalChainID) == 0:
 		g.Config = params.OdysseyLocalChainConfig
 	}
@@ -464,8 +464,8 @@ func (vm *VM) Initialize(
 	}
 
 	// Free the memory of the extDataHash map that is not used (i.e. if mainnet
-	// config, free fuji)
-	fujiExtDataHashes = nil
+	// config, free testnet)
+	testnetExtDataHashes = nil
 	mainnetExtDataHashes = nil
 
 	vm.chainID = g.Config.ChainID
