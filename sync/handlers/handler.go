@@ -9,7 +9,7 @@ import (
 	"github.com/DioneProtocol/coreth/core/state/snapshot"
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/ethdb"
-	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	"github.com/DioneProtocol/coreth/sync/handlers/stats"
 	"github.com/DioneProtocol/coreth/trie"
 	"github.com/DioneProtocol/odysseygo/codec"
@@ -43,13 +43,13 @@ type syncHandler struct {
 func NewSyncHandler(
 	provider SyncDataProvider,
 	diskDB ethdb.KeyValueReader,
-	evmTrieDB *trie.Database,
+	deltaTrieDB *trie.Database,
 	atomicTrieDB *trie.Database,
 	networkCodec codec.Manager,
 	stats stats.HandlerStats,
 ) message.RequestHandler {
 	return &syncHandler{
-		stateTrieLeafsRequestHandler:  NewLeafsRequestHandler(evmTrieDB, provider, networkCodec, stats),
+		stateTrieLeafsRequestHandler:  NewLeafsRequestHandler(deltaTrieDB, provider, networkCodec, stats),
 		atomicTrieLeafsRequestHandler: NewLeafsRequestHandler(atomicTrieDB, nil, networkCodec, stats),
 		blockRequestHandler:           NewBlockRequestHandler(provider, networkCodec, stats),
 		codeRequestHandler:            NewCodeRequestHandler(diskDB, networkCodec, stats),

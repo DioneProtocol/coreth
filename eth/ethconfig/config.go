@@ -62,7 +62,7 @@ func NewDefaultConfig() Config {
 		Miner:                 miner.Config{},
 		TxPool:                txpool.DefaultConfig,
 		RPCGasCap:             25000000,
-		RPCEVMTimeout:         5 * time.Second,
+		RPCDELTATimeout:       5 * time.Second,
 		GPO:                   DefaultFullGPOConfig,
 		RPCTxFeeCap:           1, // 1 DIONE
 	}
@@ -121,8 +121,8 @@ type Config struct {
 	// RPCGasCap is the global gas cap for eth-call variants.
 	RPCGasCap uint64 `toml:",omitempty"`
 
-	// RPCEVMTimeout is the global timeout for eth-call.
-	RPCEVMTimeout time.Duration
+	// RPCDELTATimeout is the global timeout for eth-call.
+	RPCDELTATimeout time.Duration
 
 	// RPCTxFeeCap is the global transaction fee(price * gaslimit) cap for
 	// send-transaction variants. The unit is ether.

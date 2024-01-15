@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	"github.com/DioneProtocol/coreth/utils"
 )
 

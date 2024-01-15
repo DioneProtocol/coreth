@@ -2,7 +2,7 @@
 ./consensus/consensus.go
 ./core/blockchain.go
 ./core/events.go
-./core/evm.go
+./core/delta.go
 ./core/genesis.go
 ./core/gen_genesis_account.go
 ./core/gen_genesis.go
@@ -14,7 +14,7 @@
 ./core/tx_pool.go
 ./core/types/block.go
 ./core/vm/errors.go
-./core/vm/evm.go
+./core/vm/delta.go
 ./core/vm/instructions.go
 ./core/vm/interface.go
 ./core/vm/interpreter.go

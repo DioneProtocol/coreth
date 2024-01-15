@@ -39,15 +39,15 @@ import (
 	cmath "github.com/ethereum/go-ethereum/common/math"
 )
 
-// ExecutionResult includes all output after executing given evm
+// ExecutionResult includes all output after executing given delta
 // message no matter the execution itself is successful or not.
 type ExecutionResult struct {
 	UsedGas    uint64 // Total used gas but include the refunded gas
 	Err        error  // Any error encountered during the execution(listed in core/vm/errors.go)
-	ReturnData []byte // Returned data from evm(function result or data supplied with revert opcode)
+	ReturnData []byte // Returned data from delta(function result or data supplied with revert opcode)
 }
 
-// Unwrap returns the internal evm error which allows us for further
+// Unwrap returns the internal delta error which allows us for further
 // analysis outside.
 func (result *ExecutionResult) Unwrap() error {
 	return result.Err
@@ -179,12 +179,12 @@ func TransactionToMessage(tx *types.Transaction, s types.Signer, baseFee *big.In
 // ApplyMessage computes the new state by applying the given message
 // against the old state within the environment.
 //
-// ApplyMessage returns the bytes returned by any EVM execution (if it took place),
+// ApplyMessage returns the bytes returned by any DELTA execution (if it took place),
 // the gas used (which includes gas refunds) and an error if it failed. An error always
 // indicates a core error meaning that the message would always fail for that particular
 // state and would never be accepted within a block.
-func ApplyMessage(evm *vm.EVM, msg *Message, gp *GasPool) (*ExecutionResult, error) {
-	return NewStateTransition(evm, msg, gp).TransitionDb()
+func ApplyMessage(delta *vm.DELTA, msg *Message, gp *GasPool) (*ExecutionResult, error) {
+	return NewStateTransition(delta, msg, gp).TransitionDb()
 }
 
 // StateTransition represents a state transition.
@@ -215,16 +215,16 @@ type StateTransition struct {
 	gasRemaining uint64
 	initialGas   uint64
 	state        vm.StateDB
-	evm          *vm.EVM
+	delta        *vm.DELTA
 }
 
 // NewStateTransition initialises and returns a new state transition object.
-func NewStateTransition(evm *vm.EVM, msg *Message, gp *GasPool) *StateTransition {
+func NewStateTransition(delta *vm.DELTA, msg *Message, gp *GasPool) *StateTransition {
 	return &StateTransition{
 		gp:    gp,
-		evm:   evm,
+		delta: delta,
 		msg:   msg,
-		state: evm.StateDB,
+		state: delta.StateDB,
 	}
 }
 
@@ -287,9 +287,9 @@ func (st *StateTransition) preCheck() error {
 	}
 
 	// Make sure that transaction gasFeeCap is greater than the baseFee (post london)
-	if st.evm.ChainConfig().IsApricotPhase3(st.evm.Context.Time) {
+	if st.delta.ChainConfig().IsApricotPhase3(st.delta.Context.Time) {
 		// Skip the checks if gas fields are zero and baseFee was explicitly disabled (eth_call)
-		if !st.evm.Config.NoBaseFee || msg.GasFeeCap.BitLen() > 0 || msg.GasTipCap.BitLen() > 0 {
+		if !st.delta.Config.NoBaseFee || msg.GasFeeCap.BitLen() > 0 || msg.GasTipCap.BitLen() > 0 {
 			if l := msg.GasFeeCap.BitLen(); l > 256 {
 				return fmt.Errorf("%w: address %v, maxFeePerGas bit length: %d", ErrFeeCapVeryHigh,
 					msg.From.Hex(), l)
@@ -304,9 +304,9 @@ func (st *StateTransition) preCheck() error {
 			}
 			// This will panic if baseFee is nil, but basefee presence is verified
 			// as part of header validation.
-			if msg.GasFeeCap.Cmp(st.evm.Context.BaseFee) < 0 {
+			if msg.GasFeeCap.Cmp(st.delta.Context.BaseFee) < 0 {
 				return fmt.Errorf("%w: address %v, maxFeePerGas: %s baseFee: %s", ErrFeeCapTooLow,
-					msg.From.Hex(), msg.GasFeeCap, st.evm.Context.BaseFee)
+					msg.From.Hex(), msg.GasFeeCap, st.delta.Context.BaseFee)
 			}
 		}
 	}
@@ -314,15 +314,15 @@ func (st *StateTransition) preCheck() error {
 }
 
 // TransitionDb will transition the state by applying the current message and
-// returning the evm execution result with following fields.
+// returning the delta execution result with following fields.
 //
 //   - used gas: total gas used (including gas being refunded)
-//   - returndata: the returned data from evm
-//   - concrete execution error: various EVM errors which abort the execution, e.g.
+//   - returndata: the returned data from delta
+//   - concrete execution error: various DELTA errors which abort the execution, e.g.
 //     ErrOutOfGas, ErrExecutionReverted
 //
 // However if any consensus issue encountered, return the error directly with
-// nil evm execution result.
+// nil delta execution result.
 func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	// First check this message satisfies all consensus rules before
 	// applying the message. The rules include these clauses
@@ -339,7 +339,7 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 		return nil, err
 	}
 
-	if tracer := st.evm.Config.Tracer; tracer != nil {
+	if tracer := st.delta.Config.Tracer; tracer != nil {
 		tracer.CaptureTxStart(st.initialGas)
 		defer func() {
 			tracer.CaptureTxEnd(st.gasRemaining)
@@ -349,7 +349,7 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	var (
 		msg              = st.msg
 		sender           = vm.AccountRef(msg.From)
-		rules            = st.evm.ChainConfig().OdysseyRules(st.evm.Context.BlockNumber, st.evm.Context.Time)
+		rules            = st.delta.ChainConfig().OdysseyRules(st.delta.Context.BlockNumber, st.delta.Context.Time)
 		contractCreation = msg.To == nil
 	)
 
@@ -364,7 +364,7 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	st.gasRemaining -= gas
 
 	// Check clause 6
-	if msg.Value.Sign() > 0 && !st.evm.Context.CanTransfer(st.state, msg.From, msg.Value) {
+	if msg.Value.Sign() > 0 && !st.delta.Context.CanTransfer(st.state, msg.From, msg.Value) {
 		return nil, fmt.Errorf("%w: address %v", ErrInsufficientFundsForTransfer, msg.From.Hex())
 	}
 
@@ -376,21 +376,21 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin/ApricotPhase2)
 	// - reset transient storage(eip 1153)
-	st.state.Prepare(rules, msg.From, st.evm.Context.Coinbase, msg.To, vm.ActivePrecompiles(rules), msg.AccessList)
+	st.state.Prepare(rules, msg.From, st.delta.Context.Coinbase, msg.To, vm.ActivePrecompiles(rules), msg.AccessList)
 
 	var (
 		ret   []byte
 		vmerr error // vm errors do not effect consensus and are therefore not assigned to err
 	)
 	if contractCreation {
-		ret, _, st.gasRemaining, vmerr = st.evm.Create(sender, msg.Data, st.gasRemaining, msg.Value)
+		ret, _, st.gasRemaining, vmerr = st.delta.Create(sender, msg.Data, st.gasRemaining, msg.Value)
 	} else {
 		// Increment the nonce for the next transaction
 		st.state.SetNonce(msg.From, st.state.GetNonce(sender.Address())+1)
-		ret, st.gasRemaining, vmerr = st.evm.Call(sender, st.to(), msg.Data, st.gasRemaining, msg.Value)
+		ret, st.gasRemaining, vmerr = st.delta.Call(sender, st.to(), msg.Data, st.gasRemaining, msg.Value)
 	}
 	st.refundGas(rules.IsApricotPhase1)
-	st.state.AddBalance(st.evm.Context.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), msg.GasPrice))
+	st.state.AddBalance(st.delta.Context.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), msg.GasPrice))
 
 	return &ExecutionResult{
 		UsedGas:    st.gasUsed(),

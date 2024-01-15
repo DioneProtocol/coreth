@@ -104,7 +104,7 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 	)
 	for i := 0; i < len(types); i++ {
 		// Parse the actual ABI to generate the binding for
-		evmABI, err := abi.JSON(strings.NewReader(abis[i]))
+		deltaABI, err := abi.JSON(strings.NewReader(abis[i]))
 		if err != nil {
 			return "", err
 		}
@@ -133,13 +133,13 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 			eventIdentifiers    = make(map[string]bool)
 		)
 
-		for _, input := range evmABI.Constructor.Inputs {
+		for _, input := range deltaABI.Constructor.Inputs {
 			if hasStruct(input.Type) {
 				bindStructType[lang](input.Type, structs)
 			}
 		}
 
-		for _, original := range evmABI.Methods {
+		for _, original := range deltaABI.Methods {
 			// Normalize the method for capital cases and non-anonymous inputs/outputs
 			normalized := original
 			normalizedName := methodNormalizer[lang](alias(aliases, original.Name))
@@ -189,7 +189,7 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 				transacts[original.Name] = &tmplMethod{Original: original, Normalized: normalized, Structured: structured(original.Outputs)}
 			}
 		}
-		for _, original := range evmABI.Events {
+		for _, original := range deltaABI.Events {
 			// Skip anonymous events as they don't support explicit filtering
 			if original.Anonymous {
 				continue
@@ -237,17 +237,17 @@ func Bind(types []string, abis []string, bytecodes []string, fsigs []map[string]
 			events[original.Name] = &tmplEvent{Original: original, Normalized: normalized}
 		}
 		// Add two special fallback functions if they exist
-		if evmABI.HasFallback() {
-			fallback = &tmplMethod{Original: evmABI.Fallback}
+		if deltaABI.HasFallback() {
+			fallback = &tmplMethod{Original: deltaABI.Fallback}
 		}
-		if evmABI.HasReceive() {
-			receive = &tmplMethod{Original: evmABI.Receive}
+		if deltaABI.HasReceive() {
+			receive = &tmplMethod{Original: deltaABI.Receive}
 		}
 		contracts[types[i]] = &tmplContract{
 			Type:        capitalise(types[i]),
 			InputABI:    strings.ReplaceAll(strippedABI, "\"", "\\\""),
 			InputBin:    strings.TrimPrefix(strings.TrimSpace(bytecodes[i]), "0x"),
-			Constructor: evmABI.Constructor,
+			Constructor: deltaABI.Constructor,
 			Calls:       calls,
 			Transacts:   transacts,
 			Fallback:    fallback,

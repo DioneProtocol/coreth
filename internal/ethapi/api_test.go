@@ -232,7 +232,7 @@ func (b testBackend) ChainDb() ethdb.Database                    { return b.db }
 func (b testBackend) AccountManager() *accounts.Manager          { return nil }
 func (b testBackend) ExtRPCEnabled() bool                        { return false }
 func (b testBackend) RPCGasCap() uint64                          { return 10000000 }
-func (b testBackend) RPCEVMTimeout() time.Duration               { return time.Second }
+func (b testBackend) RPCDELTATimeout() time.Duration             { return time.Second }
 func (b testBackend) RPCTxFeeCap() float64                       { return 0 }
 func (b testBackend) UnprotectedAllowed(*types.Transaction) bool { return false }
 func (b testBackend) SetHead(number uint64)                      {}
@@ -294,17 +294,17 @@ func (b testBackend) GetReceipts(ctx context.Context, hash common.Hash) (types.R
 	panic("implement me")
 }
 func (b testBackend) GetTd(ctx context.Context, hash common.Hash) *big.Int { panic("implement me") }
-func (b testBackend) GetEVM(ctx context.Context, msg *core.Message, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockContext *vm.BlockContext) (*vm.EVM, func() error) {
+func (b testBackend) GetDELTA(ctx context.Context, msg *core.Message, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockContext *vm.BlockContext) (*vm.DELTA, func() error) {
 	vmError := func() error { return nil }
 	if vmConfig == nil {
 		vmConfig = b.chain.GetVMConfig()
 	}
-	txContext := core.NewEVMTxContext(msg)
-	context := core.NewEVMBlockContext(header, b.chain, nil)
+	txContext := core.NewDELTATxContext(msg)
+	context := core.NewDELTABlockContext(header, b.chain, nil)
 	if blockContext != nil {
 		context = *blockContext
 	}
-	return vm.NewEVM(context, txContext, state, b.chain.Config(), *vmConfig), vmError
+	return vm.NewDELTA(context, txContext, state, b.chain.Config(), *vmConfig), vmError
 }
 func (b testBackend) SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription {
 	panic("implement me")

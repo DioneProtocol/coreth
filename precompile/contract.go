@@ -39,7 +39,7 @@ type ChainConfig interface {
 	// in Configure so this interface is empty.
 }
 
-// StateDB is the interface for accessing EVM state
+// StateDB is the interface for accessing DELTA state
 type StateDB interface {
 	GetState(common.Address, common.Hash) common.Hash
 	SetState(common.Address, common.Hash, common.Hash)

@@ -997,7 +997,7 @@ func (context *ChainContext) GetHeader(hash common.Hash, number uint64) *types.H
 }
 
 func DoCall(ctx context.Context, b Backend, args TransactionArgs, blockNrOrHash rpc.BlockNumberOrHash, overrides *StateOverride, blockOverrides *BlockOverrides, timeout time.Duration, globalGasCap uint64) (*core.ExecutionResult, error) {
-	defer func(start time.Time) { log.Debug("Executing EVM call finished", "runtime", time.Since(start)) }(time.Now())
+	defer func(start time.Time) { log.Debug("Executing DELTA call finished", "runtime", time.Since(start)) }(time.Now())
 
 	state, header, err := b.StateAndHeaderByNumberOrHash(ctx, blockNrOrHash)
 	if state == nil || err != nil {
@@ -1036,33 +1036,33 @@ func DoCall(ctx context.Context, b Backend, args TransactionArgs, blockNrOrHash 
 	// this makes sure resources are cleaned up.
 	defer cancel()
 
-	// Get a new instance of the EVM.
+	// Get a new instance of the DELTA.
 	msg, err := args.ToMessage(globalGasCap, header.BaseFee)
 	if err != nil {
 		return nil, err
 	}
-	blockCtx := core.NewEVMBlockContext(header, NewChainContext(ctx, b), nil)
+	blockCtx := core.NewDELTABlockContext(header, NewChainContext(ctx, b), nil)
 	if blockOverrides != nil {
 		blockOverrides.Apply(&blockCtx)
 	}
-	evm, vmError := b.GetEVM(ctx, msg, state, header, &vm.Config{NoBaseFee: true}, &blockCtx)
+	delta, vmError := b.GetDELTA(ctx, msg, state, header, &vm.Config{NoBaseFee: true}, &blockCtx)
 
-	// Wait for the context to be done and cancel the evm. Even if the
-	// EVM has finished, cancelling may be done (repeatedly)
+	// Wait for the context to be done and cancel the delta. Even if the
+	// DELTA has finished, cancelling may be done (repeatedly)
 	go func() {
 		<-ctx.Done()
-		evm.Cancel()
+		delta.Cancel()
 	}()
 
 	// Execute the message.
 	gp := new(core.GasPool).AddGas(math.MaxUint64)
-	result, err := core.ApplyMessage(evm, msg, gp)
+	result, err := core.ApplyMessage(delta, msg, gp)
 	if err := vmError(); err != nil {
 		return nil, err
 	}
 
 	// If the timer caused an abort, return an appropriate error message
-	if evm.Cancelled() {
+	if delta.Cancelled() {
 		return nil, fmt.Errorf("execution aborted (timeout = %v)", timeout)
 	}
 	if err != nil {
@@ -1083,7 +1083,7 @@ func newRevertError(result *core.ExecutionResult) *revertError {
 	}
 }
 
-// revertError is an API error that encompasses an EVM revertal with JSON error
+// revertError is an API error that encompasses an DELTA revertal with JSON error
 // code and a binary data blob.
 type revertError struct {
 	error
@@ -1103,14 +1103,14 @@ func (e *revertError) ErrorData() interface{} {
 
 type ExecutionResult struct {
 	UsedGas    uint64        `json:"gas"`        // Total used gas but include the refunded gas
-	ErrCode    int           `json:"errCode"`    // EVM error code
+	ErrCode    int           `json:"errCode"`    // DELTA error code
 	Err        string        `json:"err"`        // Any error encountered during the execution(listed in core/vm/errors.go)
-	ReturnData hexutil.Bytes `json:"returnData"` // Data from evm(function result or data supplied with revert opcode)
+	ReturnData hexutil.Bytes `json:"returnData"` // Data from delta(function result or data supplied with revert opcode)
 }
 
 // CallDetailed performs the same call as Call, but returns the full context
 func (s *BlockChainAPI) CallDetailed(ctx context.Context, args TransactionArgs, blockNrOrHash rpc.BlockNumberOrHash, overrides *StateOverride) (*ExecutionResult, error) {
-	result, err := DoCall(ctx, s.b, args, blockNrOrHash, overrides, nil, s.b.RPCEVMTimeout(), s.b.RPCGasCap())
+	result, err := DoCall(ctx, s.b, args, blockNrOrHash, overrides, nil, s.b.RPCDELTATimeout(), s.b.RPCGasCap())
 	if err != nil {
 		return nil, err
 	}
@@ -1141,7 +1141,7 @@ func (s *BlockChainAPI) CallDetailed(ctx context.Context, args TransactionArgs, 
 // Note, this function doesn't make and changes in the state/blockchain and is
 // useful to execute and retrieve values.
 func (s *BlockChainAPI) Call(ctx context.Context, args TransactionArgs, blockNrOrHash rpc.BlockNumberOrHash, overrides *StateOverride, blockOverrides *BlockOverrides) (hexutil.Bytes, error) {
-	result, err := DoCall(ctx, s.b, args, blockNrOrHash, overrides, blockOverrides, s.b.RPCEVMTimeout(), s.b.RPCGasCap())
+	result, err := DoCall(ctx, s.b, args, blockNrOrHash, overrides, blockOverrides, s.b.RPCDELTATimeout(), s.b.RPCGasCap())
 	if err != nil {
 		return nil, err
 	}
@@ -1565,7 +1565,7 @@ func AccessList(ctx context.Context, b Backend, blockNrOrHash rpc.BlockNumberOrH
 		// Apply the transaction with the access list tracer
 		tracer := logger.NewAccessListTracer(accessList, args.from(), to, precompiles)
 		config := vm.Config{Tracer: tracer, NoBaseFee: true}
-		vmenv, _ := b.GetEVM(ctx, msg, statedb, header, &config, nil)
+		vmenv, _ := b.GetDELTA(ctx, msg, statedb, header, &config, nil)
 		res, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.GasLimit))
 		if err != nil {
 			return nil, 0, nil, fmt.Errorf("failed to apply transaction: %v err: %v", args.toTransaction().Hash(), err)

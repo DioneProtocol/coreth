@@ -58,22 +58,22 @@ func TestLoopInterrupt(t *testing.T) {
 		statedb.SetCode(address, common.Hex2Bytes(tt))
 		statedb.Finalise(true)
 
-		evm := NewEVM(vmctx, TxContext{}, statedb, params.TestChainConfig, Config{})
+		delta := NewDELTA(vmctx, TxContext{}, statedb, params.TestChainConfig, Config{})
 
 		errChannel := make(chan error)
 		timeout := make(chan bool)
 
-		go func(evm *EVM) {
-			_, _, err := evm.Call(AccountRef(common.Address{}), address, nil, math.MaxUint64, new(big.Int))
+		go func(delta *DELTA) {
+			_, _, err := delta.Call(AccountRef(common.Address{}), address, nil, math.MaxUint64, new(big.Int))
 			errChannel <- err
-		}(evm)
+		}(delta)
 
 		go func() {
 			<-time.After(time.Second)
 			timeout <- true
 		}()
 
-		evm.Cancel()
+		delta.Cancel()
 
 		select {
 		case <-timeout:

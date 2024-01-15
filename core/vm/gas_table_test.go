@@ -105,7 +105,7 @@ func TestEIP2200(t *testing.T) {
 			CanTransfer: func(StateDB, common.Address, *big.Int) bool { return true },
 			Transfer:    func(StateDB, common.Address, common.Address, *big.Int) {},
 		}
-		vmenv := NewEVM(vmctx, TxContext{}, statedb, params.TestChainConfig, Config{ExtraEips: []int{2200}})
+		vmenv := NewDELTA(vmctx, TxContext{}, statedb, params.TestChainConfig, Config{ExtraEips: []int{2200}})
 
 		_, gas, err := vmenv.Call(AccountRef(common.Address{}), address, nil, tt.gaspool, new(big.Int))
 		if err != tt.failure {
@@ -163,7 +163,7 @@ func TestCreateGas(t *testing.T) {
 
 			// Note: we use Cortina instead of AllEthashProtocolChanges (upstream)
 			// because it is the last fork before the activation of EIP-3860
-			vmenv := NewEVM(vmctx, TxContext{}, statedb, params.TestCortinaChainConfig, config)
+			vmenv := NewDELTA(vmctx, TxContext{}, statedb, params.TestCortinaChainConfig, config)
 			var startGas = uint64(testGas)
 			ret, gas, err := vmenv.Call(AccountRef(common.Address{}), address, nil, startGas, new(big.Int))
 			if err != nil {

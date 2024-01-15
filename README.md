@@ -8,7 +8,7 @@ This chain implements the Ethereum Virtual Machine and supports Solidity smart c
 
 ## Building
 
-Coreth is a dependency of OdysseyGo which is used to implement the EVM based Virtual Machine for the Odyssey D-Chain. In order to run with a local version of Coreth, users must update their Coreth dependency within OdysseyGo to point to their local Coreth directory. If Coreth and OdysseyGo are at the standard location within your GOPATH, this will look like the following:
+Coreth is a dependency of OdysseyGo which is used to implement the DELTA based Virtual Machine for the Odyssey D-Chain. In order to run with a local version of Coreth, users must update their Coreth dependency within OdysseyGo to point to their local Coreth directory. If Coreth and OdysseyGo are at the standard location within your GOPATH, this will look like the following:
 
 ```bash
 cd $GOPATH/src/github.com/DioneProtocol/odysseygo

@@ -20,7 +20,7 @@ type StatefulPrecompileConfig interface {
 	Timestamp() *uint64
 	// Configure is called on the first block where the stateful precompile should be enabled.
 	// This allows the stateful precompile to configure its own state via [StateDB] as necessary.
-	// This function must be deterministic since it will impact the EVM state. If a change to the
+	// This function must be deterministic since it will impact the DELTA state. If a change to the
 	// config causes a change to the state modifications made in Configure, then it cannot be safely
 	// made to the config after the network upgrade has gone into effect.
 	//

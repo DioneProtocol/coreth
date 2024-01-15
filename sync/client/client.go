@@ -27,7 +27,7 @@ import (
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/DioneProtocol/coreth/peer"
-	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	"github.com/DioneProtocol/coreth/trie"
 )
 

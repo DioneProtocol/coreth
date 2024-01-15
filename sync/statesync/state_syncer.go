@@ -36,7 +36,7 @@ type StateSyncerConfig struct {
 // stateSync keeps the state of the entire state sync operation.
 type stateSync struct {
 	db        ethdb.Database    // database we are syncing
-	root      common.Hash       // root of the EVM state we are syncing to
+	root      common.Hash       // root of the DELTA state we are syncing to
 	trieDB    *trie.Database    // trieDB on top of db we are syncing. used to restore any existing tries.
 	snapshot  snapshot.Snapshot // used to access the database we are syncing as a snapshot.
 	batchSize int               // write batches when they reach this size

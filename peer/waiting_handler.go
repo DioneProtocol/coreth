@@ -4,7 +4,7 @@
 package peer
 
 import (
-	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/plugin/delta/message"
 )
 
 var _ message.ResponseHandler = &waitingResponseHandler{}

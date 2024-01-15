@@ -1347,7 +1347,7 @@ func (bc *BlockChain) insertBlock(block *types.Block, writes bool) error {
 	trieUpdate := statedb.AccountUpdates + statedb.StorageUpdates              // The time spent on tries update
 	trieRead := statedb.SnapshotAccountReads + statedb.AccountReads            // The time spent on account read
 	trieRead += statedb.SnapshotStorageReads + statedb.StorageReads            // The time spent on storage read
-	blockExecutionTimer.Inc((ptime - trieRead).Milliseconds())                 // The time spent on EVM processing
+	blockExecutionTimer.Inc((ptime - trieRead).Milliseconds())                 // The time spent on DELTA processing
 	blockValidationTimer.Inc((vtime - (triehash + trieUpdate)).Milliseconds()) // The time spent on block validation
 	blockTrieOpsTimer.Inc((triehash + trieUpdate + trieRead).Milliseconds())   // The time spent on trie operations
 

@@ -58,7 +58,7 @@ type Backend interface {
 	AccountManager() *accounts.Manager
 	ExtRPCEnabled() bool
 	RPCGasCap() uint64                             // global gas cap for eth_call over rpc: DoS protection
-	RPCEVMTimeout() time.Duration                  // global timeout for eth_call over rpc: DoS protection
+	RPCDELTATimeout() time.Duration                // global timeout for eth_call over rpc: DoS protection
 	RPCTxFeeCap() float64                          // global tx fee cap for all transaction related APIs
 	UnprotectedAllowed(tx *types.Transaction) bool // allows only for EIP155 transactions.
 
@@ -74,7 +74,7 @@ type Backend interface {
 	StateAndHeaderByNumber(ctx context.Context, number rpc.BlockNumber) (*state.StateDB, *types.Header, error)
 	StateAndHeaderByNumberOrHash(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (*state.StateDB, *types.Header, error)
 	GetReceipts(ctx context.Context, hash common.Hash) (types.Receipts, error)
-	GetEVM(ctx context.Context, msg *core.Message, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockCtx *vm.BlockContext) (*vm.EVM, func() error)
+	GetDELTA(ctx context.Context, msg *core.Message, state *state.StateDB, header *types.Header, vmConfig *vm.Config, blockCtx *vm.BlockContext) (*vm.DELTA, func() error)
 	SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription
 	SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription
 	SubscribeChainSideEvent(ch chan<- core.ChainSideEvent) event.Subscription

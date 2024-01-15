@@ -111,18 +111,18 @@ func flatCallTracerTestRunner(tracerName string, filename string, dirPath string
 	}
 	_, statedb := tests.MakePreState(rawdb.NewMemoryDatabase(), test.Genesis.Alloc, false)
 
-	// Create the tracer, the EVM environment and run it
+	// Create the tracer, the DELTA environment and run it
 	tracer, err := tracers.DefaultDirectory.New(tracerName, new(tracers.Context), test.TracerConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create call tracer: %v", err)
 	}
-	evm := vm.NewEVM(context, txContext, statedb, test.Genesis.Config, vm.Config{Tracer: tracer})
+	delta := vm.NewDELTA(context, txContext, statedb, test.Genesis.Config, vm.Config{Tracer: tracer})
 
 	msg, err := core.TransactionToMessage(tx, signer, nil)
 	if err != nil {
 		return fmt.Errorf("failed to prepare transaction for tracing: %v", err)
 	}
-	st := core.NewStateTransition(evm, msg, new(core.GasPool).AddGas(tx.Gas()))
+	st := core.NewStateTransition(delta, msg, new(core.GasPool).AddGas(tx.Gas()))
 
 	if _, err = st.TransitionDb(); err != nil {
 		return fmt.Errorf("failed to execute transaction: %v", err)

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/DioneProtocol/coreth/metrics"
-	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/plugin/delta/message"
 )
 
 var (

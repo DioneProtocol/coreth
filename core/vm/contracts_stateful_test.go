@@ -467,9 +467,9 @@ func TestStatefulPrecompile(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			stateDB := test.setupStateDB()
-			// Create EVM with BlockNumber and Time initialized to 0 to enable Apricot Rules.
-			evm := NewEVM(vmCtx, TxContext{}, stateDB, params.TestApricotPhase5Config, Config{}) // Use ApricotPhase5Config because these precompiles are deprecated in ApricotPhase6.
-			ret, gasRemaining, err := evm.Call(AccountRef(test.from), test.precompileAddr, test.input, test.gasInput, test.value)
+			// Create DELTA with BlockNumber and Time initialized to 0 to enable Apricot Rules.
+			delta := NewDELTA(vmCtx, TxContext{}, stateDB, params.TestApricotPhase5Config, Config{}) // Use ApricotPhase5Config because these precompiles are deprecated in ApricotPhase6.
+			ret, gasRemaining, err := delta.Call(AccountRef(test.from), test.precompileAddr, test.input, test.gasInput, test.value)
 			// Place gas remaining check before error check, so that it is not skipped when there is an error
 			assert.Equal(t, test.expectedGasRemaining, gasRemaining, "unexpected gas remaining")
 
@@ -477,7 +477,7 @@ func TestStatefulPrecompile(t *testing.T) {
 				assert.Equal(t, test.expectedErr, err, "expected error to match")
 				return
 			}
-			if assert.NoError(t, err, "EVM Call produced unexpected error") {
+			if assert.NoError(t, err, "DELTA Call produced unexpected error") {
 				assert.Equal(t, test.expectedResult, ret, "unexpected return value")
 				if test.stateDBCheck != nil {
 					test.stateDBCheck(t, stateDB)

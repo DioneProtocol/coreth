@@ -4,7 +4,7 @@
 GOPATH="$(go env GOPATH)"
 
 # Set binary location
-binary_path=${CORETH_BINARY_PATH:-"$GOPATH/src/github.com/DioneProtocol/odysseygo/build/plugins/evm"}
+binary_path=${CORETH_BINARY_PATH:-"$GOPATH/src/github.com/DioneProtocol/odysseygo/build/plugins/delta"}
 
 # Avalabs docker hub
 dockerhub_repo="avaplatform/odysseygo"

@@ -10,7 +10,7 @@ import (
 
 	"github.com/DioneProtocol/coreth/core/rawdb"
 	"github.com/DioneProtocol/coreth/ethdb/memorydb"
-	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	statesyncclient "github.com/DioneProtocol/coreth/sync/client"
 	"github.com/DioneProtocol/coreth/sync/handlers"
 	handlerstats "github.com/DioneProtocol/coreth/sync/handlers/stats"

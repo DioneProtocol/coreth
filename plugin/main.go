@@ -12,7 +12,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/utils/ulimit"
 	"github.com/DioneProtocol/odysseygo/vms/rpcchainvm"
 
-	"github.com/DioneProtocol/coreth/plugin/evm"
+	"github.com/DioneProtocol/coreth/plugin/delta"
 )
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
 		os.Exit(1)
 	}
 	if version {
-		fmt.Println(evm.Version)
+		fmt.Println(delta.Version)
 		os.Exit(0)
 	}
 	if err := ulimit.Set(ulimit.DefaultFDLimit, logging.NoLog{}); err != nil {
@@ -30,5 +30,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	rpcchainvm.Serve(context.Background(), &evm.VM{IsPlugin: true})
+	rpcchainvm.Serve(context.Background(), &delta.VM{IsPlugin: true})
 }

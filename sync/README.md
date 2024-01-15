@@ -29,9 +29,9 @@ State sync code is structured as follows:
   - `BlockRequestHandler`: handles requests for blocks
   - _Note: There are response size and time limits in place so peers joining the network do not overload peers providing data.  Additionally, the engine tracks the CPU usage of each peer for such messsages and throttles inbound requests accordingly._
 - `sync/client`: Validates responses from peers and provides support for syncing tries.
-- `sync/statesync`: Uses `sync/client` to sync EVM related state: Accounts, storage tries, and contract code.
-- `plugin/evm/atomicSyncer`: Uses `sync/client` to sync the atomic trie.
-- `plugin/evm/`: The engine expects the VM to implement `StateSyncableVM` interface,
+- `sync/statesync`: Uses `sync/client` to sync DELTA related state: Accounts, storage tries, and contract code.
+- `plugin/delta/atomicSyncer`: Uses `sync/client` to sync the atomic trie.
+- `plugin/delta/`: The engine expects the VM to implement `StateSyncableVM` interface,
   - `StateSyncServer`: Contains methods executed on nodes _serving_ state sync requests.
   - `StateSyncClient`: Contains methods executed on nodes joining the network via state sync, and orchestrates the top level steps of the sync.
 - `peer`: Contains abstractions used by `sync/statesync` to send requests to peers (`AppRequest`) and receive responses from peers (`AppResponse`). 
@@ -60,7 +60,7 @@ The following steps are executed by the VM to sync its state from peers (see `st
 1. Wipe snapshot data
 1. Sync 256 parents of the syncable block (see `BlockRequest`),
 1. Sync the atomic trie,
-1. Sync the EVM state: account trie, code, and storage tries,
+1. Sync the DELTA state: account trie, code, and storage tries,
 1. Update in-memory and on-disk pointers.
 
 Steps 3 and 4 involve syncing tries. To sync trie data, the VM will send a series of `LeafRequests` to its peers. Each request specifies:
@@ -80,7 +80,7 @@ Peers responding to these requests send back trie leafs (key/value pairs) beginn
 
 If there are more leafs in a trie than can be returned in a single response,  the client will make successive requests to continue fetching data (with `Start` set to the last key received) until the trie is complete.  `CallbackLeafSyncer` manages this process and does a callback on each batch of received leafs.
 
-### EVM state: Account trie, code, and storage tries
+### DELTA state: Account trie, code, and storage tries
 `sync/statesync.stateSyncer` uses `CallbackLeafSyncer` to sync the account trie. When the leaf callback is invoked, each leaf represents an account:
 - If the account has contract code, it is requested from peers using `client.GetCode`
 - If the account has a storage root, it is added to the list of trie roots returned from the callback. `CallbackLeafSyncer` has `defaultNumThreads` (= 4) goroutines to fetch these tries concurrently.
@@ -93,14 +93,14 @@ When the trie is complete, an `OnFinish` callback is called and we hash any rema
 When a storage trie leaf is received, it is stored in the account's storage snapshot. A `StackTrie` is used here to reconstruct intermediary trie nodes & root as well.
 
 ### Atomic trie
-`plugin/evm.atomicSyncer` uses `CallbackLeafSyncer` to sync the atomic trie. In this trie, each leaf represents a set of put or remove shared memory operations and is structured as follows:
+`plugin/delta.atomicSyncer` uses `CallbackLeafSyncer` to sync the atomic trie. In this trie, each leaf represents a set of put or remove shared memory operations and is structured as follows:
 - Key: block height + peer blockchain ID
 - Value: codec serialized `atomic.Requests` (includes `PutRequests` and `RemoveRequests`)
 
 For each 4096 blocks (`commitHeightInterval`)  inserted in the atomic trie, a root is constructed and the trie is persisted. There is no concurrency in sycing this trie.
 
 ### Updating in-memory and on-disk pointers
-`plugin/evm.stateSyncClient.StateSyncSetLastSummaryBlock` is the last step in state sync.
+`plugin/delta.stateSyncClient.StateSyncSetLastSummaryBlock` is the last step in state sync.
 Once the tries have been synced, this method:
 
 - Verifies the block the engine has received matches the expected block hash and block number in the summary,

@@ -41,7 +41,7 @@ import (
 )
 
 var (
-	_ precompile.PrecompileAccessibleState = &EVM{}
+	_ precompile.PrecompileAccessibleState = &DELTA{}
 	_ precompile.BlockContext              = &BlockContext{}
 )
 
@@ -71,24 +71,24 @@ type (
 	TransferFunc   func(StateDB, common.Address, common.Address, *big.Int)
 	TransferMCFunc func(StateDB, common.Address, common.Address, common.Hash, *big.Int)
 	// GetHashFunc returns the n'th block hash in the blockchain
-	// and is used by the BLOCKHASH EVM op code.
+	// and is used by the BLOCKHASH DELTA op code.
 	GetHashFunc func(uint64) common.Hash
 )
 
-func (evm *EVM) precompile(addr common.Address) (precompile.StatefulPrecompiledContract, bool) {
+func (delta *DELTA) precompile(addr common.Address) (precompile.StatefulPrecompiledContract, bool) {
 	var precompiles map[common.Address]precompile.StatefulPrecompiledContract
 	switch {
-	case evm.chainRules.IsBanff:
+	case delta.chainRules.IsBanff:
 		precompiles = PrecompiledContractsBanff
-	case evm.chainRules.IsApricotPhase6:
+	case delta.chainRules.IsApricotPhase6:
 		precompiles = PrecompiledContractsApricotPhase6
-	case evm.chainRules.IsApricotPhasePre6:
+	case delta.chainRules.IsApricotPhasePre6:
 		precompiles = PrecompiledContractsApricotPhasePre6
-	case evm.chainRules.IsApricotPhase2:
+	case delta.chainRules.IsApricotPhase2:
 		precompiles = PrecompiledContractsApricotPhase2
-	case evm.chainRules.IsIstanbul:
+	case delta.chainRules.IsIstanbul:
 		precompiles = PrecompiledContractsIstanbul
-	case evm.chainRules.IsByzantium:
+	case delta.chainRules.IsByzantium:
 		precompiles = PrecompiledContractsByzantium
 	default:
 		precompiles = PrecompiledContractsHomestead
@@ -101,11 +101,11 @@ func (evm *EVM) precompile(addr common.Address) (precompile.StatefulPrecompiledC
 	}
 
 	// Otherwise, check the chain rules for the additionally configured precompiles.
-	p, ok = evm.chainRules.Precompiles[addr]
+	p, ok = delta.chainRules.Precompiles[addr]
 	return p, ok
 }
 
-// BlockContext provides the EVM with auxiliary information. Once provided
+// BlockContext provides the DELTA with auxiliary information. Once provided
 // it shouldn't be modified.
 type BlockContext struct {
 	// CanTransfer returns whether the account contains
@@ -138,7 +138,7 @@ func (b *BlockContext) Timestamp() uint64 {
 	return b.Time
 }
 
-// TxContext provides the EVM with information about a transaction.
+// TxContext provides the DELTA with information about a transaction.
 // All fields can change between transactions.
 type TxContext struct {
 	// Message information
@@ -146,7 +146,7 @@ type TxContext struct {
 	GasPrice *big.Int       // Provides information for GASPRICE
 }
 
-// EVM is the Ethereum Virtual Machine base object and provides
+// DELTA is the Ethereum Virtual Machine base object and provides
 // the necessary tools to run a contract on the given state with
 // the provided context. It should be noted that any error
 // generated through any of the calls should be considered a
@@ -154,8 +154,8 @@ type TxContext struct {
 // specific errors should ever be performed. The interpreter makes
 // sure that any errors generated are to be considered faulty code.
 //
-// The EVM should never be reused and is not thread safe.
-type EVM struct {
+// The DELTA should never be reused and is not thread safe.
+type DELTA struct {
 	// Context provides auxiliary blockchain related information
 	Context BlockContext
 	TxContext
@@ -169,12 +169,12 @@ type EVM struct {
 	// chain rules contains the chain rules for the current epoch
 	chainRules params.Rules
 	// virtual machine configuration options used to initialise the
-	// evm.
+	// delta.
 	Config Config
 	// global (to this context) ethereum virtual machine
 	// used throughout the execution of the tx.
-	interpreter *EVMInterpreter
-	// abort is used to abort the EVM calling operations
+	interpreter *DELTAInterpreter
+	// abort is used to abort the DELTA calling operations
 	abort atomic.Bool
 	// callGasTemp holds the gas available for the current call. This is needed because the
 	// available gas is calculated in gasCall* according to the 63/64 rule and later
@@ -182,10 +182,10 @@ type EVM struct {
 	callGasTemp uint64
 }
 
-// NewEVM returns a new EVM. The returned EVM is not thread safe and should
+// NewDELTA returns a new DELTA. The returned DELTA is not thread safe and should
 // only ever be used *once*.
-func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainConfig *params.ChainConfig, config Config) *EVM {
-	evm := &EVM{
+func NewDELTA(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainConfig *params.ChainConfig, config Config) *DELTA {
+	delta := &DELTA{
 		Context:     blockCtx,
 		TxContext:   txCtx,
 		StateDB:     statedb,
@@ -193,110 +193,110 @@ func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb StateDB, chainConfig
 		chainConfig: chainConfig,
 		chainRules:  chainConfig.OdysseyRules(blockCtx.BlockNumber, blockCtx.Time),
 	}
-	evm.interpreter = NewEVMInterpreter(evm)
-	return evm
+	delta.interpreter = NewDELTAInterpreter(delta)
+	return delta
 }
 
-// Reset resets the EVM with a new transaction context.Reset
+// Reset resets the DELTA with a new transaction context.Reset
 // This is not threadsafe and should only be done very cautiously.
-func (evm *EVM) Reset(txCtx TxContext, statedb StateDB) {
-	evm.TxContext = txCtx
-	evm.StateDB = statedb
+func (delta *DELTA) Reset(txCtx TxContext, statedb StateDB) {
+	delta.TxContext = txCtx
+	delta.StateDB = statedb
 }
 
-// Cancel cancels any running EVM operation. This may be called concurrently and
+// Cancel cancels any running DELTA operation. This may be called concurrently and
 // it's safe to be called multiple times.
-func (evm *EVM) Cancel() {
-	evm.abort.Store(true)
+func (delta *DELTA) Cancel() {
+	delta.abort.Store(true)
 }
 
 // Cancelled returns true if Cancel has been called
-func (evm *EVM) Cancelled() bool {
-	return evm.abort.Load()
+func (delta *DELTA) Cancelled() bool {
+	return delta.abort.Load()
 }
 
-// GetStateDB returns the evm's StateDB
-func (evm *EVM) GetStateDB() precompile.StateDB {
-	return evm.StateDB
+// GetStateDB returns the delta's StateDB
+func (delta *DELTA) GetStateDB() precompile.StateDB {
+	return delta.StateDB
 }
 
-// GetBlockContext returns the evm's BlockContext
-func (evm *EVM) GetBlockContext() precompile.BlockContext {
-	return &evm.Context
+// GetBlockContext returns the delta's BlockContext
+func (delta *DELTA) GetBlockContext() precompile.BlockContext {
+	return &delta.Context
 }
 
 // Interpreter returns the current interpreter
-func (evm *EVM) Interpreter() *EVMInterpreter {
-	return evm.interpreter
+func (delta *DELTA) Interpreter() *DELTAInterpreter {
+	return delta.interpreter
 }
 
-// SetBlockContext updates the block context of the EVM.
-func (evm *EVM) SetBlockContext(blockCtx BlockContext) {
-	evm.Context = blockCtx
+// SetBlockContext updates the block context of the DELTA.
+func (delta *DELTA) SetBlockContext(blockCtx BlockContext) {
+	delta.Context = blockCtx
 	num := blockCtx.BlockNumber
-	evm.chainRules = evm.chainConfig.OdysseyRules(num, blockCtx.Time)
+	delta.chainRules = delta.chainConfig.OdysseyRules(num, blockCtx.Time)
 }
 
 // Call executes the contract associated with the addr with the given input as
 // parameters. It also handles any necessary value transfer required and takes
 // the necessary steps to create accounts and reverses the state in case of an
 // execution error or failed value transfer.
-func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
+func (delta *DELTA) Call(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
 	// Fail if we're trying to execute above the call depth limit
-	if evm.depth > int(params.CallCreateDepth) {
+	if delta.depth > int(params.CallCreateDepth) {
 		return nil, gas, vmerrs.ErrDepth
 	}
 	// Fail if we're trying to transfer more than the available balance
 	// Note: it is not possible for a negative value to be passed in here due to the fact
 	// that [value] will be popped from the stack and decoded to a *big.Int, which will
 	// always yield a positive result.
-	if value.Sign() != 0 && !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
+	if value.Sign() != 0 && !delta.Context.CanTransfer(delta.StateDB, caller.Address(), value) {
 		return nil, gas, vmerrs.ErrInsufficientBalance
 	}
-	snapshot := evm.StateDB.Snapshot()
-	p, isPrecompile := evm.precompile(addr)
-	debug := evm.Config.Tracer != nil
+	snapshot := delta.StateDB.Snapshot()
+	p, isPrecompile := delta.precompile(addr)
+	debug := delta.Config.Tracer != nil
 
-	if !evm.StateDB.Exist(addr) {
-		if !isPrecompile && evm.chainRules.IsEIP158 && value.Sign() == 0 {
+	if !delta.StateDB.Exist(addr) {
+		if !isPrecompile && delta.chainRules.IsEIP158 && value.Sign() == 0 {
 			// Calling a non existing account, don't do anything, but ping the tracer
 			if debug {
-				if evm.depth == 0 {
-					evm.Config.Tracer.CaptureStart(evm, caller.Address(), addr, false, input, gas, value)
-					evm.Config.Tracer.CaptureEnd(ret, 0, nil)
+				if delta.depth == 0 {
+					delta.Config.Tracer.CaptureStart(delta, caller.Address(), addr, false, input, gas, value)
+					delta.Config.Tracer.CaptureEnd(ret, 0, nil)
 				} else {
-					evm.Config.Tracer.CaptureEnter(CALL, caller.Address(), addr, input, gas, value)
-					evm.Config.Tracer.CaptureExit(ret, 0, nil)
+					delta.Config.Tracer.CaptureEnter(CALL, caller.Address(), addr, input, gas, value)
+					delta.Config.Tracer.CaptureExit(ret, 0, nil)
 				}
 			}
 			return nil, gas, nil
 		}
-		evm.StateDB.CreateAccount(addr)
+		delta.StateDB.CreateAccount(addr)
 	}
-	evm.Context.Transfer(evm.StateDB, caller.Address(), addr, value)
+	delta.Context.Transfer(delta.StateDB, caller.Address(), addr, value)
 
 	// Capture the tracer start/end events in debug mode
 	if debug {
-		if evm.depth == 0 {
-			evm.Config.Tracer.CaptureStart(evm, caller.Address(), addr, false, input, gas, value)
+		if delta.depth == 0 {
+			delta.Config.Tracer.CaptureStart(delta, caller.Address(), addr, false, input, gas, value)
 			defer func(startGas uint64) { // Lazy evaluation of the parameters
-				evm.Config.Tracer.CaptureEnd(ret, startGas-gas, err)
+				delta.Config.Tracer.CaptureEnd(ret, startGas-gas, err)
 			}(gas)
 		} else {
 			// Handle tracer events for entering and exiting a call frame
-			evm.Config.Tracer.CaptureEnter(CALL, caller.Address(), addr, input, gas, value)
+			delta.Config.Tracer.CaptureEnter(CALL, caller.Address(), addr, input, gas, value)
 			defer func(startGas uint64) {
-				evm.Config.Tracer.CaptureExit(ret, startGas-gas, err)
+				delta.Config.Tracer.CaptureExit(ret, startGas-gas, err)
 			}(gas)
 		}
 	}
 
 	if isPrecompile {
-		ret, gas, err = RunStatefulPrecompiledContract(p, evm, caller.Address(), addr, input, gas, evm.interpreter.readOnly)
+		ret, gas, err = RunStatefulPrecompiledContract(p, delta, caller.Address(), addr, input, gas, delta.interpreter.readOnly)
 	} else {
-		// Initialise a new contract and set the code that is to be used by the EVM.
+		// Initialise a new contract and set the code that is to be used by the DELTA.
 		// The contract is a scoped environment for this execution context only.
-		code := evm.StateDB.GetCode(addr)
+		code := delta.StateDB.GetCode(addr)
 		if len(code) == 0 {
 			ret, err = nil, nil // gas is unchanged
 		} else {
@@ -304,30 +304,30 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 			// If the account has no code, we can abort here
 			// The depth-check is already done, and precompiles handled above
 			contract := NewContract(caller, AccountRef(addrCopy), value, gas)
-			contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), code)
-			ret, err = evm.interpreter.Run(contract, input, false)
+			contract.SetCallCode(&addrCopy, delta.StateDB.GetCodeHash(addrCopy), code)
+			ret, err = delta.interpreter.Run(contract, input, false)
 			gas = contract.Gas
 		}
 	}
-	// When an error was returned by the EVM or when setting the creation code
+	// When an error was returned by the DELTA or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
 	if err != nil {
-		evm.StateDB.RevertToSnapshot(snapshot)
+		delta.StateDB.RevertToSnapshot(snapshot)
 		if err != vmerrs.ErrExecutionReverted {
 			gas = 0
 		}
 		// TODO: consider clearing up unused snapshots:
 		//} else {
-		//	evm.StateDB.DiscardSnapshot(snapshot)
+		//	delta.StateDB.DiscardSnapshot(snapshot)
 	}
 	return ret, gas, err
 }
 
 // This allows the user transfer balance of a specified coinId in addition to a normal Call().
-func (evm *EVM) CallExpert(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int, coinID common.Hash, value2 *big.Int) (ret []byte, leftOverGas uint64, err error) {
+func (delta *DELTA) CallExpert(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int, coinID common.Hash, value2 *big.Int) (ret []byte, leftOverGas uint64, err error) {
 	// Fail if we're trying to execute above the call depth limit
-	if evm.depth > int(params.CallCreateDepth) {
+	if delta.depth > int(params.CallCreateDepth) {
 		return nil, gas, vmerrs.ErrDepth
 	}
 
@@ -335,46 +335,46 @@ func (evm *EVM) CallExpert(caller ContractRef, addr common.Address, input []byte
 	// Note: it is not possible for a negative value to be passed in here due to the fact
 	// that [value] will be popped from the stack and decoded to a *big.Int, which will
 	// always yield a positive result.
-	if value.Sign() != 0 && !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
+	if value.Sign() != 0 && !delta.Context.CanTransfer(delta.StateDB, caller.Address(), value) {
 		return nil, gas, vmerrs.ErrInsufficientBalance
 	}
 
-	if value2.Sign() != 0 && !evm.Context.CanTransferMC(evm.StateDB, caller.Address(), addr, coinID, value2) {
+	if value2.Sign() != 0 && !delta.Context.CanTransferMC(delta.StateDB, caller.Address(), addr, coinID, value2) {
 		return nil, gas, vmerrs.ErrInsufficientBalance
 	}
 
-	snapshot := evm.StateDB.Snapshot()
-	//p, isPrecompile := evm.precompile(addr)
+	snapshot := delta.StateDB.Snapshot()
+	//p, isPrecompile := delta.precompile(addr)
 
-	if !evm.StateDB.Exist(addr) {
-		//if !isPrecompile && evm.chainRules.IsEIP158 && value.Sign() == 0 {
+	if !delta.StateDB.Exist(addr) {
+		//if !isPrecompile && delta.chainRules.IsEIP158 && value.Sign() == 0 {
 		//	// Calling a non existing account, don't do anything, but ping the tracer
-		//	if evm.Config.Debug && evm.depth == 0 {
-		//		evm.Config.Tracer.CaptureStart(evm, caller.Address(), addr, false, input, gas, value)
-		//		evm.Config.Tracer.CaptureEnd(ret, 0, 0, nil)
+		//	if delta.Config.Debug && delta.depth == 0 {
+		//		delta.Config.Tracer.CaptureStart(delta, caller.Address(), addr, false, input, gas, value)
+		//		delta.Config.Tracer.CaptureEnd(ret, 0, 0, nil)
 		//	}
 		//	return nil, gas, nil
 		//}
-		evm.StateDB.CreateAccount(addr)
+		delta.StateDB.CreateAccount(addr)
 	}
-	evm.Context.Transfer(evm.StateDB, caller.Address(), addr, value)
-	evm.Context.TransferMultiCoin(evm.StateDB, caller.Address(), addr, coinID, value2)
+	delta.Context.Transfer(delta.StateDB, caller.Address(), addr, value)
+	delta.Context.TransferMultiCoin(delta.StateDB, caller.Address(), addr, coinID, value2)
 
 	// Capture the tracer start/end events in debug mode
-	debug := evm.Config.Tracer != nil
-	if debug && evm.depth == 0 {
-		evm.Config.Tracer.CaptureStart(evm, caller.Address(), addr, false, input, gas, value)
+	debug := delta.Config.Tracer != nil
+	if debug && delta.depth == 0 {
+		delta.Config.Tracer.CaptureStart(delta, caller.Address(), addr, false, input, gas, value)
 		defer func(startGas uint64, startTime time.Time) { // Lazy evaluation of the parameters
-			evm.Config.Tracer.CaptureEnd(ret, startGas-gas, err)
+			delta.Config.Tracer.CaptureEnd(ret, startGas-gas, err)
 		}(gas, time.Now())
 	}
 
 	//if isPrecompile {
 	//	ret, gas, err = RunPrecompiledContract(p, input, gas)
 	//} else {
-	// Initialise a new contract and set the code that is to be used by the EVM.
+	// Initialise a new contract and set the code that is to be used by the DELTA.
 	// The contract is a scoped environment for this execution context only.
-	code := evm.StateDB.GetCode(addr)
+	code := delta.StateDB.GetCode(addr)
 	if len(code) == 0 {
 		ret, err = nil, nil // gas is unchanged
 	} else {
@@ -382,22 +382,22 @@ func (evm *EVM) CallExpert(caller ContractRef, addr common.Address, input []byte
 		// If the account has no code, we can abort here
 		// The depth-check is already done, and precompiles handled above
 		contract := NewContract(caller, AccountRef(addrCopy), value, gas)
-		contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), code)
-		ret, err = evm.interpreter.Run(contract, input, false)
+		contract.SetCallCode(&addrCopy, delta.StateDB.GetCodeHash(addrCopy), code)
+		ret, err = delta.interpreter.Run(contract, input, false)
 		gas = contract.Gas
 	}
 	//}
-	// When an error was returned by the EVM or when setting the creation code
+	// When an error was returned by the DELTA or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
 	if err != nil {
-		evm.StateDB.RevertToSnapshot(snapshot)
+		delta.StateDB.RevertToSnapshot(snapshot)
 		if err != vmerrs.ErrExecutionReverted {
 			gas = 0
 		}
 		// TODO: consider clearing up unused snapshots:
 		//} else {
-		//	evm.StateDB.DiscardSnapshot(snapshot)
+		//	delta.StateDB.DiscardSnapshot(snapshot)
 	}
 	return ret, gas, err
 }
@@ -409,9 +409,9 @@ func (evm *EVM) CallExpert(caller ContractRef, addr common.Address, input []byte
 //
 // CallCode differs from Call in the sense that it executes the given address'
 // code with the caller as context.
-func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
+func (delta *DELTA) CallCode(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
 	// Fail if we're trying to execute above the call depth limit
-	if evm.depth > int(params.CallCreateDepth) {
+	if delta.depth > int(params.CallCreateDepth) {
 		return nil, gas, vmerrs.ErrDepth
 	}
 	// Fail if we're trying to transfer more than the available balance
@@ -421,33 +421,33 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 	// Note: it is not possible for a negative value to be passed in here due to the fact
 	// that [value] will be popped from the stack and decoded to a *big.Int, which will
 	// always yield a positive result.
-	if !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
+	if !delta.Context.CanTransfer(delta.StateDB, caller.Address(), value) {
 		return nil, gas, vmerrs.ErrInsufficientBalance
 	}
-	var snapshot = evm.StateDB.Snapshot()
+	var snapshot = delta.StateDB.Snapshot()
 
 	// Invoke tracer hooks that signal entering/exiting a call frame
-	if evm.Config.Tracer != nil {
-		evm.Config.Tracer.CaptureEnter(CALLCODE, caller.Address(), addr, input, gas, value)
+	if delta.Config.Tracer != nil {
+		delta.Config.Tracer.CaptureEnter(CALLCODE, caller.Address(), addr, input, gas, value)
 		defer func(startGas uint64) {
-			evm.Config.Tracer.CaptureExit(ret, startGas-gas, err)
+			delta.Config.Tracer.CaptureExit(ret, startGas-gas, err)
 		}(gas)
 	}
 
 	// It is allowed to call precompiles, even via delegatecall
-	if p, isPrecompile := evm.precompile(addr); isPrecompile {
-		ret, gas, err = RunStatefulPrecompiledContract(p, evm, caller.Address(), addr, input, gas, evm.interpreter.readOnly)
+	if p, isPrecompile := delta.precompile(addr); isPrecompile {
+		ret, gas, err = RunStatefulPrecompiledContract(p, delta, caller.Address(), addr, input, gas, delta.interpreter.readOnly)
 	} else {
 		addrCopy := addr
-		// Initialise a new contract and set the code that is to be used by the EVM.
+		// Initialise a new contract and set the code that is to be used by the DELTA.
 		// The contract is a scoped environment for this execution context only.
 		contract := NewContract(caller, AccountRef(caller.Address()), value, gas)
-		contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), evm.StateDB.GetCode(addrCopy))
-		ret, err = evm.interpreter.Run(contract, input, false)
+		contract.SetCallCode(&addrCopy, delta.StateDB.GetCodeHash(addrCopy), delta.StateDB.GetCode(addrCopy))
+		ret, err = delta.interpreter.Run(contract, input, false)
 		gas = contract.Gas
 	}
 	if err != nil {
-		evm.StateDB.RevertToSnapshot(snapshot)
+		delta.StateDB.RevertToSnapshot(snapshot)
 		if err != vmerrs.ErrExecutionReverted {
 			gas = 0
 		}
@@ -460,38 +460,38 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 //
 // DelegateCall differs from CallCode in the sense that it executes the given address'
 // code with the caller as context and the caller is set to the caller of the caller.
-func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
+func (delta *DELTA) DelegateCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
 	// Fail if we're trying to execute above the call depth limit
-	if evm.depth > int(params.CallCreateDepth) {
+	if delta.depth > int(params.CallCreateDepth) {
 		return nil, gas, vmerrs.ErrDepth
 	}
-	var snapshot = evm.StateDB.Snapshot()
+	var snapshot = delta.StateDB.Snapshot()
 
 	// Invoke tracer hooks that signal entering/exiting a call frame
-	if evm.Config.Tracer != nil {
+	if delta.Config.Tracer != nil {
 		// NOTE: caller must, at all times be a contract. It should never happen
 		// that caller is something other than a Contract.
 		parent := caller.(*Contract)
 		// DELEGATECALL inherits value from parent call
-		evm.Config.Tracer.CaptureEnter(DELEGATECALL, caller.Address(), addr, input, gas, parent.value)
+		delta.Config.Tracer.CaptureEnter(DELEGATECALL, caller.Address(), addr, input, gas, parent.value)
 		defer func(startGas uint64) {
-			evm.Config.Tracer.CaptureExit(ret, startGas-gas, err)
+			delta.Config.Tracer.CaptureExit(ret, startGas-gas, err)
 		}(gas)
 	}
 
 	// It is allowed to call precompiles, even via delegatecall
-	if p, isPrecompile := evm.precompile(addr); isPrecompile {
-		ret, gas, err = RunStatefulPrecompiledContract(p, evm, caller.Address(), addr, input, gas, evm.interpreter.readOnly)
+	if p, isPrecompile := delta.precompile(addr); isPrecompile {
+		ret, gas, err = RunStatefulPrecompiledContract(p, delta, caller.Address(), addr, input, gas, delta.interpreter.readOnly)
 	} else {
 		addrCopy := addr
 		// Initialise a new contract and make initialise the delegate values
 		contract := NewContract(caller, AccountRef(caller.Address()), nil, gas).AsDelegate()
-		contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), evm.StateDB.GetCode(addrCopy))
-		ret, err = evm.interpreter.Run(contract, input, false)
+		contract.SetCallCode(&addrCopy, delta.StateDB.GetCodeHash(addrCopy), delta.StateDB.GetCode(addrCopy))
+		ret, err = delta.interpreter.Run(contract, input, false)
 		gas = contract.Gas
 	}
 	if err != nil {
-		evm.StateDB.RevertToSnapshot(snapshot)
+		delta.StateDB.RevertToSnapshot(snapshot)
 		if err != vmerrs.ErrExecutionReverted {
 			gas = 0
 		}
@@ -503,9 +503,9 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 // as parameters while disallowing any modifications to the state during the call.
 // Opcodes that attempt to perform such modifications will result in exceptions
 // instead of performing the modifications.
-func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
+func (delta *DELTA) StaticCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
 	// Fail if we're trying to execute above the call depth limit
-	if evm.depth > int(params.CallCreateDepth) {
+	if delta.depth > int(params.CallCreateDepth) {
 		return nil, gas, vmerrs.ErrDepth
 	}
 	// We take a snapshot here. This is a bit counter-intuitive, and could probably be skipped.
@@ -513,41 +513,41 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 	// after all empty accounts were deleted, so this is not required. However, if we omit this,
 	// then certain tests start failing; stRevertTest/RevertPrecompiledTouchExactOOG.json.
 	// We could change this, but for now it's left for legacy reasons
-	var snapshot = evm.StateDB.Snapshot()
+	var snapshot = delta.StateDB.Snapshot()
 
 	// We do an AddBalance of zero here, just in order to trigger a touch.
 	// This doesn't matter on Mainnet, where all empties are gone at the time of Byzantium,
 	// but is the correct thing to do and matters on other networks, in tests, and potential
 	// future scenarios
-	evm.StateDB.AddBalance(addr, big0)
+	delta.StateDB.AddBalance(addr, big0)
 
 	// Invoke tracer hooks that signal entering/exiting a call frame
-	if evm.Config.Tracer != nil {
-		evm.Config.Tracer.CaptureEnter(STATICCALL, caller.Address(), addr, input, gas, nil)
+	if delta.Config.Tracer != nil {
+		delta.Config.Tracer.CaptureEnter(STATICCALL, caller.Address(), addr, input, gas, nil)
 		defer func(startGas uint64) {
-			evm.Config.Tracer.CaptureExit(ret, startGas-gas, err)
+			delta.Config.Tracer.CaptureExit(ret, startGas-gas, err)
 		}(gas)
 	}
 
-	if p, isPrecompile := evm.precompile(addr); isPrecompile {
-		ret, gas, err = RunStatefulPrecompiledContract(p, evm, caller.Address(), addr, input, gas, true)
+	if p, isPrecompile := delta.precompile(addr); isPrecompile {
+		ret, gas, err = RunStatefulPrecompiledContract(p, delta, caller.Address(), addr, input, gas, true)
 	} else {
 		// At this point, we use a copy of address. If we don't, the go compiler will
 		// leak the 'contract' to the outer scope, and make allocation for 'contract'
 		// even if the actual execution ends on RunPrecompiled above.
 		addrCopy := addr
-		// Initialise a new contract and set the code that is to be used by the EVM.
+		// Initialise a new contract and set the code that is to be used by the DELTA.
 		// The contract is a scoped environment for this execution context only.
 		contract := NewContract(caller, AccountRef(addrCopy), new(big.Int), gas)
-		contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), evm.StateDB.GetCode(addrCopy))
-		// When an error was returned by the EVM or when setting the creation code
+		contract.SetCallCode(&addrCopy, delta.StateDB.GetCodeHash(addrCopy), delta.StateDB.GetCode(addrCopy))
+		// When an error was returned by the DELTA or when setting the creation code
 		// above we revert to the snapshot and consume any gas remaining. Additionally
 		// when we're in Homestead this also counts for code storage gas errors.
-		ret, err = evm.interpreter.Run(contract, input, true)
+		ret, err = delta.interpreter.Run(contract, input, true)
 		gas = contract.Gas
 	}
 	if err != nil {
-		evm.StateDB.RevertToSnapshot(snapshot)
+		delta.StateDB.RevertToSnapshot(snapshot)
 		if err != vmerrs.ErrExecutionReverted {
 			gas = 0
 		}
@@ -568,16 +568,16 @@ func (c *codeAndHash) Hash() common.Hash {
 }
 
 // create creates a new contract using code as deployment code.
-func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64, value *big.Int, address common.Address, typ OpCode) ([]byte, common.Address, uint64, error) {
+func (delta *DELTA) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64, value *big.Int, address common.Address, typ OpCode) ([]byte, common.Address, uint64, error) {
 	// Depth check execution. Fail if we're trying to execute above the
 	// limit.
-	if evm.depth > int(params.CallCreateDepth) {
+	if delta.depth > int(params.CallCreateDepth) {
 		return nil, common.Address{}, gas, vmerrs.ErrDepth
 	}
 	// Note: it is not possible for a negative value to be passed in here due to the fact
 	// that [value] will be popped from the stack and decoded to a *big.Int, which will
 	// always yield a positive result.
-	if !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
+	if !delta.Context.CanTransfer(delta.StateDB, caller.Address(), value) {
 		return nil, common.Address{}, gas, vmerrs.ErrInsufficientBalance
 	}
 	// If there is any collision with a prohibited address, return an error instead
@@ -585,51 +585,51 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	if IsProhibited(address) {
 		return nil, common.Address{}, gas, vmerrs.ErrAddrProhibited
 	}
-	nonce := evm.StateDB.GetNonce(caller.Address())
+	nonce := delta.StateDB.GetNonce(caller.Address())
 	if nonce+1 < nonce {
 		return nil, common.Address{}, gas, vmerrs.ErrNonceUintOverflow
 	}
-	evm.StateDB.SetNonce(caller.Address(), nonce+1)
+	delta.StateDB.SetNonce(caller.Address(), nonce+1)
 	// We add this to the access list _before_ taking a snapshot. Even if the creation fails,
 	// the access-list change should not be rolled back
-	if evm.chainRules.IsApricotPhase2 {
-		evm.StateDB.AddAddressToAccessList(address)
+	if delta.chainRules.IsApricotPhase2 {
+		delta.StateDB.AddAddressToAccessList(address)
 	}
 	// Ensure there's no existing contract already at the designated address
-	contractHash := evm.StateDB.GetCodeHash(address)
-	if evm.StateDB.GetNonce(address) != 0 || (contractHash != (common.Hash{}) && contractHash != emptyCodeHash) {
+	contractHash := delta.StateDB.GetCodeHash(address)
+	if delta.StateDB.GetNonce(address) != 0 || (contractHash != (common.Hash{}) && contractHash != emptyCodeHash) {
 		return nil, common.Address{}, 0, vmerrs.ErrContractAddressCollision
 	}
 	// Create a new account on the state
-	snapshot := evm.StateDB.Snapshot()
-	evm.StateDB.CreateAccount(address)
-	if evm.chainRules.IsEIP158 {
-		evm.StateDB.SetNonce(address, 1)
+	snapshot := delta.StateDB.Snapshot()
+	delta.StateDB.CreateAccount(address)
+	if delta.chainRules.IsEIP158 {
+		delta.StateDB.SetNonce(address, 1)
 	}
-	evm.Context.Transfer(evm.StateDB, caller.Address(), address, value)
+	delta.Context.Transfer(delta.StateDB, caller.Address(), address, value)
 
-	// Initialise a new contract and set the code that is to be used by the EVM.
+	// Initialise a new contract and set the code that is to be used by the DELTA.
 	// The contract is a scoped environment for this execution context only.
 	contract := NewContract(caller, AccountRef(address), value, gas)
 	contract.SetCodeOptionalHash(&address, codeAndHash)
 
-	if evm.Config.Tracer != nil {
-		if evm.depth == 0 {
-			evm.Config.Tracer.CaptureStart(evm, caller.Address(), address, true, codeAndHash.code, gas, value)
+	if delta.Config.Tracer != nil {
+		if delta.depth == 0 {
+			delta.Config.Tracer.CaptureStart(delta, caller.Address(), address, true, codeAndHash.code, gas, value)
 		} else {
-			evm.Config.Tracer.CaptureEnter(typ, caller.Address(), address, codeAndHash.code, gas, value)
+			delta.Config.Tracer.CaptureEnter(typ, caller.Address(), address, codeAndHash.code, gas, value)
 		}
 	}
 
-	ret, err := evm.interpreter.Run(contract, nil, false)
+	ret, err := delta.interpreter.Run(contract, nil, false)
 
 	// Check whether the max code size has been exceeded, assign err if the case.
-	if err == nil && evm.chainRules.IsEIP158 && len(ret) > params.MaxCodeSize {
+	if err == nil && delta.chainRules.IsEIP158 && len(ret) > params.MaxCodeSize {
 		err = vmerrs.ErrMaxCodeSizeExceeded
 	}
 
 	// Reject code starting with 0xEF if EIP-3541 is enabled.
-	if err == nil && len(ret) >= 1 && ret[0] == 0xEF && evm.chainRules.IsApricotPhase3 {
+	if err == nil && len(ret) >= 1 && ret[0] == 0xEF && delta.chainRules.IsApricotPhase3 {
 		err = vmerrs.ErrInvalidCode
 	}
 
@@ -640,52 +640,52 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	if err == nil {
 		createDataGas := uint64(len(ret)) * params.CreateDataGas
 		if contract.UseGas(createDataGas) {
-			evm.StateDB.SetCode(address, ret)
+			delta.StateDB.SetCode(address, ret)
 		} else {
 			err = vmerrs.ErrCodeStoreOutOfGas
 		}
 	}
 
-	// When an error was returned by the EVM or when setting the creation code
+	// When an error was returned by the DELTA or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
-	if err != nil && (evm.chainRules.IsHomestead || err != vmerrs.ErrCodeStoreOutOfGas) {
-		evm.StateDB.RevertToSnapshot(snapshot)
+	if err != nil && (delta.chainRules.IsHomestead || err != vmerrs.ErrCodeStoreOutOfGas) {
+		delta.StateDB.RevertToSnapshot(snapshot)
 		if err != vmerrs.ErrExecutionReverted {
 			contract.UseGas(contract.Gas)
 		}
 	}
 
-	if evm.Config.Tracer != nil {
-		if evm.depth == 0 {
-			evm.Config.Tracer.CaptureEnd(ret, gas-contract.Gas, err)
+	if delta.Config.Tracer != nil {
+		if delta.depth == 0 {
+			delta.Config.Tracer.CaptureEnd(ret, gas-contract.Gas, err)
 		} else {
-			evm.Config.Tracer.CaptureExit(ret, gas-contract.Gas, err)
+			delta.Config.Tracer.CaptureExit(ret, gas-contract.Gas, err)
 		}
 	}
 	return ret, address, contract.Gas, err
 }
 
 // Create creates a new contract using code as deployment code.
-func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
-	contractAddr = crypto.CreateAddress(caller.Address(), evm.StateDB.GetNonce(caller.Address()))
-	return evm.create(caller, &codeAndHash{code: code}, gas, value, contractAddr, CREATE)
+func (delta *DELTA) Create(caller ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
+	contractAddr = crypto.CreateAddress(caller.Address(), delta.StateDB.GetNonce(caller.Address()))
+	return delta.create(caller, &codeAndHash{code: code}, gas, value, contractAddr, CREATE)
 }
 
 // Create2 creates a new contract using code as deployment code.
 //
 // The different between Create2 with Create is Create2 uses keccak256(0xff ++ msg.sender ++ salt ++ keccak256(init_code))[12:]
 // instead of the usual sender-and-nonce-hash as the address where the contract is initialized at.
-func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *big.Int, salt *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
+func (delta *DELTA) Create2(caller ContractRef, code []byte, gas uint64, endowment *big.Int, salt *uint256.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
 	codeAndHash := &codeAndHash{code: code}
 	contractAddr = crypto.CreateAddress2(caller.Address(), salt.Bytes32(), codeAndHash.Hash().Bytes())
-	return evm.create(caller, codeAndHash, gas, endowment, contractAddr, CREATE2)
+	return delta.create(caller, codeAndHash, gas, endowment, contractAddr, CREATE2)
 }
 
 // ChainConfig returns the environment's chain configuration
-func (evm *EVM) ChainConfig() *params.ChainConfig { return evm.chainConfig }
+func (delta *DELTA) ChainConfig() *params.ChainConfig { return delta.chainConfig }
 
-func (evm *EVM) NativeAssetCall(caller common.Address, input []byte, suppliedGas uint64, gasCost uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
+func (delta *DELTA) NativeAssetCall(caller common.Address, input []byte, suppliedGas uint64, gasCost uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
 	if suppliedGas < gasCost {
 		return nil, 0, vmerrs.ErrOutOfGas
 	}
@@ -702,39 +702,39 @@ func (evm *EVM) NativeAssetCall(caller common.Address, input []byte, suppliedGas
 
 	// Note: it is not possible for a negative assetAmount to be passed in here due to the fact that decoding a
 	// byte slice into a *big.Int type will always return a positive value.
-	if assetAmount.Sign() != 0 && !evm.Context.CanTransferMC(evm.StateDB, caller, to, assetID, assetAmount) {
+	if assetAmount.Sign() != 0 && !delta.Context.CanTransferMC(delta.StateDB, caller, to, assetID, assetAmount) {
 		return nil, remainingGas, vmerrs.ErrInsufficientBalance
 	}
 
-	snapshot := evm.StateDB.Snapshot()
+	snapshot := delta.StateDB.Snapshot()
 
-	if !evm.StateDB.Exist(to) {
+	if !delta.StateDB.Exist(to) {
 		if remainingGas < params.CallNewAccountGas {
 			return nil, 0, vmerrs.ErrOutOfGas
 		}
 		remainingGas -= params.CallNewAccountGas
-		evm.StateDB.CreateAccount(to)
+		delta.StateDB.CreateAccount(to)
 	}
 
 	// Increment the call depth which is restricted to 1024
-	evm.depth++
-	defer func() { evm.depth-- }()
+	delta.depth++
+	defer func() { delta.depth-- }()
 
 	// Send [assetAmount] of [assetID] to [to] address
-	evm.Context.TransferMultiCoin(evm.StateDB, caller, to, assetID, assetAmount)
-	ret, remainingGas, err = evm.Call(AccountRef(caller), to, callData, remainingGas, new(big.Int))
+	delta.Context.TransferMultiCoin(delta.StateDB, caller, to, assetID, assetAmount)
+	ret, remainingGas, err = delta.Call(AccountRef(caller), to, callData, remainingGas, new(big.Int))
 
-	// When an error was returned by the EVM or when setting the creation code
+	// When an error was returned by the DELTA or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
 	if err != nil {
-		evm.StateDB.RevertToSnapshot(snapshot)
+		delta.StateDB.RevertToSnapshot(snapshot)
 		if err != vmerrs.ErrExecutionReverted {
 			remainingGas = 0
 		}
 		// TODO: consider clearing up unused snapshots:
 		//} else {
-		//	evm.StateDB.DiscardSnapshot(snapshot)
+		//	delta.StateDB.DiscardSnapshot(snapshot)
 	}
 	return ret, remainingGas, err
 }

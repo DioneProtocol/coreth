@@ -91,7 +91,7 @@ type TransactOpts struct {
 	// If set, the transaction is transformed to perform the requested call through the native asset
 	// precompile. This will update the to address of the transaction to that of the native asset precompile
 	// and pack the requested [to] address, [assetID], [assetAmount], and [input] data for the transaction
-	// into the call data of the transaction. When executed within the EVM, the precompile will parse the input
+	// into the call data of the transaction. When executed within the DELTA, the precompile will parse the input
 	// data and attempt to atomically transfer [assetAmount] of [assetID] to the [to] address and invoke the
 	// contract at [to] if present, passing in the original [input] data.
 	NativeAssetCall *NativeAssetCallOpts

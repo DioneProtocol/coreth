@@ -61,8 +61,8 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, c
 	var (
 		header       = block.Header()
 		gaspool      = new(GasPool).AddGas(block.GasLimit())
-		blockContext = NewEVMBlockContext(header, p.bc, nil)
-		evm          = vm.NewEVM(blockContext, vm.TxContext{}, statedb, p.config, cfg)
+		blockContext = NewDELTABlockContext(header, p.bc, nil)
+		delta        = vm.NewDELTA(blockContext, vm.TxContext{}, statedb, p.config, cfg)
 		signer       = types.MakeSigner(p.config, header.Number, header.Time)
 	)
 	// Iterate over and process the individual transactions
@@ -78,7 +78,7 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, c
 			return // Also invalid block, bail out
 		}
 		statedb.SetTxContext(tx.Hash(), i)
-		if err := precacheTransaction(msg, p.config, gaspool, statedb, header, evm); err != nil {
+		if err := precacheTransaction(msg, p.config, gaspool, statedb, header, delta); err != nil {
 			return // Ugh, something went horribly wrong, bail out
 		}
 		// If we're pre-byzantium, pre-load trie nodes for the intermediate root
@@ -95,10 +95,10 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, c
 // precacheTransaction attempts to apply a transaction to the given state database
 // and uses the input parameters for its environment. The goal is not to execute
 // the transaction successfully, rather to warm up touched data slots.
-func precacheTransaction(msg *Message, config *params.ChainConfig, gaspool *GasPool, statedb *state.StateDB, header *types.Header, evm *vm.EVM) error {
-	// Update the evm with the new transaction context.
-	evm.Reset(NewEVMTxContext(msg), statedb)
+func precacheTransaction(msg *Message, config *params.ChainConfig, gaspool *GasPool, statedb *state.StateDB, header *types.Header, delta *vm.DELTA) error {
+	// Update the delta with the new transaction context.
+	delta.Reset(NewDELTATxContext(msg), statedb)
 	// Add addresses to access list if applicable
-	_, err := ApplyMessage(evm, msg, gaspool)
+	_, err := ApplyMessage(delta, msg, gaspool)
 	return err
 }

@@ -18,7 +18,7 @@ import (
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/DioneProtocol/coreth/ethdb/memorydb"
-	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	statesyncclient "github.com/DioneProtocol/coreth/sync/client"
 	"github.com/DioneProtocol/coreth/sync/handlers"
 	handlerstats "github.com/DioneProtocol/coreth/sync/handlers/stats"
@@ -513,7 +513,7 @@ func testSyncerSyncsToNewRoot(t *testing.T, deleteBetweenSyncs func(*testing.T, 
 			return
 		}
 		called = true
-		// delete snapshot first since this is not the responsibility of the EVM State Syncer
+		// delete snapshot first since this is not the responsibility of the DELTA State Syncer
 		<-snapshot.WipeSnapshot(clientDB, false)
 
 		deleteBetweenSyncs(t, root1, clientDB)

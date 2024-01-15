@@ -91,7 +91,7 @@
 - Increase default `trie-clean-cache` size from 256 MB to 512 MB
 - Increase default `snapshot-cache` size from 128 MB to 256 MB
 - Add optional flag to skip chain config upgrade check on startup (allows VM to start after missing a network upgrade)
-- Make Odyssey blockchainID (separate from EVM ChainID) available within the EVM
+- Make Odyssey blockchainID (separate from DELTA ChainID) available within the DELTA
 - Record block height when performing state sync
 - Add support for VM-to-VM messaging
 - Move `eth_getChainConfig` under the `BlockChainAPI`

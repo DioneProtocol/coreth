@@ -38,7 +38,7 @@ var (
 	// EmptyUncleHash is the known hash of the empty uncle set.
 	EmptyUncleHash = rlpHash([]*Header(nil)) // 1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347
 
-	// EmptyCodeHash is the known hash of the empty EVM bytecode.
+	// EmptyCodeHash is the known hash of the empty DELTA bytecode.
 	EmptyCodeHash = crypto.Keccak256Hash(nil) // c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470
 
 	// EmptyTxsHash is the known hash of the empty transaction set.

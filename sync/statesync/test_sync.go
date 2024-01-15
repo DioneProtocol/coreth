@@ -20,9 +20,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// assertDBConsistency checks [serverTrieDB] and [clientTrieDB] have the same EVM state trie at [root],
+// assertDBConsistency checks [serverTrieDB] and [clientTrieDB] have the same DELTA state trie at [root],
 // and that [clientTrieDB.DiskDB] has corresponding account & snapshot values.
-// Also verifies any code referenced by the EVM state is present in [clientTrieDB] and the hash is correct.
+// Also verifies any code referenced by the DELTA state is present in [clientTrieDB] and the hash is correct.
 func assertDBConsistency(t testing.TB, root common.Hash, clientDB ethdb.Database, serverTrieDB, clientTrieDB *trie.Database) {
 	numSnapshotAccounts := 0
 	accountIt := rawdb.IterateAccountSnapshots(clientDB)

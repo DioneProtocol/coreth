@@ -31,7 +31,7 @@ import (
 	"github.com/DioneProtocol/coreth/core/vm"
 )
 
-func NewEnv(cfg *Config) *vm.EVM {
+func NewEnv(cfg *Config) *vm.DELTA {
 	txContext := vm.TxContext{
 		Origin:   cfg.Origin,
 		GasPrice: cfg.GasPrice,
@@ -50,5 +50,5 @@ func NewEnv(cfg *Config) *vm.EVM {
 		BaseFee:           cfg.BaseFee,
 	}
 
-	return vm.NewEVM(blockContext, txContext, cfg.State, cfg.ChainConfig, cfg.EVMConfig)
+	return vm.NewDELTA(blockContext, txContext, cfg.State, cfg.ChainConfig, cfg.DELTAConfig)
 }

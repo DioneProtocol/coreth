@@ -127,7 +127,7 @@ func NewFileTracerAPI(backend Backend) *FileTracerAPI {
 	return &FileTracerAPI{baseAPI{backend: backend}}
 }
 
-// chainContext constructs the context reader which is used by the evm for reading
+// chainContext constructs the context reader which is used by the delta for reading
 // the necessary chain context.
 func (api *baseAPI) chainContext(ctx context.Context) core.ChainContext {
 	return ethapi.NewChainContext(ctx, api.backend)
@@ -236,7 +236,7 @@ type txTraceTask struct {
 	index   int            // Transaction offset in the block
 }
 
-// TraceChain returns the structured logs created during the execution of EVM
+// TraceChain returns the structured logs created during the execution of DELTA
 // between two blocks (excluding start) and returns them as a JSON object.
 func (api *API) TraceChain(ctx context.Context, start, end rpc.BlockNumber, config *TraceConfig) (*rpc.Subscription, error) { // Fetch the block interval that we want to trace
 	from, err := api.blockByNumber(ctx, start)
@@ -297,7 +297,7 @@ func (api *API) traceChain(start, end *types.Block, config *TraceConfig, closed 
 			for task := range taskCh {
 				var (
 					signer   = types.MakeSigner(api.backend.ChainConfig(), task.block.Number(), task.block.Time())
-					blockCtx = core.NewEVMBlockContext(task.block.Header(), api.chainContext(ctx), nil)
+					blockCtx = core.NewDELTABlockContext(task.block.Header(), api.chainContext(ctx), nil)
 				)
 				// Trace all the transactions contained within
 				for i, tx := range task.block.Transactions() {
@@ -461,7 +461,7 @@ func (api *API) traceChain(start, end *types.Block, config *TraceConfig, closed 
 }
 
 // TraceBlockByNumber returns the structured logs created during the execution of
-// EVM and returns them as a JSON object.
+// DELTA and returns them as a JSON object.
 func (api *API) TraceBlockByNumber(ctx context.Context, number rpc.BlockNumber, config *TraceConfig) ([]*txTraceResult, error) {
 	block, err := api.blockByNumber(ctx, number)
 	if err != nil {
@@ -471,7 +471,7 @@ func (api *API) TraceBlockByNumber(ctx context.Context, number rpc.BlockNumber, 
 }
 
 // TraceBlockByHash returns the structured logs created during the execution of
-// EVM and returns them as a JSON object.
+// DELTA and returns them as a JSON object.
 func (api *API) TraceBlockByHash(ctx context.Context, hash common.Hash, config *TraceConfig) ([]*txTraceResult, error) {
 	block, err := api.blockByHash(ctx, hash)
 	if err != nil {
@@ -480,7 +480,7 @@ func (api *API) TraceBlockByHash(ctx context.Context, hash common.Hash, config *
 	return api.traceBlock(ctx, block, config)
 }
 
-// TraceBlock returns the structured logs created during the execution of EVM
+// TraceBlock returns the structured logs created during the execution of DELTA
 // and returns them as a JSON object.
 func (api *baseAPI) TraceBlock(ctx context.Context, blob hexutil.Bytes, config *TraceConfig) ([]*txTraceResult, error) {
 	block := new(types.Block)
@@ -491,7 +491,7 @@ func (api *baseAPI) TraceBlock(ctx context.Context, blob hexutil.Bytes, config *
 }
 
 // TraceBlockFromFile returns the structured logs created during the execution of
-// EVM and returns them as a JSON object.
+// DELTA and returns them as a JSON object.
 func (api *FileTracerAPI) TraceBlockFromFile(ctx context.Context, file string, config *TraceConfig) ([]*txTraceResult, error) {
 	blob, err := os.ReadFile(file)
 	if err != nil {
@@ -501,7 +501,7 @@ func (api *FileTracerAPI) TraceBlockFromFile(ctx context.Context, file string, c
 }
 
 // TraceBadBlock returns the structured logs created during the execution of
-// EVM against a block pulled from the pool of bad ones and returns them as a JSON
+// DELTA against a block pulled from the pool of bad ones and returns them as a JSON
 // object.
 func (api *API) TraceBadBlock(ctx context.Context, hash common.Hash, config *TraceConfig) ([]*txTraceResult, error) {
 	// Search for the bad block corresponding to [hash].
@@ -522,7 +522,7 @@ func (api *API) TraceBadBlock(ctx context.Context, hash common.Hash, config *Tra
 }
 
 // StandardTraceBlockToFile dumps the structured logs created during the
-// execution of EVM to the local file system and returns a list of files
+// execution of DELTA to the local file system and returns a list of files
 // to the caller.
 func (api *FileTracerAPI) StandardTraceBlockToFile(ctx context.Context, hash common.Hash, config *StdTraceConfig) ([]string, error) {
 	block, err := api.blockByHash(ctx, hash)
@@ -560,7 +560,7 @@ func (api *API) IntermediateRoots(ctx context.Context, hash common.Hash, config 
 		roots              []common.Hash
 		signer             = types.MakeSigner(api.backend.ChainConfig(), block.Number(), block.Time())
 		chainConfig        = api.backend.ChainConfig()
-		vmctx              = core.NewEVMBlockContext(block.Header(), api.chainContext(ctx), nil)
+		vmctx              = core.NewDELTABlockContext(block.Header(), api.chainContext(ctx), nil)
 		deleteEmptyObjects = chainConfig.IsEIP158(block.Number())
 	)
 	for i, tx := range block.Transactions() {
@@ -569,8 +569,8 @@ func (api *API) IntermediateRoots(ctx context.Context, hash common.Hash, config 
 		}
 		var (
 			msg, _    = core.TransactionToMessage(tx, signer, block.BaseFee())
-			txContext = core.NewEVMTxContext(msg)
-			vmenv     = vm.NewEVM(vmctx, txContext, statedb, chainConfig, vm.Config{})
+			txContext = core.NewDELTATxContext(msg)
+			vmenv     = vm.NewDELTA(vmctx, txContext, statedb, chainConfig, vm.Config{})
 		)
 		statedb.SetTxContext(tx.Hash(), i)
 		if _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.GasLimit)); err != nil {
@@ -591,7 +591,7 @@ func (api *API) IntermediateRoots(ctx context.Context, hash common.Hash, config 
 }
 
 // StandardTraceBadBlockToFile dumps the structured logs created during the
-// execution of EVM against a block pulled from the pool of bad ones to the
+// execution of DELTA against a block pulled from the pool of bad ones to the
 // local file system and returns a list of files to the caller.
 func (api *FileTracerAPI) StandardTraceBadBlockToFile(ctx context.Context, hash common.Hash, config *StdTraceConfig) ([]string, error) {
 	// Search for the bad block corresponding to [hash].
@@ -646,7 +646,7 @@ func (api *baseAPI) traceBlock(ctx context.Context, block *types.Block, config *
 		txs       = block.Transactions()
 		blockHash = block.Hash()
 		is158     = api.backend.ChainConfig().IsEIP158(block.Number())
-		blockCtx  = core.NewEVMBlockContext(block.Header(), api.chainContext(ctx), nil)
+		blockCtx  = core.NewDELTABlockContext(block.Header(), api.chainContext(ctx), nil)
 		signer    = types.MakeSigner(api.backend.ChainConfig(), block.Number(), block.Time())
 		results   = make([]*txTraceResult, len(txs))
 	)
@@ -679,7 +679,7 @@ func (api *baseAPI) traceBlockParallel(ctx context.Context, block *types.Block, 
 	var (
 		txs       = block.Transactions()
 		blockHash = block.Hash()
-		blockCtx  = core.NewEVMBlockContext(block.Header(), api.chainContext(ctx), nil)
+		blockCtx  = core.NewDELTABlockContext(block.Header(), api.chainContext(ctx), nil)
 		signer    = types.MakeSigner(api.backend.ChainConfig(), block.Number(), block.Time())
 		results   = make([]*txTraceResult, len(txs))
 		pend      sync.WaitGroup
@@ -728,7 +728,7 @@ txloop:
 		// Generate the next state snapshot fast without tracing
 		msg, _ := core.TransactionToMessage(tx, signer, block.BaseFee())
 		statedb.SetTxContext(tx.Hash(), i)
-		vmenv := vm.NewEVM(blockCtx, core.NewEVMTxContext(msg), statedb, api.backend.ChainConfig(), vm.Config{})
+		vmenv := vm.NewDELTA(blockCtx, core.NewDELTATxContext(msg), statedb, api.backend.ChainConfig(), vm.Config{})
 		if _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.GasLimit)); err != nil {
 			failed = err
 			break txloop
@@ -791,7 +791,7 @@ func (api *FileTracerAPI) standardTraceBlockToFile(ctx context.Context, block *t
 		dumps       []string
 		signer      = types.MakeSigner(api.backend.ChainConfig(), block.Number(), block.Time())
 		chainConfig = api.backend.ChainConfig()
-		vmctx       = core.NewEVMBlockContext(block.Header(), api.chainContext(ctx), nil)
+		vmctx       = core.NewDELTABlockContext(block.Header(), api.chainContext(ctx), nil)
 		canon       = true
 	)
 	// Check if there are any overrides: the caller may wish to enable a future
@@ -807,7 +807,7 @@ func (api *FileTracerAPI) standardTraceBlockToFile(ctx context.Context, block *t
 		// Prepare the transaction for un-traced execution
 		var (
 			msg, _    = core.TransactionToMessage(tx, signer, block.BaseFee())
-			txContext = core.NewEVMTxContext(msg)
+			txContext = core.NewDELTATxContext(msg)
 			vmConf    vm.Config
 			dump      *os.File
 			writer    *bufio.Writer
@@ -834,7 +834,7 @@ func (api *FileTracerAPI) standardTraceBlockToFile(ctx context.Context, block *t
 			}
 		}
 		// Execute the transaction and flush any traces to disk
-		vmenv := vm.NewEVM(vmctx, txContext, statedb, chainConfig, vmConf)
+		vmenv := vm.NewDELTA(vmctx, txContext, statedb, chainConfig, vmConf)
 		statedb.SetTxContext(tx.Hash(), i)
 		_, err = core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.GasLimit))
 		if writer != nil {
@@ -870,7 +870,7 @@ func containsTx(block *types.Block, hash common.Hash) bool {
 	return false
 }
 
-// TraceTransaction returns the structured logs created during the execution of EVM
+// TraceTransaction returns the structured logs created during the execution of DELTA
 // and returns them as a JSON object.
 func (api *API) TraceTransaction(ctx context.Context, hash common.Hash, config *TraceConfig) (interface{}, error) {
 	tx, blockHash, blockNumber, index, err := api.backend.GetTransaction(ctx, hash)
@@ -909,7 +909,7 @@ func (api *API) TraceTransaction(ctx context.Context, hash common.Hash, config *
 }
 
 // TraceCall lets you trace a given eth_call. It collects the structured logs
-// created during the execution of EVM if the given transaction was added on
+// created during the execution of DELTA if the given transaction was added on
 // top of the provided block and returns them as a JSON object.
 func (api *API) TraceCall(ctx context.Context, args ethapi.TransactionArgs, blockNrOrHash rpc.BlockNumberOrHash, config *TraceCallConfig) (interface{}, error) {
 	// Try to retrieve the specified block
@@ -946,7 +946,7 @@ func (api *API) TraceCall(ctx context.Context, args ethapi.TransactionArgs, bloc
 	}
 	defer release()
 
-	vmctx := core.NewEVMBlockContext(block.Header(), api.chainContext(ctx), nil)
+	vmctx := core.NewDELTABlockContext(block.Header(), api.chainContext(ctx), nil)
 	// Apply the customization rules if required.
 	if config != nil {
 		if err := config.StateOverrides.Apply(statedb); err != nil {
@@ -975,7 +975,7 @@ func (api *baseAPI) traceTx(ctx context.Context, message *core.Message, txctx *C
 		tracer    Tracer
 		err       error
 		timeout   = defaultTraceTimeout
-		txContext = core.NewEVMTxContext(message)
+		txContext = core.NewDELTATxContext(message)
 	)
 	if config == nil {
 		config = &TraceConfig{}
@@ -988,7 +988,7 @@ func (api *baseAPI) traceTx(ctx context.Context, message *core.Message, txctx *C
 			return nil, err
 		}
 	}
-	vmenv := vm.NewEVM(vmctx, txContext, statedb, api.backend.ChainConfig(), vm.Config{Tracer: tracer, NoBaseFee: true})
+	vmenv := vm.NewDELTA(vmctx, txContext, statedb, api.backend.ChainConfig(), vm.Config{Tracer: tracer, NoBaseFee: true})
 
 	// Define a meaningful timeout of a single transaction trace
 	if config.Timeout != nil {
@@ -1001,7 +1001,7 @@ func (api *baseAPI) traceTx(ctx context.Context, message *core.Message, txctx *C
 		<-deadlineCtx.Done()
 		if errors.Is(deadlineCtx.Err(), context.DeadlineExceeded) {
 			tracer.Stop(errors.New("execution timeout"))
-			// Stop evm execution. Note cancellation is not necessarily immediate.
+			// Stop delta execution. Note cancellation is not necessarily immediate.
 			vmenv.Cancel()
 		}
 	}()

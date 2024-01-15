@@ -20,7 +20,7 @@ import (
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/ethdb/memorydb"
 	"github.com/DioneProtocol/coreth/params"
-	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	clientstats "github.com/DioneProtocol/coreth/sync/client/stats"
 	"github.com/DioneProtocol/coreth/sync/handlers"
 	handlerstats "github.com/DioneProtocol/coreth/sync/handlers/stats"

@@ -537,7 +537,7 @@ type ChainConfig struct {
 	CancunTime *uint64 `json:"cancunTime,omitempty"`
 }
 
-// OdysseyContext provides Odyssey specific context directly into the EVM.
+// OdysseyContext provides Odyssey specific context directly into the DELTA.
 type OdysseyContext struct {
 	BlockchainID common.Hash
 }
@@ -1082,7 +1082,7 @@ func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
 // enabledStatefulPrecompiles returns a list of stateful precompile configs in the order that they are enabled
 // by block timestamp.
 // Note: the return value does not include the native precompiles [nativeAssetCall] and [nativeAssetBalance].
-// These are handled in [evm.precompile] directly.
+// These are handled in [delta.precompile] directly.
 func (c *ChainConfig) enabledStatefulPrecompiles() []precompile.StatefulPrecompileConfig {
 	statefulPrecompileConfigs := make([]precompile.StatefulPrecompileConfig, 0)
 

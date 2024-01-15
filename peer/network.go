@@ -24,7 +24,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/version"
 
 	"github.com/DioneProtocol/coreth/peer/stats"
-	"github.com/DioneProtocol/coreth/plugin/evm/message"
+	"github.com/DioneProtocol/coreth/plugin/delta/message"
 )
 
 // Minimum amount of time to handle a request

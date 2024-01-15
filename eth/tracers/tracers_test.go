@@ -90,14 +90,14 @@ func BenchmarkTransactionTrace(b *testing.B) {
 		Balance: big.NewInt(500000000000000),
 	}
 	_, statedb := tests.MakePreState(rawdb.NewMemoryDatabase(), alloc, false)
-	// Create the tracer, the EVM environment and run it
+	// Create the tracer, the DELTA environment and run it
 	tracer := logger.NewStructLogger(&logger.Config{
 		Debug: false,
 		//DisableStorage: true,
 		//EnableMemory: false,
 		//EnableReturnData: false,
 	})
-	evm := vm.NewEVM(context, txContext, statedb, params.TestChainConfig, vm.Config{Tracer: tracer})
+	delta := vm.NewDELTA(context, txContext, statedb, params.TestChainConfig, vm.Config{Tracer: tracer})
 	msg, err := core.TransactionToMessage(tx, signer, nil)
 	if err != nil {
 		b.Fatalf("failed to prepare transaction for tracing: %v", err)
@@ -107,7 +107,7 @@ func BenchmarkTransactionTrace(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		snap := statedb.Snapshot()
-		st := core.NewStateTransition(evm, msg, new(core.GasPool).AddGas(tx.Gas()))
+		st := core.NewStateTransition(delta, msg, new(core.GasPool).AddGas(tx.Gas()))
 		_, err = st.TransitionDb()
 		if err != nil {
 			b.Fatal(err)
