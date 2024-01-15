@@ -541,7 +541,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 			shouldErr: false,
 		},
 		{
-			name: "P-chain before AP5",
+			name: "O-chain before AP5",
 			tx: func() *Tx {
 				validExportTx := *validDIONEExportTx
 				validExportTx.DestinationChain = constants.PlatformChainID
@@ -555,7 +555,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 			shouldErr: true,
 		},
 		{
-			name: "P-chain after AP5",
+			name: "O-chain after AP5",
 			tx: func() *Tx {
 				validExportTx := *validDIONEExportTx
 				validExportTx.DestinationChain = constants.PlatformChainID
@@ -583,7 +583,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 			shouldErr: true,
 		},
 		{
-			name: "P-chain multi-coin before AP5",
+			name: "O-chain multi-coin before AP5",
 			tx: func() *Tx {
 				validExportTx := *validExportTx
 				validExportTx.DestinationChain = constants.PlatformChainID
@@ -599,7 +599,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 			shouldErr: true,
 		},
 		{
-			name: "P-chain multi-coin after AP5",
+			name: "O-chain multi-coin after AP5",
 			tx: func() *Tx {
 				validExportTx := *validExportTx
 				validExportTx.DestinationChain = constants.PlatformChainID

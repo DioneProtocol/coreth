@@ -180,8 +180,8 @@ func (c *client) ExportDIONE(
 	return c.Export(ctx, user, amount, to, targetChain, "DIONE", options...)
 }
 
-// Export sends an asset from this chain to the P/C-Chain.
-// After this tx is accepted, the DIONE must be imported to the P/C-chain with an importTx.
+// Export sends an asset from this chain to the O/C-Chain.
+// After this tx is accepted, the DIONE must be imported to the O/C-chain with an importTx.
 // Returns the ID of the newly created atomic transaction
 func (c *client) Export(
 	ctx context.Context,

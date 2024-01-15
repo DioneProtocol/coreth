@@ -164,7 +164,7 @@ func TestImportTxVerify(t *testing.T) {
 			rules:       apricotRulesPhase0,
 			expectedErr: errWrongBlockchainID.Error(),
 		},
-		"P-chain source before AP5": {
+		"O-chain source before AP5": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *importTx
 				tx.SourceChain = constants.PlatformChainID
@@ -174,7 +174,7 @@ func TestImportTxVerify(t *testing.T) {
 			rules:       apricotRulesPhase0,
 			expectedErr: errWrongChainID.Error(),
 		},
-		"P-chain source after AP5": {
+		"O-chain source after AP5": {
 			generate: func(t *testing.T) UnsignedAtomicTx {
 				tx := *importTx
 				tx.SourceChain = constants.PlatformChainID
