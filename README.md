@@ -1,14 +1,14 @@
-# Coreth and the C-Chain
+# Coreth and the D-Chain
 
 [Odyssey](https://docs.dione.network/learn/platform-overview) is a network composed of multiple blockchains.
 Each blockchain is an instance of a Virtual Machine (VM), much like an object in an object-oriented language is an instance of a class.
 That is, the VM defines the behavior of the blockchain.
-Coreth (from core Ethereum) is the [Virtual Machine (VM)](https://docs.dione.network/learn/platform-overview#virtual-machines) that defines the Contract Chain (C-Chain).
+Coreth (from core Ethereum) is the [Virtual Machine (VM)](https://docs.dione.network/learn/platform-overview#virtual-machines) that defines the Contract Chain (D-Chain).
 This chain implements the Ethereum Virtual Machine and supports Solidity smart contracts as well as most other Ethereum client functionality.
 
 ## Building
 
-Coreth is a dependency of OdysseyGo which is used to implement the EVM based Virtual Machine for the Odyssey C-Chain. In order to run with a local version of Coreth, users must update their Coreth dependency within OdysseyGo to point to their local Coreth directory. If Coreth and OdysseyGo are at the standard location within your GOPATH, this will look like the following:
+Coreth is a dependency of OdysseyGo which is used to implement the EVM based Virtual Machine for the Odyssey D-Chain. In order to run with a local version of Coreth, users must update their Coreth dependency within OdysseyGo to point to their local Coreth directory. If Coreth and OdysseyGo are at the standard location within your GOPATH, this will look like the following:
 
 ```bash
 cd $GOPATH/src/github.com/DioneProtocol/odysseygo
@@ -22,11 +22,11 @@ Now that OdysseyGo depends on the local version of Coreth, we can build with the
 ./build/odysseygo
 ```
 
-Note: the C-Chain originally ran in a separate process from the main OdysseyGo process and communicated with it over a local gRPC connection. When this was the case, OdysseyGo's build script would download Coreth, compile it, and place the binary into the `odysseygo/build/plugins` directory.
+Note: the D-Chain originally ran in a separate process from the main OdysseyGo process and communicated with it over a local gRPC connection. When this was the case, OdysseyGo's build script would download Coreth, compile it, and place the binary into the `odysseygo/build/plugins` directory.
 
 ## API
 
-The C-Chain supports the following API namespaces:
+The D-Chain supports the following API namespaces:
 
 - `eth`
 - `personal`
@@ -34,14 +34,14 @@ The C-Chain supports the following API namespaces:
 - `debug`
 
 Only the `eth` namespace is enabled by default. 
-To enable the other namespaces see the instructions for passing the C-Chain config to OdysseyGo [here.](https://docs.dione.network/nodes/maintain/chain-config-flags/#c-chain-configs)
-Full documentation for the C-Chain's API can be found [here.](https://docs.dione.network/apis/odysseygo/apis/c-chain/)
+To enable the other namespaces see the instructions for passing the D-Chain config to OdysseyGo [here.](https://docs.dione.network/nodes/maintain/chain-config-flags/#d-chain-configs)
+Full documentation for the D-Chain's API can be found [here.](https://docs.dione.network/apis/odysseygo/apis/d-chain/)
 
 ## Compatibility
 
-The C-Chain is compatible with almost all Ethereum tooling, including [Remix,](https://docs.dione.network/build/tutorials/smart-contracts/deploy-a-smart-contract-on-odyssey-using-remix-and-metamask) [Metamask](https://docs.dione.network/build/tutorials/smart-contracts/deploy-a-smart-contract-on-odyssey-using-remix-and-metamask) and [Truffle.](https://docs.dione.network/build/tutorials/smart-contracts/using-truffle-with-the-odyssey-c-chain)
+The D-Chain is compatible with almost all Ethereum tooling, including [Remix,](https://docs.dione.network/build/tutorials/smart-contracts/deploy-a-smart-contract-on-odyssey-using-remix-and-metamask) [Metamask](https://docs.dione.network/build/tutorials/smart-contracts/deploy-a-smart-contract-on-odyssey-using-remix-and-metamask) and [Truffle.](https://docs.dione.network/build/tutorials/smart-contracts/using-truffle-with-the-odyssey-d-chain)
 
-## Differences Between Odyssey C-Chain and Ethereum
+## Differences Between Odyssey D-Chain and Ethereum
 
 ### Atomic Transactions
 
@@ -49,7 +49,7 @@ As a network composed of multiple blockchains, Odyssey uses *atomic transactions
 
 ### Odyssey Native Tokens (ANTs)
 
-The C-Chain supports Odyssey Native Tokens, which are created on the A-Chain using precompiled contracts. These precompiled contracts *nativeAssetCall* and *nativeAssetBalance* support the same interface for ANTs as *CALL* and *BALANCE* do for DIONE with the added parameter of *assetID* to specify the asset.
+The D-Chain supports Odyssey Native Tokens, which are created on the A-Chain using precompiled contracts. These precompiled contracts *nativeAssetCall* and *nativeAssetBalance* support the same interface for ANTs as *CALL* and *BALANCE* do for DIONE with the added parameter of *assetID* to specify the asset.
 
 For the full documentation of precompiles for interacting with ANTs and using them in ARC-20s, see [here](https://docs.dione.network/build/references/coreth-arc20s).
 
@@ -67,7 +67,7 @@ Additionally, with the change from the DIFFICULTY OpCode to the RANDOM OpCode (R
 
 ## Block Format
 
-To support these changes, there have been a number of changes to the C-Chain block format compared to what exists on Ethereum.
+To support these changes, there have been a number of changes to the D-Chain block format compared to what exists on Ethereum.
 
 ### Block Body
 

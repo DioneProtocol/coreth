@@ -1074,7 +1074,7 @@ func TestExportTxVerify(t *testing.T) {
 	var exportAmount uint64 = 10000000
 	exportTx := &UnsignedExportTx{
 		NetworkID:        testNetworkID,
-		BlockchainID:     testCChainID,
+		BlockchainID:     testDChainID,
 		DestinationChain: testAChainID,
 		Ins: []EVMInput{
 			{

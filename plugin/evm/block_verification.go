@@ -155,7 +155,7 @@ func (v blockValidator) SyntacticVerify(b *Block, rules params.Rules) error {
 	if uncleHash != ethHeader.UncleHash {
 		return fmt.Errorf("invalid uncle hash %v does not match calculated uncle hash %v", ethHeader.UncleHash, uncleHash)
 	}
-	// Coinbase must match the BlackholeAddr on C-Chain
+	// Coinbase must match the BlackholeAddr on D-Chain
 	if ethHeader.Coinbase != constants.BlackholeAddr {
 		return fmt.Errorf("invalid coinbase %v does not match required blackhole address %v", ethHeader.Coinbase, constants.BlackholeAddr)
 	}

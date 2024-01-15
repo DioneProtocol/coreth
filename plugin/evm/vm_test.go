@@ -70,7 +70,7 @@ import (
 
 var (
 	testNetworkID    uint32 = 10
-	testCChainID            = ids.ID{'c', 'c', 'h', 'a', 'i', 'n', 't', 'e', 's', 't'}
+	testDChainID            = ids.ID{'c', 'c', 'h', 'a', 'i', 'n', 't', 'e', 's', 't'}
 	testAChainID            = ids.ID{'t', 'e', 's', 't', 'x'}
 	nonExistentID           = ids.ID{'F'}
 	testKeys         []*secp256k1.PrivateKey
@@ -147,13 +147,13 @@ func NewContext() *snow.Context {
 	ctx := snow.DefaultContextTest()
 	ctx.NodeID = ids.GenerateTestNodeID()
 	ctx.NetworkID = testNetworkID
-	ctx.ChainID = testCChainID
+	ctx.ChainID = testDChainID
 	ctx.DIONEAssetID = testDioneAssetID
 	ctx.AChainID = testAChainID
 	ctx.SharedMemory = testSharedMemory()
 	aliaser := ctx.BCLookup.(ids.Aliaser)
-	_ = aliaser.Alias(testCChainID, "C")
-	_ = aliaser.Alias(testCChainID, testCChainID.String())
+	_ = aliaser.Alias(testDChainID, "D")
+	_ = aliaser.Alias(testDChainID, testDChainID.String())
 	_ = aliaser.Alias(testAChainID, "A")
 	_ = aliaser.Alias(testAChainID, testAChainID.String())
 	ctx.ValidatorState = &validators.TestState{
@@ -161,7 +161,7 @@ func NewContext() *snow.Context {
 			subnetID, ok := map[ids.ID]ids.ID{
 				constants.PlatformChainID: constants.PrimaryNetworkID,
 				testAChainID:              constants.PrimaryNetworkID,
-				testCChainID:              constants.PrimaryNetworkID,
+				testDChainID:              constants.PrimaryNetworkID,
 			}[chainID]
 			if !ok {
 				return ids.Empty, errors.New("unknown chain")

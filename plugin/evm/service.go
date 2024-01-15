@@ -247,7 +247,7 @@ type ExportDIONEArgs struct {
 	To string `json:"to"`
 }
 
-// ExportDIONE exports DIONE from the C-Chain to the A-Chain
+// ExportDIONE exports DIONE from the D-Chain to the A-Chain
 // It must be imported on the A-Chain to complete the transfer
 func (service *DioneAPI) ExportDIONE(_ *http.Request, args *ExportDIONEArgs, response *api.JSONTxID) error {
 	return service.Export(nil, &ExportArgs{
@@ -263,7 +263,7 @@ type ExportArgs struct {
 	AssetID string `json:"assetID"`
 }
 
-// Export exports an asset from the C-Chain to the A-Chain
+// Export exports an asset from the D-Chain to the A-Chain
 // It must be imported on the A-Chain to complete the transfer
 func (service *DioneAPI) Export(_ *http.Request, args *ExportArgs, response *api.JSONTxID) error {
 	log.Info("EVM: Export called")

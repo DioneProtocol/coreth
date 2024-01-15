@@ -32,7 +32,7 @@
 
 ## [v0.12.0](https://github.com/DioneProtocol/coreth/releases/tag/v0.12.0)
 
-- Increase C-Chain block gas limit to 15M in Cortina
+- Increase D-Chain block gas limit to 15M in Cortina
 - Add Mainnet and Testnet Cortina Activation timestamps
 
 ## [v0.11.9](https://github.com/DioneProtocol/coreth/releases/tag/v0.11.9)
@@ -141,7 +141,7 @@
 ## [v0.8.14](https://github.com/DioneProtocol/coreth/releases/tag/v0.8.14)
 
 - Bump go-ethereum dependency to v1.10.20
-- Update API names used to enable services in `eth-api` config flag. Prior names are supported but deprecated, please update your configuration [accordingly](https://docs.dione.network/nodes/maintain/chain-config-flags#c-chain-configs)
+- Update API names used to enable services in `eth-api` config flag. Prior names are supported but deprecated, please update your configuration [accordingly](https://docs.dione.network/nodes/maintain/chain-config-flags#d-chain-configs)
 - Optimizes state sync by parallelizing trie syncing
 - Adds `eth_syncing` API for compatibility. Note: This API is only accessible after bootstrapping and always returns `"false"`, since the node will no longer be syncing at that point.
 - Adds metrics to atomic transaction mempool
@@ -180,7 +180,7 @@
 
 - Fix deadlock bug on shutdown causing historical re-generation on restart
 - Add API endpoint to fetch running VM Config
-- Add OdysseyGo custom log formatting to C-Chain logs
+- Add OdysseyGo custom log formatting to D-Chain logs
 - Deprecate support for JS Tracer
 
 ## [v0.8.8](https://github.com/DioneProtocol/coreth/releases/tag/v0.8.8)
@@ -199,7 +199,7 @@
 ## [v0.8.6](https://github.com/DioneProtocol/coreth/releases/tag/v0.8.6)
 
 - Migrate go-ethereum v1.10.16 changes
-- Increase FeeHistory maximum historical limit to improve MetaMask UI on C-Chain
+- Increase FeeHistory maximum historical limit to improve MetaMask UI on D-Chain
 - Enable chain state metrics
 
 ## [v0.8.5](https://github.com/DioneProtocol/coreth/releases/tag/v0.8.5)
