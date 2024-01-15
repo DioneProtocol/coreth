@@ -47,7 +47,7 @@ func TestEthTxGossip(t *testing.T) {
 	txPoolNewHeads := make(chan core.NewTxPoolHeadEvent)
 	vm.txPool.SubscribeNewHeadEvent(txPoolNewHeads)
 
-	importTx, err := vm.newImportTx(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+	importTx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 	require.NoError(err)
 	require.NoError(vm.issueTx(importTx, true))
 	<-issuer
@@ -225,7 +225,7 @@ func TestAtomicTxGossip(t *testing.T) {
 	wg.Wait()
 
 	// issue a new tx to the vm
-	importTx, err := vm.newImportTx(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+	importTx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 	require.NoError(err)
 
 	require.NoError(vm.issueTx(importTx, true /*=local*/))

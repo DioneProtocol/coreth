@@ -49,7 +49,7 @@ As a network composed of multiple blockchains, Odyssey uses *atomic transactions
 
 ### Odyssey Native Tokens (ANTs)
 
-The C-Chain supports Odyssey Native Tokens, which are created on the X-Chain using precompiled contracts. These precompiled contracts *nativeAssetCall* and *nativeAssetBalance* support the same interface for ANTs as *CALL* and *BALANCE* do for DIONE with the added parameter of *assetID* to specify the asset.
+The C-Chain supports Odyssey Native Tokens, which are created on the A-Chain using precompiled contracts. These precompiled contracts *nativeAssetCall* and *nativeAssetBalance* support the same interface for ANTs as *CALL* and *BALANCE* do for DIONE with the added parameter of *assetID* to specify the asset.
 
 For the full documentation of precompiles for interacting with ANTs and using them in ARC-20s, see [here](https://docs.dione.network/build/references/coreth-arc20s).
 

@@ -182,8 +182,8 @@ func (service *DioneAPI) ImportDIONE(_ *http.Request, args *ImportArgs, response
 	return service.Import(nil, args, response)
 }
 
-// Import issues a transaction to import DIONE from the X-chain. The DIONE
-// must have already been exported from the X-Chain.
+// Import issues a transaction to import DIONE from the A-chain. The DIONE
+// must have already been exported from the A-Chain.
 func (service *DioneAPI) Import(_ *http.Request, args *ImportArgs, response *api.JSONTxID) error {
 	log.Info("EVM: ImportDIONE called")
 
@@ -247,8 +247,8 @@ type ExportDIONEArgs struct {
 	To string `json:"to"`
 }
 
-// ExportDIONE exports DIONE from the C-Chain to the X-Chain
-// It must be imported on the X-Chain to complete the transfer
+// ExportDIONE exports DIONE from the C-Chain to the A-Chain
+// It must be imported on the A-Chain to complete the transfer
 func (service *DioneAPI) ExportDIONE(_ *http.Request, args *ExportDIONEArgs, response *api.JSONTxID) error {
 	return service.Export(nil, &ExportArgs{
 		ExportDIONEArgs: *args,
@@ -263,8 +263,8 @@ type ExportArgs struct {
 	AssetID string `json:"assetID"`
 }
 
-// Export exports an asset from the C-Chain to the X-Chain
-// It must be imported on the X-Chain to complete the transfer
+// Export exports an asset from the C-Chain to the A-Chain
+// It must be imported on the A-Chain to complete the transfer
 func (service *DioneAPI) Export(_ *http.Request, args *ExportArgs, response *api.JSONTxID) error {
 	log.Info("EVM: Export called")
 

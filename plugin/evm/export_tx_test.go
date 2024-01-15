@@ -41,9 +41,9 @@ func createExportTxOptions(t *testing.T, vm *VM, issuer chan engCommon.Message, 
 		t.Fatal(err)
 	}
 
-	xChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.XChainID)
+	aChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.AChainID)
 	inputID := utxo.InputID()
-	if err := xChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{{
+	if err := aChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{{
 		Key:   inputID[:],
 		Value: utxoBytes,
 		Traits: [][]byte{
@@ -54,7 +54,7 @@ func createExportTxOptions(t *testing.T, vm *VM, issuer chan engCommon.Message, 
 	}
 
 	// Import the funds
-	importTx, err := vm.newImportTx(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+	importTx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func createExportTxOptions(t *testing.T, vm *VM, issuer chan engCommon.Message, 
 	// Use the funds to create 3 conflicting export transactions sending the funds to each of the test addresses
 	exportTxs := make([]*Tx, 0, 3)
 	for _, addr := range testShortIDAddrs {
-		exportTx, err := vm.newExportTx(vm.ctx.DIONEAssetID, uint64(5000000), vm.ctx.XChainID, addr, initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+		exportTx, err := vm.newExportTx(vm.ctx.DIONEAssetID, uint64(5000000), vm.ctx.AChainID, addr, initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -346,8 +346,8 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			xChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.XChainID)
-			if err := xChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{
+			aChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.AChainID)
+			if err := aChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{
 				{
 					Key:   dioneInputID[:],
 					Value: dioneUTXOBytes,
@@ -366,7 +366,7 @@ func TestExportTxEVMStateTransfer(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			tx, err := vm.newImportTx(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+			tx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -459,7 +459,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 	validExportTx := &UnsignedExportTx{
 		NetworkID:        vm.ctx.NetworkID,
 		BlockchainID:     vm.ctx.ChainID,
-		DestinationChain: vm.ctx.XChainID,
+		DestinationChain: vm.ctx.AChainID,
 		Ins: []EVMInput{
 			{
 				Address: ethAddr,
@@ -497,7 +497,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 	validDIONEExportTx := &UnsignedExportTx{
 		NetworkID:        vm.ctx.NetworkID,
 		BlockchainID:     vm.ctx.ChainID,
-		DestinationChain: vm.ctx.XChainID,
+		DestinationChain: vm.ctx.AChainID,
 		Ins: []EVMInput{
 			{
 				Address: ethAddr,
@@ -924,7 +924,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 func TestExportTxAccept(t *testing.T) {
 	_, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONApricotPhase0, "", "")
 
-	xChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.XChainID)
+	aChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.AChainID)
 
 	defer func() {
 		if err := vm.Shutdown(context.Background()); err != nil {
@@ -945,7 +945,7 @@ func TestExportTxAccept(t *testing.T) {
 	exportTx := &UnsignedExportTx{
 		NetworkID:        vm.ctx.NetworkID,
 		BlockchainID:     vm.ctx.ChainID,
-		DestinationChain: vm.ctx.XChainID,
+		DestinationChain: vm.ctx.AChainID,
 		Ins: []EVMInput{
 			{
 				Address: ethAddr,
@@ -1008,7 +1008,7 @@ func TestExportTxAccept(t *testing.T) {
 	if err := vm.ctx.SharedMemory.Apply(map[ids.ID]*atomic.Requests{chainID: {PutRequests: atomicRequests.PutRequests}}, commitBatch); err != nil {
 		t.Fatal(err)
 	}
-	indexedValues, _, _, err := xChainSharedMemory.Indexed(vm.ctx.ChainID, [][]byte{addr.Bytes()}, nil, nil, 3)
+	indexedValues, _, _, err := aChainSharedMemory.Indexed(vm.ctx.ChainID, [][]byte{addr.Bytes()}, nil, nil, 3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1029,7 +1029,7 @@ func TestExportTxAccept(t *testing.T) {
 	}
 	customInputID := customUTXOID.InputID()
 
-	fetchedValues, err := xChainSharedMemory.Get(vm.ctx.ChainID, [][]byte{
+	fetchedValues, err := aChainSharedMemory.Get(vm.ctx.ChainID, [][]byte{
 		customInputID[:],
 		dioneInputID[:],
 	})
@@ -1075,7 +1075,7 @@ func TestExportTxVerify(t *testing.T) {
 	exportTx := &UnsignedExportTx{
 		NetworkID:        testNetworkID,
 		BlockchainID:     testCChainID,
-		DestinationChain: testXChainID,
+		DestinationChain: testAChainID,
 		Ins: []EVMInput{
 			{
 				Address: testEthAddrs[0],
@@ -1368,7 +1368,7 @@ func TestExportTxVerify(t *testing.T) {
 func TestExportTxGasCost(t *testing.T) {
 	dioneAssetID := ids.GenerateTestID()
 	chainID := ids.GenerateTestID()
-	xChainID := ids.GenerateTestID()
+	aChainID := ids.GenerateTestID()
 	networkID := uint32(5)
 	exportAmount := uint64(5000000)
 
@@ -1385,7 +1385,7 @@ func TestExportTxGasCost(t *testing.T) {
 			UnsignedExportTx: &UnsignedExportTx{
 				NetworkID:        networkID,
 				BlockchainID:     chainID,
-				DestinationChain: xChainID,
+				DestinationChain: aChainID,
 				Ins: []EVMInput{
 					{
 						Address: testEthAddrs[0],
@@ -1417,7 +1417,7 @@ func TestExportTxGasCost(t *testing.T) {
 			UnsignedExportTx: &UnsignedExportTx{
 				NetworkID:        networkID,
 				BlockchainID:     chainID,
-				DestinationChain: xChainID,
+				DestinationChain: aChainID,
 				Ins: []EVMInput{
 					{
 						Address: testEthAddrs[0],
@@ -1450,7 +1450,7 @@ func TestExportTxGasCost(t *testing.T) {
 			UnsignedExportTx: &UnsignedExportTx{
 				NetworkID:        networkID,
 				BlockchainID:     chainID,
-				DestinationChain: xChainID,
+				DestinationChain: aChainID,
 				Ins: []EVMInput{
 					{
 						Address: testEthAddrs[0],
@@ -1482,7 +1482,7 @@ func TestExportTxGasCost(t *testing.T) {
 			UnsignedExportTx: &UnsignedExportTx{
 				NetworkID:        networkID,
 				BlockchainID:     chainID,
-				DestinationChain: xChainID,
+				DestinationChain: aChainID,
 				Ins: []EVMInput{
 					{
 						Address: testEthAddrs[0],
@@ -1514,7 +1514,7 @@ func TestExportTxGasCost(t *testing.T) {
 			UnsignedExportTx: &UnsignedExportTx{
 				NetworkID:        networkID,
 				BlockchainID:     chainID,
-				DestinationChain: xChainID,
+				DestinationChain: aChainID,
 				Ins: []EVMInput{
 					{
 						Address: testEthAddrs[0],
@@ -1558,7 +1558,7 @@ func TestExportTxGasCost(t *testing.T) {
 			UnsignedExportTx: &UnsignedExportTx{
 				NetworkID:        networkID,
 				BlockchainID:     chainID,
-				DestinationChain: xChainID,
+				DestinationChain: aChainID,
 				Ins: []EVMInput{
 					{
 						Address: testEthAddrs[0],
@@ -1709,9 +1709,9 @@ func TestNewExportTx(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			xChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.XChainID)
+			aChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.AChainID)
 			inputID := utxo.InputID()
-			if err := xChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{{
+			if err := aChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{{
 				Key:   inputID[:],
 				Value: utxoBytes,
 				Traits: [][]byte{
@@ -1721,7 +1721,7 @@ func TestNewExportTx(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			tx, err := vm.newImportTx(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+			tx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1752,7 +1752,7 @@ func TestNewExportTx(t *testing.T) {
 			parent = vm.LastAcceptedBlockInternal().(*Block)
 			exportAmount := uint64(5000000)
 
-			tx, err = vm.newExportTx(vm.ctx.DIONEAssetID, exportAmount, vm.ctx.XChainID, testShortIDAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+			tx, err = vm.newExportTx(vm.ctx.DIONEAssetID, exportAmount, vm.ctx.AChainID, testShortIDAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1890,9 +1890,9 @@ func TestNewExportTxMulticoin(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			xChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.XChainID)
+			aChainSharedMemory := sharedMemory.NewSharedMemory(vm.ctx.AChainID)
 			inputID2 := utxo2.InputID()
-			if err := xChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{
+			if err := aChainSharedMemory.Apply(map[ids.ID]*atomic.Requests{vm.ctx.ChainID: {PutRequests: []*atomic.Element{
 				{
 					Key:   inputID[:],
 					Value: utxoBytes,
@@ -1911,7 +1911,7 @@ func TestNewExportTxMulticoin(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			tx, err := vm.newImportTx(vm.ctx.XChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+			tx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1948,7 +1948,7 @@ func TestNewExportTxMulticoin(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			tx, err = vm.newExportTx(tid, exportAmount, vm.ctx.XChainID, exportId, initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+			tx, err = vm.newExportTx(tid, exportAmount, vm.ctx.AChainID, exportId, initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 			if err != nil {
 				t.Fatal(err)
 			}
