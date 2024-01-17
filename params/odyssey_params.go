@@ -26,7 +26,7 @@ const (
 	ApricotPhase3MaxBaseFee               int64  = 225_000_000_000
 	ApricotPhase3InitialBaseFee           int64  = 225_000_000_000
 	ApricotPhase3TargetGas                uint64 = 10_000_000
-	ApricotPhase4MinBaseFee               int64  = 25_000_000_000
+	ApricotPhase4MinBaseFee               int64  = 50_000_000_000
 	ApricotPhase4MaxBaseFee               int64  = 1_000_000_000_000
 	ApricotPhase4BaseFeeChangeDenominator uint64 = 12
 	ApricotPhase5TargetGas                uint64 = 15_000_000
