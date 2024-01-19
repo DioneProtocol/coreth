@@ -91,17 +91,17 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		ApricotPhase1BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.March, 26, 14, 0, 0, 0, time.UTC)),
-		ApricotPhase2BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.May, 5, 14, 0, 0, 0, time.UTC)),
-		ApricotPhase3BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.August, 16, 19, 0, 0, 0, time.UTC)),
-		ApricotPhase4BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.September, 16, 21, 0, 0, 0, time.UTC)),
-		ApricotPhase5BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.November, 24, 15, 0, 0, 0, time.UTC)),
-		ApricotPhasePre6BlockTimestamp:  utils.TimeToNewUint64(time.Date(2022, time.September, 6, 20, 0, 0, 0, time.UTC)),
-		ApricotPhase6BlockTimestamp:     utils.TimeToNewUint64(time.Date(2022, time.September, 6, 20, 0, 0, 0, time.UTC)),
-		ApricotPhasePost6BlockTimestamp: utils.TimeToNewUint64(time.Date(2022, time.September, 7, 6, 0, 0, 0, time.UTC)),
-		BanffBlockTimestamp:             utils.TimeToNewUint64(time.Date(2022, time.October, 3, 14, 0, 0, 0, time.UTC)),
-		CortinaBlockTimestamp:           utils.TimeToNewUint64(time.Date(2023, time.April, 6, 15, 0, 0, 0, time.UTC)),
-		// TODO Add DUpgrade timestamp
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+		ApricotPhase6BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
+		BanffBlockTimestamp:             utils.NewUint64(0),
+		CortinaBlockTimestamp:           utils.NewUint64(0),
+		DUpgradeBlockTimestamp:          utils.NewUint64(0),
 	}
 
 	// OdysseyLocalChainConfig is the configuration for the Odyssey Local Network
