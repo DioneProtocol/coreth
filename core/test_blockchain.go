@@ -20,7 +20,7 @@ import (
 )
 
 var TestCallbacks = dummy.ConsensusCallbacks{
-	OnExtraStateChange: func(block *types.Block, sdb *state.StateDB) (*big.Int, *big.Int, error) {
+	OnExtraStateChange: func(block *types.Block, sdb *state.StateDB, receipts []*types.Receipt) (*big.Int, *big.Int, error) {
 		sdb.SetBalanceMultiCoin(common.HexToAddress("0xdeadbeef"), common.HexToHash("0xdeadbeef"), big.NewInt(block.Number().Int64()))
 		return nil, nil, nil
 	},

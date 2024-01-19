@@ -53,6 +53,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/version"
 	"github.com/DioneProtocol/odysseygo/vms/components/chain"
 	"github.com/DioneProtocol/odysseygo/vms/components/dione"
+	"github.com/DioneProtocol/odysseygo/vms/components/feecollector"
 	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 
 	engCommon "github.com/DioneProtocol/odysseygo/snow/engine/common"
@@ -181,6 +182,7 @@ func setupGenesis(t *testing.T,
 	[]byte,
 	chan engCommon.Message,
 	*atomic.Memory) {
+	require := require.New(t)
 	if len(genesisJSON) == 0 {
 		genesisJSON = genesisJSONLatest
 	}
@@ -195,6 +197,10 @@ func setupGenesis(t *testing.T,
 
 	m := atomic.NewMemory(prefixdb.New([]byte{0}, baseDBManager.Current().Database))
 	ctx.SharedMemory = m.NewSharedMemory(ctx.ChainID)
+
+	f, err := feecollector.New(prefixdb.New([]byte{1}, baseDBManager.Current().Database))
+	require.NoError(err)
+	ctx.FeeCollector = f
 
 	// NB: this lock is intentionally left locked when this function returns.
 	// The caller of this function is responsible for unlocking.
@@ -4038,7 +4044,7 @@ func TestExtraStateChangeAtomicGasLimitExceeded(t *testing.T) {
 	}
 
 	// Hack: test [onExtraStateChange] directly to ensure it catches the atomic gas limit error correctly.
-	if _, _, err := vm2.onExtraStateChange(ethBlk2, state); err == nil || !strings.Contains(err.Error(), "exceeds atomic gas limit") {
+	if _, _, err := vm2.onExtraStateChange(ethBlk2, state, nil); err == nil || !strings.Contains(err.Error(), "exceeds atomic gas limit") {
 		t.Fatalf("Expected block to fail verification due to exceeded atomic gas limit, but found error: %v", err)
 	}
 }

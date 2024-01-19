@@ -41,7 +41,7 @@ const (
 type (
 	OnFinalizeAndAssembleCallbackType = func(header *types.Header, state *state.StateDB, txs []*types.Transaction) (extraData []byte, blockFeeContribution *big.Int, extDataGasUsed *big.Int, err error)
 	OnAPIsCallbackType                = func(consensus.ChainHeaderReader) []rpc.API
-	OnExtraStateChangeType            = func(block *types.Block, statedb *state.StateDB) (blockFeeContribution *big.Int, extDataGasUsed *big.Int, err error)
+	OnExtraStateChangeType            = func(block *types.Block, statedb *state.StateDB, receipts []*types.Receipt) (blockFeeContribution *big.Int, extDataGasUsed *big.Int, err error)
 
 	ConsensusCallbacks struct {
 		OnFinalizeAndAssemble OnFinalizeAndAssembleCallbackType
@@ -340,7 +340,7 @@ func (self *DummyEngine) Finalize(chain consensus.ChainHeaderReader, block *type
 		err                          error
 	)
 	if self.cb.OnExtraStateChange != nil {
-		contribution, extDataGasUsed, err = self.cb.OnExtraStateChange(block, state)
+		contribution, extDataGasUsed, err = self.cb.OnExtraStateChange(block, state, receipts)
 		if err != nil {
 			return err
 		}

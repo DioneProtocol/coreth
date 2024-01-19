@@ -168,6 +168,11 @@ type Block struct {
 	version uint32
 	extdata *[]byte
 
+	// Collected fees
+	totalBaseFee     *big.Int
+	totalPriorityFee *big.Int
+	totalAtomicFee   *big.Int
+
 	// caches
 	hash atomic.Value
 	size atomic.Value
@@ -256,6 +261,39 @@ func CopyHeader(h *Header) *Header {
 		copy(cpy.Extra, h.Extra)
 	}
 	return &cpy
+}
+
+func (b *Block) SetTotalBaseFee(f *big.Int) {
+	b.totalBaseFee = new(big.Int).Set(f)
+}
+
+func (b *Block) TotalBaseFee() *big.Int {
+	if b.totalBaseFee == nil {
+		return big.NewInt(0)
+	}
+	return new(big.Int).Set(b.totalBaseFee)
+}
+
+func (b *Block) SetTotalPriorityFee(f *big.Int) {
+	b.totalPriorityFee = new(big.Int).Set(f)
+}
+
+func (b *Block) TotalPriorityFee() *big.Int {
+	if b.totalPriorityFee == nil {
+		return big.NewInt(0)
+	}
+	return new(big.Int).Set(b.totalPriorityFee)
+}
+
+func (b *Block) SetTotalAtomicFee(f *big.Int) {
+	b.totalAtomicFee = new(big.Int).Set(f)
+}
+
+func (b *Block) TotalAtomicFee() *big.Int {
+	if b.totalAtomicFee == nil {
+		return big.NewInt(0)
+	}
+	return new(big.Int).Set(b.totalAtomicFee)
 }
 
 // DecodeRLP decodes the Ethereum

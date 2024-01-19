@@ -914,13 +914,43 @@ func (vm *VM) onFinalizeAndAssemble(header *types.Header, state *state.StateDB, 
 	return vm.postBatchOnFinalizeAndAssemble(header, state, txs)
 }
 
-func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB) (*big.Int, *big.Int, error) {
+func (vm *VM) setBlockFees(block *types.Block, receipts []*types.Receipt) {
+	var (
+		baseFee          = block.BaseFee()
+		totalBaseFee     = big.NewInt(0)
+		totalPriorityFee = big.NewInt(0)
+	)
+
+	if baseFee == nil {
+		// Prior to activation of EIP-1559, the coinbase payment was gasPrice * gasUsed
+		for i, tx := range block.Transactions() {
+			gasUsed := new(big.Int).SetUint64(receipts[i].GasUsed)
+			gasPrice := tx.GasPrice()
+			totalBaseFee.Add(totalBaseFee, new(big.Int).Mul(gasPrice, gasUsed))
+		}
+	} else {
+		for i, tx := range block.Transactions() {
+			gasUsed := new(big.Int).SetUint64(receipts[i].GasUsed)
+			totalBaseFee.Add(totalBaseFee, new(big.Int).Mul(baseFee, gasUsed))
+
+			gasTip := tx.EffectiveGasTipValue(baseFee)
+			totalPriorityFee.Add(totalPriorityFee, new(big.Int).Mul(gasTip, gasUsed))
+		}
+	}
+
+	block.SetTotalBaseFee(totalBaseFee)
+	block.SetTotalPriorityFee(totalPriorityFee)
+}
+
+func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB, receipts []*types.Receipt) (*big.Int, *big.Int, error) {
 	var (
 		batchContribution *big.Int = big.NewInt(0)
 		batchGasUsed      *big.Int = big.NewInt(0)
 		header                     = block.Header()
 		rules                      = vm.chainConfig.OdysseyRules(header.Number, header.Time)
 	)
+
+	vm.setBlockFees(block, receipts)
 
 	txs, err := ExtractAtomicTxs(block.ExtData(), rules.IsApricotPhase5, vm.codec)
 	if err != nil {
@@ -949,7 +979,14 @@ func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB) (*big
 		return nil, nil, nil
 	}
 
+	totalBurned := new(big.Int)
 	for _, tx := range txs {
+		burned, err := tx.Burned(vm.ctx.DIONEAssetID)
+		if err != nil {
+			return nil, nil, err
+		}
+		totalBurned.Add(totalBurned, new(big.Int).SetUint64(burned))
+
 		if err := tx.UnsignedAtomicTx.DELTAStateTransfer(vm.ctx, state); err != nil {
 			return nil, nil, err
 		}
@@ -973,6 +1010,9 @@ func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB) (*big
 			}
 		}
 	}
+
+	totalBurned.Mul(totalBurned, x2cRate)
+	block.SetTotalAtomicFee(totalBurned)
 	return batchContribution, batchGasUsed, nil
 }
 

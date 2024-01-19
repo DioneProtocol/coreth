@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -152,6 +153,18 @@ func (b *Block) Accept(context.Context) error {
 	for _, tx := range b.atomicTxs {
 		// Remove the accepted transaction from the mempool
 		vm.mempool.RemoveTx(tx)
+	}
+
+	fee := new(big.Int)
+	fee.Add(fee, b.ethBlock.TotalBaseFee())
+	fee.Add(fee, b.ethBlock.TotalPriorityFee())
+	fee.Add(fee, b.ethBlock.TotalAtomicFee())
+	fee.Div(fee, x2cRate)
+
+	if fee.Sign() > 0 {
+		if err := b.vm.ctx.FeeCollector.AddDChainValue(fee.Uint64()); err != nil {
+			return fmt.Errorf("failed to collect fee: %w", err)
+		}
 	}
 
 	// Update VM state for atomic txs in this block. This includes updating the
