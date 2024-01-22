@@ -16,7 +16,7 @@ const (
 	LaunchMinGasPrice        int64 = 470_000_000_000
 	ApricotPhase1MinGasPrice int64 = 225_000_000_000
 
-	OdysseyAtomicTxFee = units.MilliDione
+	OdysseyAtomicTxFee = 50 * units.Dione
 
 	ApricotPhase1GasLimit uint64 = 8_000_000
 	CortinaGasLimit       uint64 = 15_000_000
