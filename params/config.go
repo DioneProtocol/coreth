@@ -30,7 +30,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/DioneProtocol/coreth/precompile"
 	"github.com/DioneProtocol/coreth/utils"
@@ -40,11 +39,11 @@ import (
 // Odyssey ChainIDs
 var (
 	// OdysseyMainnetChainID ...
-	OdysseyMainnetChainID = big.NewInt(43114)
+	OdysseyMainnetChainID = big.NewInt(15236)
 	// OdysseyTestnetChainID ...
-	OdysseyTestnetChainID = big.NewInt(43113)
+	OdysseyTestnetChainID = big.NewInt(15235)
 	// OdysseyLocalChainID ...
-	OdysseyLocalChainID = big.NewInt(43112)
+	OdysseyLocalChainID = big.NewInt(15234)
 
 	errNonGenesisForkByHeight = errors.New("coreth only supports forking by height at the genesis block")
 )
@@ -64,17 +63,17 @@ var (
 		PetersburgBlock:                 big.NewInt(0),
 		IstanbulBlock:                   big.NewInt(0),
 		MuirGlacierBlock:                big.NewInt(0),
-		ApricotPhase1BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.March, 31, 14, 0, 0, 0, time.UTC)),
-		ApricotPhase2BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.May, 10, 11, 0, 0, 0, time.UTC)),
-		ApricotPhase3BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.August, 24, 14, 0, 0, 0, time.UTC)),
-		ApricotPhase4BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.September, 22, 21, 0, 0, 0, time.UTC)),
-		ApricotPhase5BlockTimestamp:     utils.TimeToNewUint64(time.Date(2021, time.December, 2, 18, 0, 0, 0, time.UTC)),
-		ApricotPhasePre6BlockTimestamp:  utils.TimeToNewUint64(time.Date(2022, time.September, 5, 1, 30, 0, 0, time.UTC)),
-		ApricotPhase6BlockTimestamp:     utils.TimeToNewUint64(time.Date(2022, time.September, 6, 20, 0, 0, 0, time.UTC)),
-		ApricotPhasePost6BlockTimestamp: utils.TimeToNewUint64(time.Date(2022, time.September, 7, 3, 0, 0, 0, time.UTC)),
-		BanffBlockTimestamp:             utils.TimeToNewUint64(time.Date(2022, time.October, 18, 16, 0, 0, 0, time.UTC)),
-		CortinaBlockTimestamp:           utils.TimeToNewUint64(time.Date(2023, time.April, 25, 15, 0, 0, 0, time.UTC)),
-		// TODO Add DUpgrade timestamp
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+		ApricotPhase6BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
+		BanffBlockTimestamp:             utils.NewUint64(0),
+		CortinaBlockTimestamp:           utils.NewUint64(0),
+		DUpgradeBlockTimestamp:          utils.NewUint64(0),
 	}
 
 	// OdysseyTestnetChainConfig is the configuration for the Testnet Test Network
