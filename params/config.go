@@ -733,6 +733,26 @@ func (c *ChainConfig) CheckCompatible(newcfg *ChainConfig, height uint64, time u
 	return lasterr
 }
 
+func (c *ChainConfig) LpAddress(time uint64) common.Address {
+	return common.HexToAddress(LpAddress)
+}
+
+func (c *ChainConfig) GovernanceAddress(time uint64) common.Address {
+	return common.HexToAddress(GovernanceAddress)
+}
+
+func (c *ChainConfig) LpAllocation(time uint64) uint64 {
+	return LpAllocation
+}
+
+func (c *ChainConfig) GovernanceAllocation(time uint64) uint64 {
+	return GovernanceAllocation
+}
+
+func (c *ChainConfig) AllocationDenominator(time uint64) uint64 {
+	return AllocationDenominator
+}
+
 // CheckConfigForkOrder checks that we don't "skip" any forks, geth isn't pluggable enough
 // to guarantee that forks can be implemented in a different order than on official networks
 func (c *ChainConfig) CheckConfigForkOrder() error {
@@ -1023,6 +1043,9 @@ type Rules struct {
 	IsCortina                                                                           bool
 	IsDUpgrade                                                                          bool
 
+	LpAllocation, GovernanceAllocation, AllocationDenominator uint64
+	LpAddress, GovernanceAddress                              common.Address
+
 	// Precompiles maps addresses to stateful precompiled contracts that are enabled
 	// for this rule set.
 	// Note: none of these addresses should conflict with the address space used by
@@ -1066,6 +1089,11 @@ func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
 	rules.IsBanff = c.IsBanff(timestamp)
 	rules.IsCortina = c.IsCortina(timestamp)
 	rules.IsDUpgrade = c.IsDUpgrade(timestamp)
+	rules.LpAddress = c.LpAddress(timestamp)
+	rules.GovernanceAddress = c.GovernanceAddress(timestamp)
+	rules.LpAllocation = c.LpAllocation(timestamp)
+	rules.GovernanceAllocation = c.GovernanceAllocation(timestamp)
+	rules.AllocationDenominator = c.AllocationDenominator(timestamp)
 
 	// Initialize the stateful precompiles that should be enabled at [blockTimestamp].
 	rules.Precompiles = make(map[common.Address]precompile.StatefulPrecompiledContract)

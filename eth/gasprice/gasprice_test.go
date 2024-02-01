@@ -126,10 +126,10 @@ func newTestBackend(t *testing.T, config *params.ChainConfig, numBlocks int, ext
 	}
 
 	engine := dummy.NewDummyEngine(&dummy.ConsensusCallbacks{
-		OnFinalizeAndAssemble: func(header *types.Header, state *state.StateDB, txs []*types.Transaction) ([]byte, *big.Int, *big.Int, error) {
+		OnFinalizeAndAssemble: func(header *types.Header, state *state.StateDB, txs []*types.Transaction, receipts types.Receipts) ([]byte, *big.Int, *big.Int, error) {
 			return nil, common.Big0, extDataGasUsage, nil
 		},
-		OnExtraStateChange: func(block *types.Block, state *state.StateDB, receipt []*types.Receipt) (*big.Int, *big.Int, error) {
+		OnExtraStateChange: func(block *types.Block, state *state.StateDB, receipt types.Receipts) (*big.Int, *big.Int, error) {
 			return common.Big0, extDataGasUsage, nil
 		},
 	})

@@ -760,7 +760,7 @@ func (vm *VM) createConsensusCallbacks() *dummy.ConsensusCallbacks {
 	}
 }
 
-func (vm *VM) preBatchOnFinalizeAndAssemble(header *types.Header, state *state.StateDB, txs []*types.Transaction) ([]byte, *big.Int, *big.Int, error) {
+func (vm *VM) preBatchOnFinalizeAndAssemble(header *types.Header, state *state.StateDB, txs []*types.Transaction, receipts types.Receipts) ([]byte, *big.Int, *big.Int, error) {
 	for {
 		tx, exists := vm.mempool.NextTx()
 		if !exists {
@@ -803,11 +803,15 @@ func (vm *VM) preBatchOnFinalizeAndAssemble(header *types.Header, state *state.S
 		return nil, nil, nil, errEmptyBlock
 	}
 
+	rules := vm.chainConfig.OdysseyRules(header.Number, header.Time)
+	totalBaseFee, totalPriorityFee := vm.calculateTxFees(header.BaseFee, txs, receipts, &rules)
+	vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
+
 	return nil, nil, nil, nil
 }
 
 // assumes that we are in at least Apricot Phase 5.
-func (vm *VM) postBatchOnFinalizeAndAssemble(header *types.Header, state *state.StateDB, txs []*types.Transaction) ([]byte, *big.Int, *big.Int, error) {
+func (vm *VM) postBatchOnFinalizeAndAssemble(header *types.Header, state *state.StateDB, txs []*types.Transaction, receipts types.Receipts) ([]byte, *big.Int, *big.Int, error) {
 	var (
 		batchAtomicTxs    []*Tx
 		batchAtomicUTXOs  set.Set[ids.ID]
@@ -902,34 +906,36 @@ func (vm *VM) postBatchOnFinalizeAndAssemble(header *types.Header, state *state.
 		return nil, nil, nil, errEmptyBlock
 	}
 
+	totalBaseFee, totalPriorityFee := vm.calculateTxFees(header.BaseFee, txs, receipts, &rules)
+	vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
+
 	// If there are no atomic transactions, but there is a non-zero number of regular transactions, then
 	// we return a nil slice with no contribution from the atomic transactions and a nil error.
 	return nil, nil, nil, nil
 }
 
-func (vm *VM) onFinalizeAndAssemble(header *types.Header, state *state.StateDB, txs []*types.Transaction) ([]byte, *big.Int, *big.Int, error) {
+func (vm *VM) onFinalizeAndAssemble(header *types.Header, state *state.StateDB, txs []*types.Transaction, receipts types.Receipts) ([]byte, *big.Int, *big.Int, error) {
 	if !vm.chainConfig.IsApricotPhase5(header.Time) {
-		return vm.preBatchOnFinalizeAndAssemble(header, state, txs)
+		return vm.preBatchOnFinalizeAndAssemble(header, state, txs, receipts)
 	}
-	return vm.postBatchOnFinalizeAndAssemble(header, state, txs)
+	return vm.postBatchOnFinalizeAndAssemble(header, state, txs, receipts)
 }
 
-func (vm *VM) setBlockFees(block *types.Block, receipts []*types.Receipt) {
+func (vm *VM) calculateTxFees(baseFee *big.Int, txs []*types.Transaction, receipts types.Receipts, rules *params.Rules) (*big.Int, *big.Int) {
 	var (
-		baseFee          = block.BaseFee()
 		totalBaseFee     = big.NewInt(0)
 		totalPriorityFee = big.NewInt(0)
 	)
 
 	if baseFee == nil {
 		// Prior to activation of EIP-1559, the coinbase payment was gasPrice * gasUsed
-		for i, tx := range block.Transactions() {
+		for i, tx := range txs {
 			gasUsed := new(big.Int).SetUint64(receipts[i].GasUsed)
 			gasPrice := tx.GasPrice()
 			totalBaseFee.Add(totalBaseFee, new(big.Int).Mul(gasPrice, gasUsed))
 		}
 	} else {
-		for i, tx := range block.Transactions() {
+		for i, tx := range txs {
 			gasUsed := new(big.Int).SetUint64(receipts[i].GasUsed)
 			totalBaseFee.Add(totalBaseFee, new(big.Int).Mul(baseFee, gasUsed))
 
@@ -938,11 +944,34 @@ func (vm *VM) setBlockFees(block *types.Block, receipts []*types.Receipt) {
 		}
 	}
 
-	block.SetTotalBaseFee(totalBaseFee)
-	block.SetTotalPriorityFee(totalPriorityFee)
+	return totalBaseFee, totalPriorityFee
 }
 
-func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB, receipts []*types.Receipt) (*big.Int, *big.Int, error) {
+func (vm *VM) distributeFees(totalBaseFee *big.Int, totalPriorityFee *big.Int, state *state.StateDB, rules *params.Rules) (*big.Int, *big.Int) {
+	totalBaseFee = new(big.Int).Set(totalBaseFee)
+	totalPriorityFee = new(big.Int).Set(totalPriorityFee)
+
+	lpAllocation := new(big.Int).SetUint64(rules.LpAllocation)
+	governanceAllocation := new(big.Int).SetUint64(rules.GovernanceAllocation)
+	denominator := new(big.Int).SetUint64(rules.AllocationDenominator)
+
+	lpAllocation.Mul(lpAllocation, totalBaseFee)
+	lpAllocation.Div(lpAllocation, denominator)
+
+	governanceAllocation.Mul(governanceAllocation, totalBaseFee)
+	governanceAllocation.Div(governanceAllocation, denominator)
+
+	totalBaseFee.Sub(totalBaseFee, lpAllocation)
+	totalBaseFee.Sub(totalBaseFee, governanceAllocation)
+
+	state.AddBalance(rules.LpAddress, lpAllocation)
+	state.AddBalance(rules.GovernanceAddress, governanceAllocation)
+
+	return totalBaseFee, totalPriorityFee
+
+}
+
+func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB, receipts types.Receipts) (*big.Int, *big.Int, error) {
 	var (
 		batchContribution *big.Int = big.NewInt(0)
 		batchGasUsed      *big.Int = big.NewInt(0)
@@ -950,7 +979,11 @@ func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB, recei
 		rules                      = vm.chainConfig.OdysseyRules(header.Number, header.Time)
 	)
 
-	vm.setBlockFees(block, receipts)
+	totalBaseFee, totalPriorityFee := vm.calculateTxFees(block.BaseFee(), block.Transactions(), receipts, &rules)
+	totalBaseFee, totalPriorityFee = vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
+
+	block.SetTotalBaseFee(totalBaseFee)
+	block.SetTotalPriorityFee(totalPriorityFee)
 
 	txs, err := ExtractAtomicTxs(block.ExtData(), rules.IsApricotPhase5, vm.codec)
 	if err != nil {

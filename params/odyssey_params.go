@@ -32,6 +32,13 @@ const (
 	ApricotPhase5TargetGas                uint64 = 15_000_000
 	ApricotPhase5BaseFeeChangeDenominator uint64 = 36
 
+	LpAllocation          uint64 = 25_000  // 25%
+	GovernanceAllocation  uint64 = 50_000  // 50%
+	AllocationDenominator uint64 = 100_000 // 100%
+
+	LpAddress         string = "0x0000000000000000000000000000000000000001"
+	GovernanceAddress string = "0x0000000000000000000000000000000000000002"
+
 	// The base cost to charge per atomic transaction. Added in Apricot Phase 5.
 	AtomicTxBaseCost uint64 = 10_000
 )
