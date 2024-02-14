@@ -25,7 +25,7 @@ const (
 	defaultSyncableCommitInterval                     = defaultCommitInterval * 4
 	defaultSnapshotWait                               = false
 	defaultRpcGasCap                                  = 50_000_000 // Default to 50M Gas Limit
-	defaultRpcTxFeeCap                                = 100        // 100 DIONE
+	defaultRpcTxFeeCap                                = 1_058_200  // 1058200 DIONE
 	defaultMetricsExpensiveEnabled                    = true
 	defaultApiMaxDuration                             = 0 // Default to no maximum API call duration
 	defaultWsCpuRefillRate                            = 0 // Default to no maximum WS CPU usage
