@@ -167,6 +167,14 @@ func (b *Block) Accept(context.Context) error {
 		}
 	}
 
+	orionFee := b.ethBlock.OrionNodeFee()
+	orionFee.Div(orionFee, x2cRate)
+	if orionFee.Sign() > 0 {
+		if err := b.vm.ctx.FeeCollector.AddOrionsValue(vm.orionNodes, orionFee.Uint64()); err != nil {
+			return nil
+		}
+	}
+
 	// Update VM state for atomic txs in this block. This includes updating the
 	// atomic tx repo, atomic trie, and shared memory.
 	atomicState, err := b.vm.atomicBackend.GetVerifiedAtomicState(common.Hash(b.ID()))

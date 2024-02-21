@@ -950,7 +950,7 @@ func (vm *VM) calculateTxFees(baseFee *big.Int, txs []*types.Transaction, receip
 	return totalBaseFee, totalPriorityFee
 }
 
-func (vm *VM) distributeFees(totalBaseFee *big.Int, totalPriorityFee *big.Int, state *state.StateDB, rules *params.Rules) (*big.Int, *big.Int) {
+func (vm *VM) distributeFees(totalBaseFee *big.Int, totalPriorityFee *big.Int, state *state.StateDB, rules *params.Rules) (*big.Int, *big.Int, *big.Int) {
 	totalBaseFee = new(big.Int).Set(totalBaseFee)
 	totalPriorityFee = new(big.Int).Set(totalPriorityFee)
 
@@ -976,11 +976,11 @@ func (vm *VM) distributeFees(totalBaseFee *big.Int, totalPriorityFee *big.Int, s
 	lpAllocation.Mul(lpAllocation, totalBaseFee)
 	lpAllocation.Div(lpAllocation, denominator)
 
-	orionAllocation := new(big.Int)
+	orionFee := new(big.Int)
 	if summaryOrionAllocation.Sign() > 0 {
-		orionAllocation = new(big.Int).Mul(summaryOrionAllocation, totalBaseFee)
-		orionAllocation.Div(orionAllocation, denominator)
-		orionAllocation.Div(orionAllocation, orionNodesAmount)
+		orionFee = new(big.Int).Mul(summaryOrionAllocation, totalBaseFee)
+		orionFee.Div(orionFee, denominator)
+		orionFee.Div(orionFee, orionNodesAmount)
 	}
 
 	governanceAllocation.Sub(governanceAllocation, summaryOrionAllocation)
@@ -989,12 +989,12 @@ func (vm *VM) distributeFees(totalBaseFee *big.Int, totalPriorityFee *big.Int, s
 
 	totalBaseFee.Sub(totalBaseFee, lpAllocation)
 	totalBaseFee.Sub(totalBaseFee, governanceAllocation)
-	totalBaseFee.Sub(totalBaseFee, new(big.Int).Mul(orionAllocation, orionNodesAmount))
+	totalBaseFee.Sub(totalBaseFee, new(big.Int).Mul(orionFee, orionNodesAmount))
 
 	state.AddBalance(rules.LpAddress, lpAllocation)
 	state.AddBalance(rules.GovernanceAddress, governanceAllocation)
 
-	return totalBaseFee, totalPriorityFee
+	return totalBaseFee, totalPriorityFee, orionFee
 
 }
 
@@ -1007,10 +1007,11 @@ func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB, recei
 	)
 
 	totalBaseFee, totalPriorityFee := vm.calculateTxFees(block.BaseFee(), block.Transactions(), receipts, &rules)
-	totalBaseFee, totalPriorityFee = vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
+	totalBaseFee, totalPriorityFee, orionFee := vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
 
 	block.SetTotalBaseFee(totalBaseFee)
 	block.SetTotalPriorityFee(totalPriorityFee)
+	block.SetOrionNodeFee(orionFee)
 
 	txs, err := ExtractAtomicTxs(block.ExtData(), rules.IsApricotPhase5, vm.codec)
 	if err != nil {
