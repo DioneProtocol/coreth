@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	"github.com/DioneProtocol/odysseygo/utils/units"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // Minimum Gas Price
@@ -34,6 +35,8 @@ const (
 
 	LpAllocation          uint64 = 25_000  // 25%
 	GovernanceAllocation  uint64 = 50_000  // 50%
+	OrionAllocation       uint64 = 5_000   // 5%
+	MaxOrionAllocation    uint64 = 25_000  // 25%
 	AllocationDenominator uint64 = 100_000 // 100%
 
 	LpAddress         string = "0x0000000000000000000000000000000000000001"
@@ -57,4 +60,10 @@ var (
 	//
 	// This value must always remain <= MaxUint64.
 	AtomicGasLimit *big.Int = big.NewInt(100_000)
+
+	orionContractAddress         = common.HexToAddress("0x0710400000000000000000000000000000000000")
+	orionLastUpdateTimestampSlot = common.HexToHash("0x0000000000000000000000000000000000000001")
+	orionNodesSlot               = common.HexToHash("0x0000000000000000000000000000000000000002")
+
+	OrionGetter = NewOrionGetter(orionContractAddress, orionLastUpdateTimestampSlot, orionNodesSlot)
 )

@@ -753,6 +753,18 @@ func (c *ChainConfig) AllocationDenominator(time uint64) uint64 {
 	return AllocationDenominator
 }
 
+func (c *ChainConfig) OrionNodesGetter(time uint64) OrionNodesGetter {
+	return OrionGetter
+}
+
+func (c *ChainConfig) OrionAllocation(time uint64) uint64 {
+	return OrionAllocation
+}
+
+func (c *ChainConfig) MaxOrionAllocation(time uint64) uint64 {
+	return MaxOrionAllocation
+}
+
 // CheckConfigForkOrder checks that we don't "skip" any forks, geth isn't pluggable enough
 // to guarantee that forks can be implemented in a different order than on official networks
 func (c *ChainConfig) CheckConfigForkOrder() error {
@@ -1044,7 +1056,9 @@ type Rules struct {
 	IsDUpgrade                                                                          bool
 
 	LpAllocation, GovernanceAllocation, AllocationDenominator uint64
+	OrionAllocation, MaxOrionAllocation                       uint64
 	LpAddress, GovernanceAddress                              common.Address
+	OrionNodes                                                OrionNodesGetter
 
 	// Precompiles maps addresses to stateful precompiled contracts that are enabled
 	// for this rule set.
@@ -1094,6 +1108,9 @@ func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
 	rules.LpAllocation = c.LpAllocation(timestamp)
 	rules.GovernanceAllocation = c.GovernanceAllocation(timestamp)
 	rules.AllocationDenominator = c.AllocationDenominator(timestamp)
+	rules.OrionNodes = c.OrionNodesGetter(timestamp)
+	rules.OrionAllocation = c.OrionAllocation(timestamp)
+	rules.MaxOrionAllocation = c.MaxOrionAllocation(timestamp)
 
 	// Initialize the stateful precompiles that should be enabled at [blockTimestamp].
 	rules.Precompiles = make(map[common.Address]precompile.StatefulPrecompiledContract)

@@ -324,6 +324,9 @@ type VM struct {
 	bootstrapped bool
 	IsPlugin     bool
 
+	orionSyncTimestamp uint64
+	orionNodes         []ids.NodeID
+
 	logger CorethLogger
 	// State sync server and client
 	StateSyncServer
@@ -953,16 +956,40 @@ func (vm *VM) distributeFees(totalBaseFee *big.Int, totalPriorityFee *big.Int, s
 
 	lpAllocation := new(big.Int).SetUint64(rules.LpAllocation)
 	governanceAllocation := new(big.Int).SetUint64(rules.GovernanceAllocation)
+	maxOrionAllocatoin := new(big.Int).SetUint64(rules.MaxOrionAllocation)
 	denominator := new(big.Int).SetUint64(rules.AllocationDenominator)
+
+	timestamp := rules.OrionNodes.GetLastUpdateTimestamp(state)
+	if vm.orionSyncTimestamp != timestamp {
+		nodes := rules.OrionNodes.GetNodesList(state)
+		vm.orionNodes = nodes
+		vm.orionSyncTimestamp = timestamp
+	}
+
+	orionNodesAmount := new(big.Int).SetInt64(int64(len(vm.orionNodes)))
+	summaryOrionAllocation := new(big.Int).SetUint64(rules.OrionAllocation)
+	summaryOrionAllocation.Mul(summaryOrionAllocation, orionNodesAmount)
+	if summaryOrionAllocation.Cmp(maxOrionAllocatoin) > 0 {
+		summaryOrionAllocation.Set(maxOrionAllocatoin)
+	}
 
 	lpAllocation.Mul(lpAllocation, totalBaseFee)
 	lpAllocation.Div(lpAllocation, denominator)
 
+	orionAllocation := new(big.Int)
+	if summaryOrionAllocation.Sign() > 0 {
+		orionAllocation = new(big.Int).Mul(summaryOrionAllocation, totalBaseFee)
+		orionAllocation.Div(orionAllocation, denominator)
+		orionAllocation.Div(orionAllocation, orionNodesAmount)
+	}
+
+	governanceAllocation.Sub(governanceAllocation, summaryOrionAllocation)
 	governanceAllocation.Mul(governanceAllocation, totalBaseFee)
 	governanceAllocation.Div(governanceAllocation, denominator)
 
 	totalBaseFee.Sub(totalBaseFee, lpAllocation)
 	totalBaseFee.Sub(totalBaseFee, governanceAllocation)
+	totalBaseFee.Sub(totalBaseFee, new(big.Int).Mul(orionAllocation, orionNodesAmount))
 
 	state.AddBalance(rules.LpAddress, lpAllocation)
 	state.AddBalance(rules.GovernanceAddress, governanceAllocation)
