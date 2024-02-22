@@ -765,6 +765,10 @@ func (c *ChainConfig) MaxOrionAllocation(time uint64) uint64 {
 	return MaxOrionAllocation
 }
 
+func (c *ChainConfig) PriorityFeeOrionAllocation(time uint64) uint64 {
+	return PriorityFeeOrionAllocation
+}
+
 // CheckConfigForkOrder checks that we don't "skip" any forks, geth isn't pluggable enough
 // to guarantee that forks can be implemented in a different order than on official networks
 func (c *ChainConfig) CheckConfigForkOrder() error {
@@ -1057,6 +1061,7 @@ type Rules struct {
 
 	LpAllocation, GovernanceAllocation, AllocationDenominator uint64
 	OrionAllocation, MaxOrionAllocation                       uint64
+	PriorityFeeOrionAllocation                                uint64
 	LpAddress, GovernanceAddress                              common.Address
 	OrionNodes                                                OrionNodesGetter
 
@@ -1111,6 +1116,7 @@ func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
 	rules.OrionNodes = c.OrionNodesGetter(timestamp)
 	rules.OrionAllocation = c.OrionAllocation(timestamp)
 	rules.MaxOrionAllocation = c.MaxOrionAllocation(timestamp)
+	rules.PriorityFeeOrionAllocation = c.PriorityFeeOrionAllocation(timestamp)
 
 	// Initialize the stateful precompiles that should be enabled at [blockTimestamp].
 	rules.Precompiles = make(map[common.Address]precompile.StatefulPrecompiledContract)
