@@ -951,14 +951,6 @@ func (vm *VM) calculateTxFees(baseFee *big.Int, txs []*types.Transaction, receip
 }
 
 func (vm *VM) distributeFees(totalBaseFee *big.Int, totalPriorityFee *big.Int, state *state.StateDB, rules *params.Rules) (*big.Int, *big.Int, *big.Int) {
-	totalBaseFee = new(big.Int).Set(totalBaseFee)
-	totalPriorityFee = new(big.Int).Set(totalPriorityFee)
-
-	lpAllocation := new(big.Int).SetUint64(rules.LpAllocation)
-	governanceAllocation := new(big.Int).SetUint64(rules.GovernanceAllocation)
-	maxOrionAllocatoin := new(big.Int).SetUint64(rules.MaxOrionAllocation)
-	denominator := new(big.Int).SetUint64(rules.AllocationDenominator)
-
 	timestamp := rules.OrionNodes.GetLastUpdateTimestamp(state)
 	if vm.orionSyncTimestamp != timestamp {
 		nodes := rules.OrionNodes.GetNodesList(state)
@@ -966,36 +958,15 @@ func (vm *VM) distributeFees(totalBaseFee *big.Int, totalPriorityFee *big.Int, s
 		vm.orionSyncTimestamp = timestamp
 	}
 
-	orionNodesAmount := new(big.Int).SetInt64(int64(len(vm.orionNodes)))
-	summaryOrionAllocation := new(big.Int).SetUint64(rules.OrionAllocation)
-	summaryOrionAllocation.Mul(summaryOrionAllocation, orionNodesAmount)
-	if summaryOrionAllocation.Cmp(maxOrionAllocatoin) > 0 {
-		summaryOrionAllocation.Set(maxOrionAllocatoin)
+	orionNodesAmount := uint64(len(vm.orionNodes))
+	fees := CalculateFees(totalBaseFee, totalPriorityFee, orionNodesAmount, rules)
+
+	if state != nil {
+		state.AddBalance(rules.LpAddress, fees.LpAllocation)
+		state.AddBalance(rules.GovernanceAddress, fees.GovernanceAllocation)
 	}
 
-	lpAllocation.Mul(lpAllocation, totalBaseFee)
-	lpAllocation.Div(lpAllocation, denominator)
-
-	orionFee := new(big.Int)
-	if summaryOrionAllocation.Sign() > 0 {
-		orionFee = new(big.Int).Mul(summaryOrionAllocation, totalBaseFee)
-		orionFee.Div(orionFee, denominator)
-		orionFee.Div(orionFee, orionNodesAmount)
-	}
-
-	governanceAllocation.Sub(governanceAllocation, summaryOrionAllocation)
-	governanceAllocation.Mul(governanceAllocation, totalBaseFee)
-	governanceAllocation.Div(governanceAllocation, denominator)
-
-	totalBaseFee.Sub(totalBaseFee, lpAllocation)
-	totalBaseFee.Sub(totalBaseFee, governanceAllocation)
-	totalBaseFee.Sub(totalBaseFee, new(big.Int).Mul(orionFee, orionNodesAmount))
-
-	state.AddBalance(rules.LpAddress, lpAllocation)
-	state.AddBalance(rules.GovernanceAddress, governanceAllocation)
-
-	return totalBaseFee, totalPriorityFee, orionFee
-
+	return fees.BaseFee, fees.PriorityFee, fees.OrionFee
 }
 
 func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB, receipts types.Receipts) (*big.Int, *big.Int, error) {

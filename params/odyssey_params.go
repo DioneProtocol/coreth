@@ -33,13 +33,6 @@ const (
 	ApricotPhase5TargetGas                uint64 = 15_000_000
 	ApricotPhase5BaseFeeChangeDenominator uint64 = 36
 
-	LpAllocation               uint64 = 25_000  // 25%
-	GovernanceAllocation       uint64 = 50_000  // 50%
-	OrionAllocation            uint64 = 5_000   // 5%
-	MaxOrionAllocation         uint64 = 25_000  // 25%
-	PriorityFeeOrionAllocation uint64 = 5_000   // 5%
-	AllocationDenominator      uint64 = 100_000 // 100%
-
 	LpAddress         string = "0x0000000000000000000000000000000000000001"
 	GovernanceAddress string = "0x0000000000000000000000000000000000000002"
 
@@ -61,6 +54,13 @@ var (
 	//
 	// This value must always remain <= MaxUint64.
 	AtomicGasLimit *big.Int = big.NewInt(100_000)
+
+	LpAllocation               *big.Int = big.NewInt(25_000)  // 25%
+	GovernanceAllocation       *big.Int = big.NewInt(50_000)  // 50%
+	OrionAllocation            *big.Int = big.NewInt(5_000)   // 5%
+	MaxOrionAllocation         *big.Int = big.NewInt(25_000)  // 25%
+	PriorityFeeOrionAllocation *big.Int = big.NewInt(5_000)   // 5%
+	AllocationDenominator      *big.Int = big.NewInt(100_000) // 100%
 
 	orionContractAddress         = common.HexToAddress("0x0710400000000000000000000000000000000000")
 	orionLastUpdateTimestampSlot = common.HexToHash("0x0000000000000000000000000000000000000001")

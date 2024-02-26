@@ -741,15 +741,15 @@ func (c *ChainConfig) GovernanceAddress(time uint64) common.Address {
 	return common.HexToAddress(GovernanceAddress)
 }
 
-func (c *ChainConfig) LpAllocation(time uint64) uint64 {
+func (c *ChainConfig) LpAllocation(time uint64) *big.Int {
 	return LpAllocation
 }
 
-func (c *ChainConfig) GovernanceAllocation(time uint64) uint64 {
+func (c *ChainConfig) GovernanceAllocation(time uint64) *big.Int {
 	return GovernanceAllocation
 }
 
-func (c *ChainConfig) AllocationDenominator(time uint64) uint64 {
+func (c *ChainConfig) AllocationDenominator(time uint64) *big.Int {
 	return AllocationDenominator
 }
 
@@ -757,15 +757,15 @@ func (c *ChainConfig) OrionNodesGetter(time uint64) OrionNodesGetter {
 	return OrionGetter
 }
 
-func (c *ChainConfig) OrionAllocation(time uint64) uint64 {
+func (c *ChainConfig) OrionAllocation(time uint64) *big.Int {
 	return OrionAllocation
 }
 
-func (c *ChainConfig) MaxOrionAllocation(time uint64) uint64 {
+func (c *ChainConfig) MaxOrionAllocation(time uint64) *big.Int {
 	return MaxOrionAllocation
 }
 
-func (c *ChainConfig) PriorityFeeOrionAllocation(time uint64) uint64 {
+func (c *ChainConfig) PriorityFeeOrionAllocation(time uint64) *big.Int {
 	return PriorityFeeOrionAllocation
 }
 
@@ -1059,9 +1059,9 @@ type Rules struct {
 	IsCortina                                                                           bool
 	IsDUpgrade                                                                          bool
 
-	LpAllocation, GovernanceAllocation, AllocationDenominator uint64
-	OrionAllocation, MaxOrionAllocation                       uint64
-	PriorityFeeOrionAllocation                                uint64
+	LpAllocation, GovernanceAllocation, AllocationDenominator *big.Int
+	OrionAllocation, MaxOrionAllocation                       *big.Int
+	PriorityFeeOrionAllocation                                *big.Int
 	LpAddress, GovernanceAddress                              common.Address
 	OrionNodes                                                OrionNodesGetter
 
