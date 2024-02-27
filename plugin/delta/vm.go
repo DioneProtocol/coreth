@@ -645,6 +645,7 @@ func (vm *VM) initializeChain(lastAcceptedHash common.Hash) error {
 		vm.config.EthBackendSettings(),
 		lastAcceptedHash,
 		&vm.clock,
+		vm.ctx.FeeCollector,
 	)
 	if err != nil {
 		return err
@@ -809,6 +810,7 @@ func (vm *VM) preBatchOnFinalizeAndAssemble(header *types.Header, state *state.S
 	rules := vm.chainConfig.OdysseyRules(header.Number, header.Time)
 	totalBaseFee, totalPriorityFee := vm.calculateTxFees(header.BaseFee, txs, receipts, &rules)
 	vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
+	vm.distributeUndistributedRewards(header.UndistributedReward, state, &rules)
 
 	return nil, nil, nil, nil
 }
@@ -911,6 +913,7 @@ func (vm *VM) postBatchOnFinalizeAndAssemble(header *types.Header, state *state.
 
 	totalBaseFee, totalPriorityFee := vm.calculateTxFees(header.BaseFee, txs, receipts, &rules)
 	vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
+	vm.distributeUndistributedRewards(header.UndistributedReward, state, &rules)
 
 	// If there are no atomic transactions, but there is a non-zero number of regular transactions, then
 	// we return a nil slice with no contribution from the atomic transactions and a nil error.
@@ -950,6 +953,12 @@ func (vm *VM) calculateTxFees(baseFee *big.Int, txs []*types.Transaction, receip
 	return totalBaseFee, totalPriorityFee
 }
 
+func (vm *VM) distributeUndistributedRewards(rewards *big.Int, state *state.StateDB, rules *params.Rules) {
+	if rewards != nil {
+		state.AddBalance(rules.GovernanceAddress, rewards)
+	}
+}
+
 func (vm *VM) distributeFees(totalBaseFee *big.Int, totalPriorityFee *big.Int, state *state.StateDB, rules *params.Rules) (*big.Int, *big.Int, *big.Int) {
 	timestamp := rules.OrionNodes.GetLastUpdateTimestamp(state)
 	if vm.orionSyncTimestamp != timestamp {
@@ -979,6 +988,7 @@ func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB, recei
 
 	totalBaseFee, totalPriorityFee := vm.calculateTxFees(block.BaseFee(), block.Transactions(), receipts, &rules)
 	totalBaseFee, totalPriorityFee, orionFee := vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
+	vm.distributeUndistributedRewards(header.UndistributedReward, state, &rules)
 
 	block.SetTotalBaseFee(totalBaseFee)
 	block.SetTotalPriorityFee(totalPriorityFee)

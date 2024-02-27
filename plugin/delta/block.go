@@ -160,7 +160,6 @@ func (b *Block) Accept(context.Context) error {
 	fee.Add(fee, b.ethBlock.TotalPriorityFee())
 	fee.Add(fee, b.ethBlock.TotalAtomicFee())
 	fee.Div(fee, x2cRate)
-
 	if fee.Sign() > 0 {
 		if err := b.vm.ctx.FeeCollector.AddDChainValue(fee.Uint64()); err != nil {
 			return fmt.Errorf("failed to collect fee: %w", err)
@@ -172,6 +171,14 @@ func (b *Block) Accept(context.Context) error {
 	if orionFee.Sign() > 0 {
 		if err := b.vm.ctx.FeeCollector.AddOrionsValue(vm.orionNodes, orionFee.Uint64()); err != nil {
 			return nil
+		}
+	}
+
+	undistributedReward := b.ethBlock.UndistributedReward()
+	undistributedReward.Div(undistributedReward, x2cRate)
+	if undistributedReward.Sign() > 0 {
+		if err := b.vm.ctx.FeeCollector.SubURewardValue(undistributedReward.Uint64()); err != nil {
+			return fmt.Errorf("failed to subtract undistributed reward: %w", err)
 		}
 	}
 

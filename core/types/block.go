@@ -91,6 +91,8 @@ type Header struct {
 	// BaseFee was added by EIP-1559 and is ignored in legacy headers.
 	BaseFee *big.Int `json:"baseFeePerGas" rlp:"optional"`
 
+	UndistributedReward *big.Int `json:"undistributedReward" rlp:"optional"`
+
 	// ExtDataGasUsed was added by Apricot Phase 4 and is ignored in legacy
 	// headers.
 	//
@@ -108,16 +110,17 @@ type Header struct {
 
 // field type overrides for gencodec
 type headerMarshaling struct {
-	Difficulty     *hexutil.Big
-	Number         *hexutil.Big
-	GasLimit       hexutil.Uint64
-	GasUsed        hexutil.Uint64
-	Time           hexutil.Uint64
-	Extra          hexutil.Bytes
-	BaseFee        *hexutil.Big
-	ExtDataGasUsed *hexutil.Big
-	BlockGasCost   *hexutil.Big
-	Hash           common.Hash `json:"hash"` // adds call to Hash() in MarshalJSON
+	Difficulty          *hexutil.Big
+	Number              *hexutil.Big
+	GasLimit            hexutil.Uint64
+	GasUsed             hexutil.Uint64
+	Time                hexutil.Uint64
+	Extra               hexutil.Bytes
+	BaseFee             *hexutil.Big
+	UndistributedReward *hexutil.Big
+	ExtDataGasUsed      *hexutil.Big
+	BlockGasCost        *hexutil.Big
+	Hash                common.Hash `json:"hash"` // adds call to Hash() in MarshalJSON
 }
 
 // Hash returns the block hash of the header, which is simply the keccak256 hash of its
@@ -257,6 +260,9 @@ func CopyHeader(h *Header) *Header {
 	if h.BlockGasCost != nil {
 		cpy.BlockGasCost = new(big.Int).Set(h.BlockGasCost)
 	}
+	if h.UndistributedReward != nil {
+		cpy.UndistributedReward = new(big.Int).Set(h.UndistributedReward)
+	}
 	if len(h.Extra) > 0 {
 		cpy.Extra = make([]byte, len(h.Extra))
 		copy(cpy.Extra, h.Extra)
@@ -270,7 +276,7 @@ func (b *Block) SetTotalBaseFee(f *big.Int) {
 
 func (b *Block) TotalBaseFee() *big.Int {
 	if b.totalBaseFee == nil {
-		return big.NewInt(0)
+		return new(big.Int)
 	}
 	return new(big.Int).Set(b.totalBaseFee)
 }
@@ -281,7 +287,7 @@ func (b *Block) SetTotalPriorityFee(f *big.Int) {
 
 func (b *Block) TotalPriorityFee() *big.Int {
 	if b.totalPriorityFee == nil {
-		return big.NewInt(0)
+		return new(big.Int)
 	}
 	return new(big.Int).Set(b.totalPriorityFee)
 }
@@ -292,7 +298,7 @@ func (b *Block) SetTotalAtomicFee(f *big.Int) {
 
 func (b *Block) TotalAtomicFee() *big.Int {
 	if b.totalAtomicFee == nil {
-		return big.NewInt(0)
+		return new(big.Int)
 	}
 	return new(big.Int).Set(b.totalAtomicFee)
 }
@@ -401,6 +407,13 @@ func (b *Block) BaseFee() *big.Int {
 		return nil
 	}
 	return new(big.Int).Set(b.header.BaseFee)
+}
+
+func (b *Block) UndistributedReward() *big.Int {
+	if b.header.UndistributedReward == nil {
+		return new(big.Int)
+	}
+	return new(big.Int).Set(b.header.UndistributedReward)
 }
 
 func (b *Block) ExtDataGasUsed() *big.Int {

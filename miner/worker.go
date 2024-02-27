@@ -44,6 +44,7 @@ import (
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/DioneProtocol/odysseygo/utils/timer/mockable"
 	"github.com/DioneProtocol/odysseygo/utils/units"
+	"github.com/DioneProtocol/odysseygo/vms/components/feecollector"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
@@ -53,6 +54,12 @@ const (
 	// Leaves 256 KBs for other sections of the block (limit is 2MB).
 	// This should suffice for atomic txs, proposervm header, and serialization overhead.
 	targetTxsSize = 1792 * units.KiB
+
+	x2cRateInt64 int64 = 1_000_000_000
+)
+
+var (
+	x2cRate = big.NewInt(x2cRateInt64)
 )
 
 // environment is the worker's current environment and holds all of the current state information.
@@ -90,18 +97,21 @@ type worker struct {
 	mu       sync.RWMutex   // The lock used to protect the coinbase and extra fields
 	coinbase common.Address
 	clock    *mockable.Clock // Allows us mock the clock for testing
+
+	feeCollector feecollector.FeeCollector
 }
 
-func newWorker(config *Config, chainConfig *params.ChainConfig, engine consensus.Engine, eth Backend, mux *event.TypeMux, clock *mockable.Clock) *worker {
+func newWorker(config *Config, chainConfig *params.ChainConfig, engine consensus.Engine, eth Backend, mux *event.TypeMux, clock *mockable.Clock, feeCollector feecollector.FeeCollector) *worker {
 	worker := &worker{
-		config:      config,
-		chainConfig: chainConfig,
-		engine:      engine,
-		eth:         eth,
-		chain:       eth.BlockChain(),
-		mux:         mux,
-		coinbase:    config.Etherbase,
-		clock:       clock,
+		config:       config,
+		chainConfig:  chainConfig,
+		engine:       engine,
+		eth:          eth,
+		chain:        eth.BlockChain(),
+		mux:          mux,
+		coinbase:     config.Etherbase,
+		clock:        clock,
+		feeCollector: feeCollector,
 	}
 
 	return worker
@@ -146,6 +156,14 @@ func (w *worker) commitNewWork() (*types.Block, error) {
 		Extra:      nil,
 		Time:       timestamp,
 	}
+
+	reward := w.feeCollector.GetURewardValue()
+	if reward > 0 {
+		rewardX2C := new(big.Int).SetUint64(reward)
+		rewardX2C.Mul(rewardX2C, x2cRate)
+		header.UndistributedReward = rewardX2C
+	}
+
 	// Set BaseFee and Extra data field if we are post ApricotPhase3
 	if w.chainConfig.IsApricotPhase3(timestamp) {
 		var err error
