@@ -34,10 +34,10 @@ func calculateToGovernanceAndOrion(totalBaseFee, orionAmount *big.Int, rules *pa
 	}
 
 	summaryOrionAllocation.Mul(summaryOrionAllocation, totalBaseFee)
+	summaryOrionAllocation.Div(summaryOrionAllocation, rules.AllocationDenominator)
 	orionAllocation := new(big.Int).Div(summaryOrionAllocation, orionAmount)
-	correctSummaryOrionAllocatoin := new(big.Int).Mul(orionAllocation, orionAmount)
-	correctSummaryOrionAllocatoin.Div(correctSummaryOrionAllocatoin, rules.AllocationDenominator)
 
+	correctSummaryOrionAllocatoin := new(big.Int).Mul(orionAllocation, orionAmount)
 	governanceAllocation := new(big.Int).Sub(governanceAndOrion, correctSummaryOrionAllocatoin)
 	return governanceAllocation, correctSummaryOrionAllocatoin
 }

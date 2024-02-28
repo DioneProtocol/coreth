@@ -229,9 +229,9 @@ func TestFeeCalculator(t *testing.T) {
 
 			expectedOrionFee:             150_143,
 			expectedPriorityFee:          500_084,
-			expectedBaseFee:              251_853,
+			expectedBaseFee:              250_645,
 			expectedLpAllocation:         250_644,
-			expectedGovernanceAllocation: 249_439,
+			expectedGovernanceAllocation: 250_648,
 		},
 	}
 
