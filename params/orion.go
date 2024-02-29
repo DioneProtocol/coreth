@@ -28,7 +28,6 @@ package params
 
 import (
 	"encoding/binary"
-	"fmt"
 	"math/big"
 
 	"github.com/DioneProtocol/odysseygo/ids"
@@ -80,7 +79,6 @@ func (o *orionNodesGetter) GetNodesList(state stateGetter) []ids.NodeID {
 	for i := uint64(0); i < size; i++ {
 		nodeIDslot := new(big.Int).Add(o.listStartSlot, new(big.Int).SetUint64(i))
 		nodeIDHash := state.GetState(o.contract, common.BigToHash(nodeIDslot))
-		fmt.Println(nodeIDHash)
 		nodeID := ids.NodeID(nodeIDHash[:20])
 		nodeIDs = append(nodeIDs, nodeID)
 	}
