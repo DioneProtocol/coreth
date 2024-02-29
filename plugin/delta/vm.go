@@ -765,6 +765,11 @@ func (vm *VM) createConsensusCallbacks() *dummy.ConsensusCallbacks {
 }
 
 func (vm *VM) preBatchOnFinalizeAndAssemble(header *types.Header, state *state.StateDB, txs []*types.Transaction, receipts types.Receipts) ([]byte, *big.Int, *big.Int, error) {
+	rules := vm.chainConfig.OdysseyRules(header.Number, header.Time)
+	totalBaseFee, totalPriorityFee := vm.calculateTxFees(header.BaseFee, txs, receipts, &rules)
+	vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
+	vm.distributeUndistributedRewards(header.UndistributedReward, state, &rules)
+
 	for {
 		tx, exists := vm.mempool.NextTx()
 		if !exists {
@@ -807,11 +812,6 @@ func (vm *VM) preBatchOnFinalizeAndAssemble(header *types.Header, state *state.S
 		return nil, nil, nil, errEmptyBlock
 	}
 
-	rules := vm.chainConfig.OdysseyRules(header.Number, header.Time)
-	totalBaseFee, totalPriorityFee := vm.calculateTxFees(header.BaseFee, txs, receipts, &rules)
-	vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
-	vm.distributeUndistributedRewards(header.UndistributedReward, state, &rules)
-
 	return nil, nil, nil, nil
 }
 
@@ -825,6 +825,10 @@ func (vm *VM) postBatchOnFinalizeAndAssemble(header *types.Header, state *state.
 		rules                      = vm.chainConfig.OdysseyRules(header.Number, header.Time)
 		size              int
 	)
+
+	totalBaseFee, totalPriorityFee := vm.calculateTxFees(header.BaseFee, txs, receipts, &rules)
+	vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
+	vm.distributeUndistributedRewards(header.UndistributedReward, state, &rules)
 
 	for {
 		tx, exists := vm.mempool.NextTx()
@@ -910,10 +914,6 @@ func (vm *VM) postBatchOnFinalizeAndAssemble(header *types.Header, state *state.
 		// this could happen due to the async logic of geth tx pool
 		return nil, nil, nil, errEmptyBlock
 	}
-
-	totalBaseFee, totalPriorityFee := vm.calculateTxFees(header.BaseFee, txs, receipts, &rules)
-	vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
-	vm.distributeUndistributedRewards(header.UndistributedReward, state, &rules)
 
 	// If there are no atomic transactions, but there is a non-zero number of regular transactions, then
 	// we return a nil slice with no contribution from the atomic transactions and a nil error.
