@@ -14,21 +14,21 @@ import (
 const (
 	// MinGasPrice is the number of nDIONE required per gas unit for a
 	// transaction to be valid, measured in wei
-	LaunchMinGasPrice        int64 = 2_380_952_380_952_381
-	ApricotPhase1MinGasPrice int64 = 2_380_952_380_952_381
+	LaunchMinGasPrice        int64 = 2_380_952_380_952_38
+	ApricotPhase1MinGasPrice int64 = 2_380_952_380_952_38
 
-	OdysseyAtomicTxFee = 50 * units.Dione
+	OdysseyAtomicTxFee = 5 * units.Dione
 
 	ApricotPhase1GasLimit uint64 = 8_000_000
 	CortinaGasLimit       uint64 = 15_000_000
 
 	ApricotPhase3ExtraDataSize            uint64 = 80
-	ApricotPhase3MinBaseFee               int64  = 2_380_952_380_952_381
-	ApricotPhase3MaxBaseFee               int64  = 7_142_857_142_857_143
-	ApricotPhase3InitialBaseFee           int64  = 2_380_952_380_952_381
+	ApricotPhase3MinBaseFee               int64  = 2_380_952_380_952_38
+	ApricotPhase3MaxBaseFee               int64  = 7_142_857_142_857_14
+	ApricotPhase3InitialBaseFee           int64  = 2_380_952_380_952_38
 	ApricotPhase3TargetGas                uint64 = 10_000_000
-	ApricotPhase4MinBaseFee               int64  = 2_380_952_380_952_381
-	ApricotPhase4MaxBaseFee               int64  = 7_142_857_142_857_143
+	ApricotPhase4MinBaseFee               int64  = 2_380_952_380_952_38
+	ApricotPhase4MaxBaseFee               int64  = 7_142_857_142_857_14
 	ApricotPhase4BaseFeeChangeDenominator uint64 = 12
 	ApricotPhase5TargetGas                uint64 = 15_000_000
 	ApricotPhase5BaseFeeChangeDenominator uint64 = 36
@@ -37,7 +37,7 @@ const (
 	GovernanceAddress string = "0x0000000000000000000000000000000000000002"
 
 	// The base cost to charge per atomic transaction. Added in Apricot Phase 5.
-	AtomicTxBaseCost uint64 = 10_000
+	AtomicTxBaseCost uint64 = 21_000
 )
 
 // Constants for message sizes
