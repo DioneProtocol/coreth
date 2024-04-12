@@ -39,11 +39,11 @@ import (
 // Odyssey ChainIDs
 var (
 	// OdysseyMainnetChainID ...
-	OdysseyMainnetChainID = big.NewInt(15236)
+	OdysseyMainnetChainID = big.NewInt(153153)
 	// OdysseyTestnetChainID ...
-	OdysseyTestnetChainID = big.NewInt(15235)
+	OdysseyTestnetChainID = big.NewInt(131313)
 	// OdysseyLocalChainID ...
-	OdysseyLocalChainID = big.NewInt(15234)
+	OdysseyLocalChainID = big.NewInt(131312)
 
 	errNonGenesisForkByHeight = errors.New("coreth only supports forking by height at the genesis block")
 )
