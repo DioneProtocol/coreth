@@ -1,9 +1,9 @@
 # Coreth and the D-Chain
 
-[Odyssey](https://docs.dione.network/learn/platform-overview) is a network composed of multiple blockchains.
+Odyssey is a network composed of multiple blockchains.
 Each blockchain is an instance of a Virtual Machine (VM), much like an object in an object-oriented language is an instance of a class.
 That is, the VM defines the behavior of the blockchain.
-Coreth (from core Ethereum) is the [Virtual Machine (VM)](https://docs.dione.network/learn/platform-overview#virtual-machines) that defines the Contract Chain (D-Chain).
+Coreth (from core Ethereum) is the Virtual Machine (VM) that defines the Contract Chain (D-Chain).
 This chain implements the Ethereum Virtual Machine and supports Solidity smart contracts as well as most other Ethereum client functionality.
 
 ## Building
@@ -18,7 +18,7 @@ go mod edit -replace github.com/DioneProtocol/coreth=../coreth
 Now that OdysseyGo depends on the local version of Coreth, we can build with the normal build script:
 
 ```bash
-./scripts/build.sh
+./scripts/build_odyssey.sh
 ./build/odysseygo
 ```
 
@@ -33,13 +33,11 @@ The D-Chain supports the following API namespaces:
 - `txpool`
 - `debug`
 
-Only the `eth` namespace is enabled by default. 
-To enable the other namespaces see the instructions for passing the D-Chain config to OdysseyGo [here.](https://docs.dione.network/nodes/maintain/chain-config-flags/#d-chain-configs)
-Full documentation for the D-Chain's API can be found [here.](https://docs.dione.network/apis/odysseygo/apis/d-chain/)
+Only the `eth` namespace is enabled by default.
 
 ## Compatibility
 
-The D-Chain is compatible with almost all Ethereum tooling, including [Remix,](https://docs.dione.network/build/tutorials/smart-contracts/deploy-a-smart-contract-on-odyssey-using-remix-and-metamask) [Metamask](https://docs.dione.network/build/tutorials/smart-contracts/deploy-a-smart-contract-on-odyssey-using-remix-and-metamask) and [Truffle.](https://docs.dione.network/build/tutorials/smart-contracts/using-truffle-with-the-odyssey-d-chain)
+The D-Chain is compatible with almost all Ethereum tooling, including Remix, Metamask and Truffle.
 
 ## Differences Between Odyssey D-Chain and Ethereum
 
@@ -50,8 +48,6 @@ As a network composed of multiple blockchains, Odyssey uses *atomic transactions
 ### Odyssey Native Tokens (ANTs)
 
 The D-Chain supports Odyssey Native Tokens, which are created on the A-Chain using precompiled contracts. These precompiled contracts *nativeAssetCall* and *nativeAssetBalance* support the same interface for ANTs as *CALL* and *BALANCE* do for DIONE with the added parameter of *assetID* to specify the asset.
-
-For the full documentation of precompiles for interacting with ANTs and using them in ARC-20s, see [here](https://docs.dione.network/build/references/coreth-arc20s).
 
 ### Block Timing
 
