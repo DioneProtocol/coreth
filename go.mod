@@ -3,7 +3,7 @@ module github.com/DioneProtocol/coreth
 go 1.20
 
 require (
-	github.com/DioneProtocol/odysseygo v0.0.1
+	github.com/DioneProtocol/odysseygo v1.10.10
 	github.com/VictoriaMetrics/fastcache v1.10.0
 	github.com/cespare/cp v0.1.0
 	github.com/cockroachdb/pebble v0.0.0-20230209160836-829675f94811

@@ -44,8 +44,8 @@ github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53/go.mod h1:+3
 github.com/CloudyKit/jet/v3 v3.0.0/go.mod h1:HKQPgSJmdK8hdoAbKUUWajkHyHo4RaU5rMdUywE7VMo=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
 github.com/DataDog/zstd v1.5.2/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwSAmyw=
-github.com/DioneProtocol/odysseygo v0.0.1 h1:eKAuTMMtspUi/BuU1BxAOLWmXI+ucDoddjK/DyLbXvI=
-github.com/DioneProtocol/odysseygo v0.0.1/go.mod h1:VvtA/VVV+Niu/Ux8lcMhvQVn1eWaJzTNP/7jAW52U88=
+github.com/DioneProtocol/odysseygo v1.10.10 h1:yffSwSIhdw85u5OBM8EH3L/EPlZhiJ0Fc3isopjyi1k=
+github.com/DioneProtocol/odysseygo v1.10.10/go.mod h1:VvtA/VVV+Niu/Ux8lcMhvQVn1eWaJzTNP/7jAW52U88=
 github.com/Joker/hpp v1.0.0/go.mod h1:8x5n+M1Hp5hC0g8okX3sR3vFQwynaX/UgSOM9MeBKzY=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
