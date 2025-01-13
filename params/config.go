@@ -74,6 +74,7 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	// OdysseyTestnetChainConfig is the configuration for the Testnet Test Network
@@ -101,6 +102,7 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		ApricotPhase7BlockTimestamp:     utils.NewUint64(0),
 	}
 
 	// OdysseyLocalChainConfig is the configuration for the Odyssey Local Network
@@ -128,6 +130,7 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	TestChainConfig = &ChainConfig{
@@ -155,6 +158,7 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	TestLaunchConfig = &ChainConfig{
@@ -182,6 +186,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	TestApricotPhase1Config = &ChainConfig{
@@ -209,6 +214,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	TestApricotPhase2Config = &ChainConfig{
@@ -236,6 +242,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	TestApricotPhase3Config = &ChainConfig{
@@ -263,6 +270,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	TestApricotPhase4Config = &ChainConfig{
@@ -290,6 +298,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	TestApricotPhase5Config = &ChainConfig{
@@ -317,6 +326,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	TestApricotPhasePre6Config = &ChainConfig{
@@ -344,6 +354,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	TestApricotPhase6Config = &ChainConfig{
@@ -371,6 +382,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	TestApricotPhasePost6Config = &ChainConfig{
@@ -398,6 +410,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	TestBanffChainConfig = &ChainConfig{
@@ -425,6 +438,7 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	TestCortinaChainConfig = &ChainConfig{
@@ -452,6 +466,7 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          nil,
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	TestDUpgradeChainConfig = &ChainConfig{
@@ -478,6 +493,35 @@ var (
 		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
+		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		ApricotPhase7BlockTimestamp:     nil,
+	}
+
+	TestApricotPhase7Config = &ChainConfig{
+		OdysseyContext:                  OdysseyContext{common.Hash{1}},
+		ChainID:                         big.NewInt(1),
+		HomesteadBlock:                  big.NewInt(0),
+		DAOForkBlock:                    nil,
+		DAOForkSupport:                  false,
+		EIP150Block:                     big.NewInt(0),
+		EIP155Block:                     big.NewInt(0),
+		EIP158Block:                     big.NewInt(0),
+		ByzantiumBlock:                  big.NewInt(0),
+		ConstantinopleBlock:             big.NewInt(0),
+		PetersburgBlock:                 big.NewInt(0),
+		IstanbulBlock:                   big.NewInt(0),
+		MuirGlacierBlock:                big.NewInt(0),
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+		ApricotPhase6BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
+		BanffBlockTimestamp:             utils.NewUint64(0),
+		CortinaBlockTimestamp:           utils.NewUint64(0),
+		DUpgradeBlockTimestamp:          utils.NewUint64(0),
 	}
 
 	TestRules = TestChainConfig.OdysseyRules(new(big.Int), 0)
@@ -534,6 +578,8 @@ type ChainConfig struct {
 	DUpgradeBlockTimestamp *uint64 `json:"dUpgradeBlockTimestamp,omitempty"`
 	// Cancun activates the Cancun upgrade from Ethereum. (nil = no fork, 0 = already activated)
 	CancunTime *uint64 `json:"cancunTime,omitempty"`
+	// Apricot Phase 7 includes changes in gas prices. (nil = no fork, 0 = already activated)
+	ApricotPhase7BlockTimestamp *uint64 `json:"apricotPhase7BlockTimestamp,omitempty"`
 }
 
 // OdysseyContext provides Odyssey specific context directly into the DELTA.
@@ -578,6 +624,7 @@ func (c *ChainConfig) Description() string {
 	banner += fmt.Sprintf(" - Cortina Timestamp:                #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.10.0)\n", c.CortinaBlockTimestamp)
 	banner += fmt.Sprintf(" - DUpgrade Timestamp:               #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.11.0)\n", c.DUpgradeBlockTimestamp)
 	banner += fmt.Sprintf(" - Cancun Timestamp:                 #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.11.0)\n", c.DUpgradeBlockTimestamp)
+	banner += fmt.Sprintf(" - Apricot Phase 7 Timestamp:        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.11.0)\n", c.ApricotPhase7BlockTimestamp)
 	banner += "\n"
 	return banner
 }
@@ -706,6 +753,12 @@ func (c *ChainConfig) IsDUpgrade(time uint64) bool {
 // with a timestamp after the Cancun upgrade time.
 func (c *ChainConfig) IsCancun(time uint64) bool {
 	return utils.IsTimestampForked(c.CancunTime, time)
+}
+
+// IsApricotPhase7 returns whether [time] represents a block
+// with a timestamp after the Apricot Phase 7 upgrade time.
+func (c *ChainConfig) IsApricotPhase7(time uint64) bool {
+	return utils.IsTimestampForked(c.ApricotPhase7BlockTimestamp, time)
 }
 
 // CheckCompatible checks whether scheduled fork transitions have been imported
@@ -838,6 +891,7 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 		{name: "banffBlockTimestamp", timestamp: c.BanffBlockTimestamp},
 		{name: "cortinaBlockTimestamp", timestamp: c.CortinaBlockTimestamp},
 		{name: "dUpgradeBlockTimestamp", timestamp: c.DUpgradeBlockTimestamp},
+		{name: "apricotPhase7BlockTimestamp", timestamp: c.ApricotPhase7BlockTimestamp},
 		{name: "cancunTime", timestamp: c.CancunTime},
 	} {
 		if lastFork.name != "" {
@@ -941,6 +995,9 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, height *big.Int, time
 	}
 	if isForkTimestampIncompatible(c.CancunTime, newcfg.CancunTime, time) {
 		return newTimestampCompatError("Cancun fork block timestamp", c.DUpgradeBlockTimestamp, newcfg.DUpgradeBlockTimestamp)
+	}
+	if isForkTimestampIncompatible(c.ApricotPhase7BlockTimestamp, newcfg.ApricotPhase7BlockTimestamp, time) {
+		return newTimestampCompatError("ApricotPhase7 fork block timestamp", c.ApricotPhase7BlockTimestamp, newcfg.ApricotPhase7BlockTimestamp)
 	}
 
 	return nil
@@ -1064,6 +1121,7 @@ type Rules struct {
 	IsBanff                                                                             bool
 	IsCortina                                                                           bool
 	IsDUpgrade                                                                          bool
+	IsApricotPhase7                                                                     bool
 
 	LpAllocation, GovernanceAllocation, AllocationDenominator *big.Int
 	OrionAllocation, MaxOrionAllocation                       *big.Int
@@ -1114,6 +1172,7 @@ func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
 	rules.IsBanff = c.IsBanff(timestamp)
 	rules.IsCortina = c.IsCortina(timestamp)
 	rules.IsDUpgrade = c.IsDUpgrade(timestamp)
+	rules.IsApricotPhase7 = c.IsApricotPhase7(timestamp)
 	rules.LpAddress = c.LpAddress(timestamp)
 	rules.GovernanceAddress = c.GovernanceAddress(timestamp)
 	rules.LpAllocation = c.LpAllocation(timestamp)
