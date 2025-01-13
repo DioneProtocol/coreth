@@ -449,7 +449,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 	ethAddr := testEthAddrs[0]
 
 	var (
-		dioneBalance          = 10 * units.Dione
+		dioneBalance          = 15 * units.Dione
 		custom0Balance uint64 = 100
 		custom0AssetID        = ids.ID{1, 2, 3, 4, 5}
 		custom1Balance uint64 = 1000

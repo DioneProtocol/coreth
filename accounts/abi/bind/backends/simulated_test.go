@@ -52,7 +52,9 @@ func TestSimulatedBackend(t *testing.T) {
 	key, _ := crypto.GenerateKey() // nolint: gosec
 	auth, _ := bind.NewKeyedTransactorWithChainID(key, big.NewInt(1337))
 	genAlloc := make(core.GenesisAlloc)
-	genAlloc[auth.From] = core.GenesisAccount{Balance: big.NewInt(9223372036854775807)}
+	balance := new(big.Int)
+	balance, _ = balance.SetString("714285714285717000000", 10)
+	genAlloc[auth.From] = core.GenesisAccount{Balance: balance}
 
 	sim := NewSimulatedBackend(genAlloc, gasLimit)
 	defer sim.Close()
@@ -125,14 +127,14 @@ var expectedReturn = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 func simTestBackend(testAddr common.Address) *SimulatedBackend {
 	return NewSimulatedBackend(
 		core.GenesisAlloc{
-			testAddr: {Balance: new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(1000))},
+			testAddr: {Balance: new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(10000))},
 		}, 10000000,
 	)
 }
 
 func TestNewSimulatedBackend(t *testing.T) {
 	testAddr := crypto.PubkeyToAddress(testKey.PublicKey)
-	expectedBal := new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(1000))
+	expectedBal := new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(10000))
 	sim := simTestBackend(testAddr)
 	defer sim.Close()
 
@@ -206,7 +208,7 @@ func TestNewAdjustTimeFail(t *testing.T) {
 
 func TestBalanceAt(t *testing.T) {
 	testAddr := crypto.PubkeyToAddress(testKey.PublicKey)
-	expectedBal := new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(1000))
+	expectedBal := new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(10000))
 	sim := simTestBackend(testAddr)
 	defer sim.Close()
 	bgCtx := context.Background()
@@ -514,7 +516,7 @@ func TestEstimateGas(t *testing.T) {
 			GasPrice: big.NewInt(0),
 			Value:    nil,
 			Data:     common.Hex2Bytes("e09fface"),
-		}, 21275, nil, nil},
+		}, 21064, nil, nil},
 	}
 	for _, c := range cases {
 		got, err := sim.EstimateGas(context.Background(), c.message)
