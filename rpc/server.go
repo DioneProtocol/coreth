@@ -60,6 +60,10 @@ type Server struct {
 	mutex  sync.Mutex
 	codecs map[ServerCodec]struct{}
 	run    atomic.Bool
+
+	httpBodyLimit      int
+	batchItemLimit     int
+	batchResponseLimit int
 }
 
 // NewServer creates a new server instance with no registered handlers.
@@ -72,6 +76,7 @@ func NewServer(maximumDuration time.Duration) *Server {
 		idgen:           randomIDGenerator(),
 		codecs:          make(map[ServerCodec]struct{}),
 		maximumDuration: maximumDuration,
+		httpBodyLimit:   defaultBodyLimit,
 	}
 	server.run.Store(true)
 	// Register the default service providing meta information about the RPC service such
@@ -79,6 +84,24 @@ func NewServer(maximumDuration time.Duration) *Server {
 	rpcService := &RPCService{server}
 	server.RegisterName(MetadataApi, rpcService)
 	return server
+}
+
+// SetBatchLimits sets limits applied to batch requests. There are two limits: 'itemLimit'
+// is the maximum number of items in a batch. 'maxResponseSize' is the maximum number of
+// response bytes across all requests in a batch.
+//
+// This method should be called before processing any requests via ServeCodec, ServeHTTP,
+// ServeListener etc.
+func (s *Server) SetBatchLimits(itemLimit, maxResponseSize int) {
+	s.batchItemLimit = itemLimit
+	s.batchResponseLimit = maxResponseSize
+}
+
+// SetHTTPBodyLimit sets the size limit for HTTP requests.
+//
+// This method should be called before processing any requests via ServeHTTP.
+func (s *Server) SetHTTPBodyLimit(limit int) {
+	s.httpBodyLimit = limit
 }
 
 // RegisterName creates a service for the given receiver type under the given name. When no
@@ -134,7 +157,7 @@ func (s *Server) serveSingleRequest(ctx context.Context, codec ServerCodec) {
 		return
 	}
 
-	h := newHandler(ctx, codec, s.idgen, &s.services)
+	h := newHandler(ctx, codec, s.idgen, &s.services, s.batchItemLimit, s.batchResponseLimit)
 	h.deadlineContext = s.maximumDuration
 	h.allowSubscribe = false
 	defer h.close(io.EOF, nil)

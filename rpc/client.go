@@ -123,7 +123,7 @@ func (c *Client) newClientConn(conn ServerCodec, apiMaxDuration, refillRate, max
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, clientContextKey{}, c)
 	ctx = context.WithValue(ctx, peerInfoContextKey{}, conn.peerInfo())
-	handler := newHandler(ctx, conn, c.idgen, c.services)
+	handler := newHandler(ctx, conn, c.idgen, c.services, 0, 0)
 
 	// When [apiMaxDuration] or [refillRate]/[maxStored] is 0 (as is the case for
 	// all client invocations of this function), it is ignored.

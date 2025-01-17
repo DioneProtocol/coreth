@@ -196,6 +196,11 @@ type Config struct {
 	//  * 0:   means no limit
 	//  * N:   means N block limit [HEAD-N+1, HEAD] and delete extra indexes
 	TxLookupLimit uint64 `json:"tx-lookup-limit"`
+
+	// RPC settings
+	HttpBodyLimit      uint64 `json:"http-body-limit"`
+	BatchItemLimit     uint64 `json:"batch-item-limit"`
+	BatchResponseLimit uint64 `json:"batch-response-limit"`
 }
 
 // EthAPIs returns an array of strings representing the Eth APIs that should be enabled

@@ -1392,6 +1392,10 @@ func newHandler(name string, service interface{}, lockOption ...commonEng.LockOp
 // CreateHandlers makes new http handlers that can handle API calls
 func (vm *VM) CreateHandlers(context.Context) (map[string]*commonEng.HTTPHandler, error) {
 	handler := rpc.NewServer(vm.config.APIMaxDuration.Duration)
+	handler.SetBatchLimits(int(vm.config.BatchItemLimit), int(vm.config.BatchResponseLimit))
+	if vm.config.HttpBodyLimit > 0 {
+		handler.SetHTTPBodyLimit(int(vm.config.HttpBodyLimit))
+	}
 	enabledAPIs := vm.config.EthAPIs()
 	if err := attachEthService(handler, vm.eth.APIs(), enabledAPIs); err != nil {
 		return nil, err
@@ -1446,6 +1450,10 @@ func (vm *VM) CreateHandlers(context.Context) (map[string]*commonEng.HTTPHandler
 // CreateStaticHandlers makes new http handlers that can handle API calls
 func (vm *VM) CreateStaticHandlers(context.Context) (map[string]*commonEng.HTTPHandler, error) {
 	handler := rpc.NewServer(0)
+	handler.SetBatchLimits(int(vm.config.BatchItemLimit), int(vm.config.BatchResponseLimit))
+	if vm.config.HttpBodyLimit > 0 {
+		handler.SetHTTPBodyLimit(int(vm.config.HttpBodyLimit))
+	}
 	if err := handler.RegisterName("static", &StaticService{}); err != nil {
 		return nil, err
 	}
