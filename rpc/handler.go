@@ -61,17 +61,19 @@ import (
 //		h.removeRequestOp(op) // timeout, etc.
 //	}
 type handler struct {
-	reg            *serviceRegistry
-	unsubscribeCb  *callback
-	idgen          func() ID                      // subscription ID generator
-	respWait       map[string]*requestOp          // active client requests
-	clientSubs     map[string]*ClientSubscription // active client subscriptions
-	callWG         sync.WaitGroup                 // pending call goroutines
-	rootCtx        context.Context                // canceled by close()
-	cancelRoot     func()                         // cancel function for rootCtx
-	conn           jsonWriter                     // where responses will be sent
-	log            log.Logger
-	allowSubscribe bool
+	reg                  *serviceRegistry
+	unsubscribeCb        *callback
+	idgen                func() ID                      // subscription ID generator
+	respWait             map[string]*requestOp          // active client requests
+	clientSubs           map[string]*ClientSubscription // active client subscriptions
+	callWG               sync.WaitGroup                 // pending call goroutines
+	rootCtx              context.Context                // canceled by close()
+	cancelRoot           func()                         // cancel function for rootCtx
+	conn                 jsonWriter                     // where responses will be sent
+	log                  log.Logger
+	allowSubscribe       bool
+	batchRequestLimit    int
+	batchResponseMaxSize int
 
 	subLock    sync.Mutex
 	serverSubs map[ID]*Subscription
@@ -87,19 +89,21 @@ type callProc struct {
 	procStart time.Time
 }
 
-func newHandler(connCtx context.Context, conn jsonWriter, idgen func() ID, reg *serviceRegistry) *handler {
+func newHandler(connCtx context.Context, conn jsonWriter, idgen func() ID, reg *serviceRegistry, batchRequestLimit, batchResponseMaxSize int) *handler {
 	rootCtx, cancelRoot := context.WithCancel(connCtx)
 	h := &handler{
-		reg:            reg,
-		idgen:          idgen,
-		conn:           conn,
-		respWait:       make(map[string]*requestOp),
-		clientSubs:     make(map[string]*ClientSubscription),
-		rootCtx:        rootCtx,
-		cancelRoot:     cancelRoot,
-		allowSubscribe: true,
-		serverSubs:     make(map[ID]*Subscription),
-		log:            log.Root(),
+		reg:                  reg,
+		idgen:                idgen,
+		conn:                 conn,
+		respWait:             make(map[string]*requestOp),
+		clientSubs:           make(map[string]*ClientSubscription),
+		rootCtx:              rootCtx,
+		cancelRoot:           cancelRoot,
+		allowSubscribe:       true,
+		serverSubs:           make(map[ID]*Subscription),
+		log:                  log.Root(),
+		batchRequestLimit:    batchRequestLimit,
+		batchResponseMaxSize: batchResponseMaxSize,
 	}
 	if conn.remoteAddr() != "" {
 		h.log = h.log.New("conn", conn.remoteAddr())
@@ -151,6 +155,20 @@ func (b *batchCallBuffer) write(ctx context.Context, conn jsonWriter) {
 	b.doWrite(ctx, conn, false)
 }
 
+// respondWithError sends the responses added so far. For the remaining unanswered call
+// messages, it responds with the given error.
+func (b *batchCallBuffer) respondWithError(ctx context.Context, conn jsonWriter, err error) {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	for _, msg := range b.calls {
+		if !msg.isNotification() {
+			b.resp = append(b.resp, msg.errorResponse(err))
+		}
+	}
+	b.doWrite(ctx, conn, true)
+}
+
 // timeout sends the responses added so far. For the remaining unanswered call
 // messages, it sends a timeout error response.
 func (b *batchCallBuffer) timeout(ctx context.Context, conn jsonWriter) {
@@ -200,6 +218,13 @@ func (h *handler) handleBatch(msgs []*jsonrpcMessage) {
 		})
 		return
 	}
+	// Apply limit on total number of requests.
+	if h.batchRequestLimit != 0 && len(msgs) > h.batchRequestLimit {
+		h.startCallProc(func(cp *callProc) {
+			h.respondWithBatchTooLarge(cp, msgs)
+		})
+		return
+	}
 
 	// Handle non-call messages first:
 	calls := make([]*jsonrpcMessage, 0, len(msgs))
@@ -232,6 +257,7 @@ func (h *handler) handleBatch(msgs []*jsonrpcMessage) {
 			})
 		}
 
+		responseBytes := 0
 		for {
 			// No need to handle rest of calls if timed out.
 			if cp.ctx.Err() != nil {
@@ -243,6 +269,14 @@ func (h *handler) handleBatch(msgs []*jsonrpcMessage) {
 			}
 			resp := h.handleCallMsg(cp, msg)
 			callBuffer.pushResponse(resp)
+			if resp != nil && h.batchResponseMaxSize != 0 {
+				responseBytes += len(resp.Result)
+				if responseBytes > h.batchResponseMaxSize {
+					err := &internalServerError{errcodeResponseTooLarge, errMsgResponseTooLarge}
+					callBuffer.respondWithError(cp.ctx, h.conn, err)
+					break
+				}
+			}
 		}
 		if timer != nil {
 			timer.Stop()
@@ -253,6 +287,20 @@ func (h *handler) handleBatch(msgs []*jsonrpcMessage) {
 			n.activate()
 		}
 	})
+}
+
+func (h *handler) respondWithBatchTooLarge(cp *callProc, batch []*jsonrpcMessage) {
+	resp := errorMessage(&invalidRequestError{errMsgBatchTooLarge})
+	// Find the first call and add its "id" field to the error.
+	// This is the best we can do, given that the protocol doesn't have a way
+	// of reporting an error for the entire batch.
+	for _, msg := range batch {
+		if msg.isCall() {
+			resp.ID = msg.ID
+			break
+		}
+	}
+	h.conn.writeJSON(cp.ctx, []*jsonrpcMessage{resp}, true)
 }
 
 // handleMsg handles a single message.
