@@ -137,8 +137,8 @@ func FillAccounts(
 	onAccount func(*testing.T, int, types.StateAccount) types.StateAccount,
 ) (common.Hash, map[*keystore.Key]*types.StateAccount) {
 	var (
-		minBalance  = big.NewInt(3000000000000000000)
-		randBalance = big.NewInt(1000000000000000000)
+		minBalance  = new(big.Int).Mul(big.NewInt(3000000000000000000), big.NewInt(1000))
+		randBalance = new(big.Int).Mul(big.NewInt(1000000000000000000), big.NewInt(1000))
 		maxNonce    = 10
 		accounts    = make(map[*keystore.Key]*types.StateAccount, numAccounts)
 	)

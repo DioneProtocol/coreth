@@ -348,7 +348,7 @@ func TestCrossChainMessagestoVM(t *testing.T) {
 	require.NoErrorf(err, "could not parse abi: %v")
 
 	calledSendCrossChainAppResponseFn := false
-	importAmount := uint64(5000000000)
+	importAmount := 200 * units.Dione
 	issuer, vm, _, _, appSender := GenesisVMWithUTXOs(t, true, "", "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -420,7 +420,7 @@ func TestCrossChainMessagestoVM(t *testing.T) {
 		t.Fatalf("Expected last accepted blockID to be the accepted block: %s, but found %s", blk1.ID(), lastAcceptedID)
 	}
 
-	contractTx := types.NewContractCreation(0, common.Big0, 200000, new(big.Int).Mul(big.NewInt(3), initialBaseFee), common.FromHex(abiBin))
+	contractTx := types.NewContractCreation(0, common.Big0, 200000, new(big.Int).Mul(big.NewInt(4), initialBaseFee), common.FromHex(abiBin))
 	contractSignedTx, err := types.SignTx(contractTx, types.NewEIP155Signer(vm.chainID), testKeys[0].ToECDSA())
 	require.NoError(err)
 
@@ -656,7 +656,7 @@ func TestVMUpgrades(t *testing.T) {
 
 func TestImportMissingUTXOs(t *testing.T) {
 	// make a VM with a shared memory that has an importable UTXO to build a block
-	importAmount := uint64(50000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase2, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -694,7 +694,7 @@ func TestImportMissingUTXOs(t *testing.T) {
 // Simple test to ensure we can issue an import transaction followed by an export transaction
 // and they will be indexed correctly when accepted.
 func TestIssueAtomicTxs(t *testing.T) {
-	importAmount := uint64(50000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase2, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -817,7 +817,7 @@ func TestIssueAtomicTxs(t *testing.T) {
 }
 
 func TestBuildEthTxBlock(t *testing.T) {
-	importAmount := uint64(20000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, dbManager, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase2, "{\"pruning-enabled\":true}", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -976,7 +976,7 @@ func TestBuildEthTxBlock(t *testing.T) {
 }
 
 func testConflictingImportTxs(t *testing.T, genesis string) {
-	importAmount := uint64(10000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesis, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 		testShortIDAddrs[1]: importAmount,
@@ -1162,7 +1162,7 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 
 	for name, issueTxs := range map[string]func(t *testing.T, vm *VM, sharedMemory *atomic.Memory) (issued []*Tx, discarded []*Tx){
 		"single UTXO override": func(t *testing.T, vm *VM, sharedMemory *atomic.Memory) (issued []*Tx, evicted []*Tx) {
-			utxo, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
+			utxo, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, 50*units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1185,11 +1185,11 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 			return []*Tx{tx2}, []*Tx{tx1}
 		},
 		"one of two UTXOs overrides": func(t *testing.T, vm *VM, sharedMemory *atomic.Memory) (issued []*Tx, evicted []*Tx) {
-			utxo1, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
+			utxo1, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, 50*units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
-			utxo2, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
+			utxo2, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, 50*units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1212,11 +1212,11 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 			return []*Tx{tx2}, []*Tx{tx1}
 		},
 		"hola": func(t *testing.T, vm *VM, sharedMemory *atomic.Memory) (issued []*Tx, evicted []*Tx) {
-			utxo1, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
+			utxo1, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, 50*units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
-			utxo2, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
+			utxo2, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, 50*units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1307,7 +1307,7 @@ func TestConflictingImportTxsAcrossBlocks(t *testing.T) {
 func TestSetPreferenceRace(t *testing.T) {
 	// Create two VMs which will agree on block A and then
 	// build the two distinct preferred chains above
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "{\"pruning-enabled\":true}", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -1557,7 +1557,7 @@ func TestConflictingTransitiveAncestryWithGap(t *testing.T) {
 	key1 := testKeys[1]
 	addr1 := key1.PublicKey().Address()
 
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 
 	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "", "",
 		map[ids.ShortID]uint64{
@@ -1783,7 +1783,7 @@ func TestBonusBlocksTxs(t *testing.T) {
 // accept block C, which should be an orphaned block at this point and
 // get rejected.
 func TestReorgProtection(t *testing.T) {
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "{\"pruning-enabled\":false}", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -1965,7 +1965,7 @@ func TestReorgProtection(t *testing.T) {
 //	 / \
 //	B   C
 func TestNonCanonicalAccept(t *testing.T) {
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -2140,7 +2140,7 @@ func TestNonCanonicalAccept(t *testing.T) {
 //	    |
 //	    D
 func TestStickyPreference(t *testing.T) {
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -2414,7 +2414,7 @@ func TestStickyPreference(t *testing.T) {
 //	    |
 //	    D
 func TestUncleBlock(t *testing.T) {
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -2677,7 +2677,7 @@ func TestEmptyBlock(t *testing.T) {
 //	    |
 //	    D
 func TestAcceptReorg(t *testing.T) {
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -2947,7 +2947,7 @@ func TestFutureBlock(t *testing.T) {
 // Regression test to ensure we can build blocks if we are starting with the
 // Apricot Phase 1 ruleset in genesis.
 func TestBuildApricotPhase1Block(t *testing.T) {
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase1, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -3455,7 +3455,7 @@ func TestBuildApricotPhase4Block(t *testing.T) {
 	key := testKeys[0].ToECDSA()
 	address := testEthAddrs[0]
 
-	importAmount := uint64(1000000000)
+	importAmount := 200 * units.Dione
 	utxoID := dione.UTXOID{TxID: ids.GenerateTestID()}
 
 	utxo := &dione.UTXO{
@@ -3540,7 +3540,7 @@ func TestBuildApricotPhase4Block(t *testing.T) {
 
 	txs := make([]*types.Transaction, 10)
 	for i := 0; i < 5; i++ {
-		tx := types.NewTransaction(uint64(i), address, big.NewInt(10), 21000, big.NewInt(params.LaunchMinGasPrice), nil)
+		tx := types.NewTransaction(uint64(i), address, big.NewInt(10), 21000, new(big.Int).Mul(big.NewInt(params.LaunchMinGasPrice), big.NewInt(3)), nil)
 		signedTx, err := types.SignTx(tx, types.NewEIP155Signer(vm.chainID), key)
 		if err != nil {
 			t.Fatal(err)
@@ -3548,7 +3548,7 @@ func TestBuildApricotPhase4Block(t *testing.T) {
 		txs[i] = signedTx
 	}
 	for i := 5; i < 10; i++ {
-		tx := types.NewTransaction(uint64(i), address, big.NewInt(10), 21000, big.NewInt(params.ApricotPhase1MinGasPrice), nil)
+		tx := types.NewTransaction(uint64(i), address, big.NewInt(10), 21000, new(big.Int).Mul(big.NewInt(params.ApricotPhase1MinGasPrice), big.NewInt(3)), nil)
 		signedTx, err := types.SignTx(tx, types.NewEIP155Signer(vm.chainID), key)
 		if err != nil {
 			t.Fatal(err)
@@ -3637,7 +3637,7 @@ func TestBuildApricotPhase5Block(t *testing.T) {
 	key := testKeys[0].ToECDSA()
 	address := testEthAddrs[0]
 
-	importAmount := uint64(1000000000)
+	importAmount := 200 * units.Dione
 	utxoID := dione.UTXOID{TxID: ids.GenerateTestID()}
 
 	utxo := &dione.UTXO{
@@ -3704,8 +3704,8 @@ func TestBuildApricotPhase5Block(t *testing.T) {
 	if eBlockGasCost := ethBlk.BlockGasCost(); eBlockGasCost == nil || eBlockGasCost.Cmp(common.Big0) != 0 {
 		t.Fatalf("expected blockGasCost to be 0 but got %d", eBlockGasCost)
 	}
-	if eExtDataGasUsed := ethBlk.ExtDataGasUsed(); eExtDataGasUsed == nil || eExtDataGasUsed.Cmp(big.NewInt(11230)) != 0 {
-		t.Fatalf("expected extDataGasUsed to be 11230 but got %d", eExtDataGasUsed)
+	if eExtDataGasUsed := ethBlk.ExtDataGasUsed(); eExtDataGasUsed == nil || eExtDataGasUsed.Cmp(big.NewInt(22230)) != 0 {
+		t.Fatalf("expected extDataGasUsed to be 22230 but got %d", eExtDataGasUsed)
 	}
 	minRequiredTip, err := dummy.MinRequiredTip(vm.chainConfig, ethBlk.Header())
 	if err != nil {
@@ -3856,7 +3856,7 @@ func TestConsecutiveAtomicTransactionsRevertSnapshot(t *testing.T) {
 }
 
 func TestAtomicTxBuildBlockDropsConflicts(t *testing.T) {
-	importAmount := uint64(10000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase5, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 		testShortIDAddrs[1]: importAmount,
@@ -3925,7 +3925,7 @@ func TestAtomicTxBuildBlockDropsConflicts(t *testing.T) {
 }
 
 func TestBuildBlockDoesNotExceedAtomicGasLimit(t *testing.T) {
-	importAmount := uint64(10000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONApricotPhase5, "", "")
 
 	defer func() {
@@ -3970,7 +3970,7 @@ func TestBuildBlockDoesNotExceedAtomicGasLimit(t *testing.T) {
 }
 
 func TestExtraStateChangeAtomicGasLimitExceeded(t *testing.T) {
-	importAmount := uint64(10000000)
+	importAmount := 50 * units.Dione
 	// We create two VMs one in ApriotPhase4 and one in ApricotPhase5, so that we can construct a block
 	// containing a large enough atomic transaction that it will exceed the atomic gas limit in
 	// ApricotPhase5.

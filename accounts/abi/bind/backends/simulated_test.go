@@ -51,8 +51,9 @@ func TestSimulatedBackend(t *testing.T) {
 	var gasLimit uint64 = 8000029
 	key, _ := crypto.GenerateKey() // nolint: gosec
 	auth, _ := bind.NewKeyedTransactorWithChainID(key, big.NewInt(1337))
+	initialBalance := new(big.Int).Mul(big.NewInt(9223372036854775807), big.NewInt(100))
 	genAlloc := make(core.GenesisAlloc)
-	genAlloc[auth.From] = core.GenesisAccount{Balance: big.NewInt(9223372036854775807)}
+	genAlloc[auth.From] = core.GenesisAccount{Balance: initialBalance}
 
 	sim := NewSimulatedBackend(genAlloc, gasLimit)
 	defer sim.Close()
@@ -125,14 +126,14 @@ var expectedReturn = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 func simTestBackend(testAddr common.Address) *SimulatedBackend {
 	return NewSimulatedBackend(
 		core.GenesisAlloc{
-			testAddr: {Balance: new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(1000))},
+			testAddr: {Balance: new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(100000))},
 		}, 10000000,
 	)
 }
 
 func TestNewSimulatedBackend(t *testing.T) {
 	testAddr := crypto.PubkeyToAddress(testKey.PublicKey)
-	expectedBal := new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(1000))
+	expectedBal := new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(100000))
 	sim := simTestBackend(testAddr)
 	defer sim.Close()
 
@@ -206,7 +207,7 @@ func TestNewAdjustTimeFail(t *testing.T) {
 
 func TestBalanceAt(t *testing.T) {
 	testAddr := crypto.PubkeyToAddress(testKey.PublicKey)
-	expectedBal := new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(1000))
+	expectedBal := new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(100000))
 	sim := simTestBackend(testAddr)
 	defer sim.Close()
 	bgCtx := context.Background()
@@ -371,7 +372,7 @@ func TestTransactionByHash(t *testing.T) {
 
 	sim := NewSimulatedBackend(
 		core.GenesisAlloc{
-			testAddr: {Balance: new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(1000))},
+			testAddr: {Balance: new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(100000))},
 		}, 10000000,
 	)
 	defer sim.Close()
@@ -439,7 +440,8 @@ func TestEstimateGas(t *testing.T) {
 	addr := crypto.PubkeyToAddress(key.PublicKey)
 	opts, _ := bind.NewKeyedTransactorWithChainID(key, big.NewInt(1337))
 
-	sim := NewSimulatedBackend(core.GenesisAlloc{addr: {Balance: big.NewInt(params.Ether)}}, 10000000)
+	initialBalance := new(big.Int).Mul(big.NewInt(params.Ether), big.NewInt(100))
+	sim := NewSimulatedBackend(core.GenesisAlloc{addr: {Balance: initialBalance}}, 10000000)
 	defer sim.Close()
 
 	parsed, _ := abi.JSON(strings.NewReader(contractAbi))
@@ -544,7 +546,8 @@ func TestEstimateGasWithPrice(t *testing.T) {
 	key, _ := crypto.GenerateKey()
 	addr := crypto.PubkeyToAddress(key.PublicKey)
 
-	sim := NewSimulatedBackend(core.GenesisAlloc{addr: {Balance: big.NewInt(params.Ether*2 + 2e17)}}, 10000000)
+	initialBalance := new(big.Int).Mul(big.NewInt(params.Ether), big.NewInt(10000))
+	sim := NewSimulatedBackend(core.GenesisAlloc{addr: {Balance: initialBalance}}, 10000000)
 	defer sim.Close()
 
 	recipient := common.HexToAddress("deadbeef")
@@ -567,7 +570,7 @@ func TestEstimateGasWithPrice(t *testing.T) {
 			From:     addr,
 			To:       &recipient,
 			Gas:      0,
-			GasPrice: big.NewInt(225000000000),
+			GasPrice: big.NewInt(2380952380952381),
 			Value:    big.NewInt(100000000000),
 			Data:     nil,
 		}, 21000, nil},
@@ -576,8 +579,8 @@ func TestEstimateGasWithPrice(t *testing.T) {
 			From:     addr,
 			To:       &recipient,
 			Gas:      0,
-			GasPrice: big.NewInt(1e14), // gascost = 2.1ether
-			Value:    big.NewInt(1e17), // the remaining balance for fee is 2.1ether
+			GasPrice: big.NewInt(1e16),                                    // gascost = 210 ether
+			Value:    new(big.Int).Mul(big.NewInt(1e17), big.NewInt(1e2)), // the remaining balance for fee is 210 ether
 			Data:     nil,
 		}, 21000, nil},
 
@@ -585,18 +588,18 @@ func TestEstimateGasWithPrice(t *testing.T) {
 			From:     addr,
 			To:       &recipient,
 			Gas:      0,
-			GasPrice: big.NewInt(2e14), // gascost = 4.2ether
+			GasPrice: big.NewInt(1e18), // gascost = 21000 ether
 			Value:    big.NewInt(100000000000),
 			Data:     nil,
-		}, 21000, errors.New("gas required exceeds allowance (10999)")}, // 10999=(2.2ether-1000wei)/(2e14)
+		}, 21000, errors.New("gas required exceeds allowance (9999)")},
 
 		{"EstimateEIP1559WithHighFees", interfaces.CallMsg{
 			From:      addr,
 			To:        &addr,
 			Gas:       0,
-			GasFeeCap: big.NewInt(1e14), // maxgascost = 2.1ether
+			GasFeeCap: big.NewInt(1e16),
 			GasTipCap: big.NewInt(1),
-			Value:     big.NewInt(1e17), // the remaining balance for fee is 2.1ether
+			Value:     big.NewInt(1e17),
 			Data:      nil,
 		}, params.TxGas, nil},
 
@@ -604,11 +607,11 @@ func TestEstimateGasWithPrice(t *testing.T) {
 			From:      addr,
 			To:        &addr,
 			Gas:       0,
-			GasFeeCap: big.NewInt(1e14), // maxgascost = 2.1ether
+			GasFeeCap: big.NewInt(1e18),
 			GasTipCap: big.NewInt(1),
-			Value:     big.NewInt(1e17 + 1), // the remaining balance for fee is 2.1ether
+			Value:     big.NewInt(1e17 + 1),
 			Data:      nil,
-		}, params.TxGas, errors.New("gas required exceeds allowance (20999)")}, // 20999=(2.2ether-0.1ether-1wei)/(1e14)
+		}, params.TxGas, errors.New("gas required exceeds allowance (9999)")},
 	}
 	for i, c := range cases {
 		got, err := sim.EstimateGas(context.Background(), c.message)

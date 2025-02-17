@@ -78,12 +78,13 @@ func executeStateTransitionTest(t *testing.T, st stateTransitionTest) {
 	require.Equal(len(st.txs), len(st.gasUsed), "length of gas used must match length of txs")
 
 	var (
-		db    = rawdb.NewMemoryDatabase()
-		gspec = &Genesis{
+		db             = rawdb.NewMemoryDatabase()
+		initialBalance = new(big.Int).Mul(big.NewInt(params.Ether), big.NewInt(2000)) // 2000 ether
+		gspec          = &Genesis{
 			Config: st.config,
 			Alloc: GenesisAlloc{
 				common.HexToAddress("0x71562b71999873DB5b286dF957af199Ec94617F7"): GenesisAccount{
-					Balance: big.NewInt(2000000000000000000), // 2 ether
+					Balance: initialBalance,
 					Nonce:   0,
 				},
 			},

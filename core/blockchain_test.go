@@ -895,7 +895,7 @@ func testCreateThenDelete(t *testing.T, config *params.ChainConfig) {
 		key, _      = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 		address     = crypto.PubkeyToAddress(key.PublicKey)
 		destAddress = crypto.CreateAddress(address, 0)
-		funds       = big.NewInt(params.Ether) // Note: additional funds are provided here compared to go-ethereum so test completes.
+		funds       = new(big.Int).Mul(big.NewInt(params.Ether), big.NewInt(100)) // Note: additional funds are provided here compared to go-ethereum so test completes.
 	)
 
 	// runtime code is 	0x60ffff : PUSH1 0xFF SELFDESTRUCT, a.k.a SELFDESTRUCT(0xFF)
@@ -971,7 +971,7 @@ func TestTransientStorageReset(t *testing.T) {
 		key, _      = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 		address     = crypto.PubkeyToAddress(key.PublicKey)
 		destAddress = crypto.CreateAddress(address, 0)
-		funds       = big.NewInt(params.Ether) // Note: additional funds are provided here compared to go-ethereum so test completes.
+		funds       = new(big.Int).Mul(big.NewInt(params.Ether), big.NewInt(100)) // Note: additional funds are provided here compared to go-ethereum so test completes.
 		vmConfig    = vm.Config{
 			ExtraEips: []int{1153}, // Enable transient storage EIP
 		}
@@ -1069,7 +1069,7 @@ func TestEIP3651(t *testing.T) {
 		key2, _ = crypto.HexToECDSA("8a1f9a8f95be41cd7ccb6168179afb4504aefe388d1e14474d32c45c72ce7b7a")
 		addr1   = crypto.PubkeyToAddress(key1.PublicKey)
 		addr2   = crypto.PubkeyToAddress(key2.PublicKey)
-		funds   = new(big.Int).Mul(common.Big1, big.NewInt(params.Ether))
+		funds   = new(big.Int).Mul(big.NewInt(1000), big.NewInt(params.Ether))
 		gspec   = &Genesis{
 			Config: params.TestChainConfig,
 			Alloc: GenesisAlloc{
@@ -1116,7 +1116,7 @@ func TestEIP3651(t *testing.T) {
 			Nonce:      0,
 			To:         &bb,
 			Gas:        500000,
-			GasFeeCap:  newGwei(225),
+			GasFeeCap:  newGwei(238096),
 			GasTipCap:  big.NewInt(2),
 			AccessList: nil,
 			Data:       []byte{},

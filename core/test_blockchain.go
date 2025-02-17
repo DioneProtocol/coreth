@@ -1397,7 +1397,7 @@ func TestInsertChainValidBlockFee(t *testing.T, create func(db ethdb.Database, g
 
 	// This call generates a chain of 3 blocks.
 	signer := types.LatestSigner(params.TestChainConfig)
-	tip := big.NewInt(50000 * params.GWei)
+	tip := big.NewInt(50000000 * params.GWei)
 	transfer := big.NewInt(10000)
 	_, chain, _, err := GenerateChainWithGenesis(gspec, blockchain.engine, 3, 0, func(i int, gen *BlockGen) {
 		feeCap := new(big.Int).Add(gen.BaseFee(), tip)
@@ -1439,7 +1439,7 @@ func TestInsertChainValidBlockFee(t *testing.T, create func(db ethdb.Database, g
 		}
 		balance1 := sdb.GetBalance(addr1)
 		expectedBalance1 := new(big.Int).Sub(genesisBalance, transfer)
-		feeSpend := new(big.Int).Mul(new(big.Int).Add(big.NewInt(225*params.GWei), tip), new(big.Int).SetUint64(params.TxGas))
+		feeSpend := new(big.Int).Mul(new(big.Int).Add(big.NewInt(238095238095238), tip), new(big.Int).SetUint64(params.TxGas))
 		expectedBalance1.Sub(expectedBalance1, feeSpend)
 		if balance1.Cmp(expectedBalance1) != 0 {
 			return fmt.Errorf("expected addr1 balance: %d, found balance: %d", expectedBalance1, balance1)

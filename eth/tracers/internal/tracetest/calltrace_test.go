@@ -285,6 +285,7 @@ func TestInternals(t *testing.T) {
 			Time:        5,
 			Difficulty:  big.NewInt(0x30000),
 			GasLimit:    uint64(6000000),
+			BaseFee:     new(big.Int).SetUint64(0),
 		}
 	)
 	mkTracer := func(name string, cfg json.RawMessage) tracers.Tracer {
@@ -312,7 +313,7 @@ func TestInternals(t *testing.T) {
 				byte(vm.CALL),
 			},
 			tracer: mkTracer("callTracer", nil),
-			want:   `{"from":"0x000000000000000000000000000000000000feed","gas":"0xc350","gasUsed":"0x54d8","to":"0x00000000000000000000000000000000deadbeef","input":"0x","calls":[{"from":"0x00000000000000000000000000000000deadbeef","gas":"0x6cbf","gasUsed":"0x0","to":"0x00000000000000000000000000000000000000ff","input":"0x","value":"0x0","type":"CALL"}],"value":"0x0","type":"CALL"}`,
+			want:   `{"from":"0x000000000000000000000000000000000000feed","gas":"0xc350","gasUsed":"0x5c44","to":"0x00000000000000000000000000000000deadbeef","input":"0x","calls":[{"from":"0x00000000000000000000000000000000deadbeef","gas":"0x6570","gasUsed":"0x0","to":"0x00000000000000000000000000000000000000ff","input":"0x","value":"0x0","type":"CALL"}],"value":"0x0","type":"CALL"}`,
 		},
 		{
 			name:   "Stack depletion in LOG0",

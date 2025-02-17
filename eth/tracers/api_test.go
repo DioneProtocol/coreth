@@ -210,10 +210,11 @@ func TestTraceCall(t *testing.T) {
 
 	// Initialize test accounts
 	accounts := newAccounts(3)
+	initialBalance := new(big.Int).Mul(big.NewInt(params.Ether), big.NewInt(2000)) // 2000 ether
 	genesis := &core.Genesis{
 		Config: params.TestBanffChainConfig, // TODO: go-ethereum has not enabled Shanghai yet, so we use Banff here so tests pass.
 		Alloc: core.GenesisAlloc{
-			accounts[0].addr: {Balance: big.NewInt(params.Ether)},
+			accounts[0].addr: {Balance: initialBalance},
 			accounts[1].addr: {Balance: big.NewInt(params.Ether)},
 			accounts[2].addr: {Balance: big.NewInt(params.Ether)},
 		}}
@@ -344,10 +345,11 @@ func TestTraceTransaction(t *testing.T) {
 
 	// Initialize test accounts
 	accounts := newAccounts(2)
+	initialBalance := new(big.Int).Mul(big.NewInt(params.Ether), big.NewInt(2000)) // 2000 ether
 	genesis := &core.Genesis{
 		Config: params.TestChainConfig,
 		Alloc: core.GenesisAlloc{
-			accounts[0].addr: {Balance: big.NewInt(params.Ether)},
+			accounts[0].addr: {Balance: initialBalance},
 			accounts[1].addr: {Balance: big.NewInt(params.Ether)},
 		},
 	}
@@ -393,10 +395,11 @@ func TestTraceBlock(t *testing.T) {
 
 	// Initialize test accounts
 	accounts := newAccounts(3)
+	initialBalance := new(big.Int).Mul(big.NewInt(params.Ether), big.NewInt(2000)) // 2000 ether
 	genesis := &core.Genesis{
 		Config: params.TestChainConfig,
 		Alloc: core.GenesisAlloc{
-			accounts[0].addr: {Balance: big.NewInt(params.Ether)},
+			accounts[0].addr: {Balance: initialBalance},
 			accounts[1].addr: {Balance: big.NewInt(params.Ether)},
 			accounts[2].addr: {Balance: big.NewInt(params.Ether)},
 		},
@@ -476,10 +479,11 @@ func TestTracingWithOverrides(t *testing.T) {
 	// Initialize test accounts
 	accounts := newAccounts(3)
 	storageAccount := common.Address{0x13, 37}
+	initialBalance := new(big.Int).Mul(big.NewInt(params.Ether), big.NewInt(2000)) // 2000 ether
 	genesis := &core.Genesis{
 		Config: params.TestCortinaChainConfig, // TODO: go-ethereum has not enabled Shanghai yet, so we use Cortina here so tests pass.
 		Alloc: core.GenesisAlloc{
-			accounts[0].addr: {Balance: big.NewInt(params.Ether)},
+			accounts[0].addr: {Balance: initialBalance},
 			accounts[1].addr: {Balance: big.NewInt(params.Ether)},
 			accounts[2].addr: {Balance: big.NewInt(params.Ether)},
 			// An account with existing storage
@@ -845,10 +849,11 @@ func TestTraceChain(t *testing.T) {
 	// Initialize test accounts
 	// Note: the balances in this test have been increased compared to go-ethereum.
 	accounts := newAccounts(3)
+	initialBalance := new(big.Int).Mul(big.NewInt(params.Ether), big.NewInt(8000))
 	genesis := &core.Genesis{
 		Config: params.TestChainConfig,
 		Alloc: core.GenesisAlloc{
-			accounts[0].addr: {Balance: big.NewInt(5 * params.Ether)},
+			accounts[0].addr: {Balance: initialBalance},
 			accounts[1].addr: {Balance: big.NewInt(5 * params.Ether)},
 			accounts[2].addr: {Balance: big.NewInt(5 * params.Ether)},
 		},

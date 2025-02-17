@@ -734,14 +734,14 @@ func (c *ChainConfig) CheckCompatible(newcfg *ChainConfig, height uint64, time u
 }
 
 func (c *ChainConfig) LpAddress(time uint64) common.Address {
-	if c.ChainID.Cmp(OdysseyMainnetChainID) == 0 {
+	if c.ChainID != nil && c.ChainID.Cmp(OdysseyMainnetChainID) == 0 {
 		return common.HexToAddress(LpAddressMainnet)
 	}
 	return common.HexToAddress(LpAddressDefault)
 }
 
 func (c *ChainConfig) GovernanceAddress(time uint64) common.Address {
-	if c.ChainID.Cmp(OdysseyMainnetChainID) == 0 {
+	if c.ChainID != nil && c.ChainID.Cmp(OdysseyMainnetChainID) == 0 {
 		return common.HexToAddress(GovernanceAddressMannet)
 	}
 	return common.HexToAddress(GovernanceAddressDefault)

@@ -25,11 +25,12 @@ import (
 // that attempt to send the funds to each of the test keys (list of length 3).
 func createExportTxOptions(t *testing.T, vm *VM, issuer chan engCommon.Message, sharedMemory *atomic.Memory) []*Tx {
 	// Add a UTXO to shared memory
+	importAmount := 50 * units.Dione
 	utxo := &dione.UTXO{
 		UTXOID: dione.UTXOID{TxID: ids.GenerateTestID()},
 		Asset:  dione.Asset{ID: vm.ctx.DIONEAssetID},
 		Out: &secp256k1fx.TransferOutput{
-			Amt: uint64(50000000),
+			Amt: importAmount,
 			OutputOwners: secp256k1fx.OutputOwners{
 				Threshold: 1,
 				Addrs:     []ids.ShortID{testKeys[0].PublicKey().Address()},
@@ -84,8 +85,9 @@ func createExportTxOptions(t *testing.T, vm *VM, issuer chan engCommon.Message, 
 
 	// Use the funds to create 3 conflicting export transactions sending the funds to each of the test addresses
 	exportTxs := make([]*Tx, 0, 3)
+	exportAmount := 1 * units.Dione
 	for _, addr := range testShortIDAddrs {
-		exportTx, err := vm.newExportTx(vm.ctx.DIONEAssetID, uint64(5000000), vm.ctx.AChainID, addr, initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+		exportTx, err := vm.newExportTx(vm.ctx.DIONEAssetID, exportAmount, vm.ctx.AChainID, addr, initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -449,7 +451,7 @@ func TestExportTxSemanticVerify(t *testing.T) {
 	ethAddr := testEthAddrs[0]
 
 	var (
-		dioneBalance          = 10 * units.Dione
+		dioneBalance          = 100 * units.Dione
 		custom0Balance uint64 = 100
 		custom0AssetID        = ids.ID{1, 2, 3, 4, 5}
 		custom1Balance uint64 = 1000
@@ -1441,7 +1443,7 @@ func TestExportTxGasCost(t *testing.T) {
 				},
 			},
 			Keys:            [][]*secp256k1.PrivateKey{{testKeys[0]}},
-			ExpectedGasUsed: 11230,
+			ExpectedGasUsed: 22230,
 			ExpectedFee:     1,
 			BaseFee:         big.NewInt(1),
 			FixedFee:        true,
@@ -1640,43 +1642,43 @@ func TestNewExportTx(t *testing.T) {
 			name:                "apricot phase 0",
 			genesis:             genesisJSONApricotPhase0,
 			rules:               apricotRulesPhase0,
-			bal:                 44000000,
-			expectedBurnedDIONE: 1000000,
+			bal:                 44 * units.Dione,
+			expectedBurnedDIONE: 5 * units.Dione,
 		},
 		{
 			name:                "apricot phase 1",
 			genesis:             genesisJSONApricotPhase1,
 			rules:               apricotRulesPhase1,
-			bal:                 44000000,
-			expectedBurnedDIONE: 1000000,
+			bal:                 44 * units.Dione,
+			expectedBurnedDIONE: 5 * units.Dione,
 		},
 		{
 			name:                "apricot phase 2",
 			genesis:             genesisJSONApricotPhase2,
 			rules:               apricotRulesPhase2,
-			bal:                 43000000,
-			expectedBurnedDIONE: 1000000,
+			bal:                 39 * units.Dione,
+			expectedBurnedDIONE: 5 * units.Dione,
 		},
 		{
 			name:                "apricot phase 3",
 			genesis:             genesisJSONApricotPhase3,
 			rules:               apricotRulesPhase3,
-			bal:                 44446500,
-			expectedBurnedDIONE: 276750,
+			bal:                 48414285714,
+			expectedBurnedDIONE: 292857143,
 		},
 		{
 			name:                "apricot phase 4",
 			genesis:             genesisJSONApricotPhase4,
 			rules:               apricotRulesPhase4,
-			bal:                 44446500,
-			expectedBurnedDIONE: 276750,
+			bal:                 48414285714,
+			expectedBurnedDIONE: 292857143,
 		},
 		{
 			name:                "apricot phase 5",
 			genesis:             genesisJSONApricotPhase5,
 			rules:               apricotRulesPhase5,
-			bal:                 39946500,
-			expectedBurnedDIONE: 2526750,
+			bal:                 38414285714,
+			expectedBurnedDIONE: 5292857143,
 		},
 	}
 	for _, test := range tests {
@@ -1690,7 +1692,7 @@ func TestNewExportTx(t *testing.T) {
 			}()
 
 			parent := vm.LastAcceptedBlockInternal().(*Block)
-			importAmount := uint64(50000000)
+			importAmount := 50 * units.Dione
 			utxoID := dione.UTXOID{TxID: ids.GenerateTestID()}
 
 			utxo := &dione.UTXO{
@@ -1750,7 +1752,7 @@ func TestNewExportTx(t *testing.T) {
 			}
 
 			parent = vm.LastAcceptedBlockInternal().(*Block)
-			exportAmount := uint64(5000000)
+			exportAmount := 1 * units.Dione
 
 			tx, err = vm.newExportTx(vm.ctx.DIONEAssetID, exportAmount, vm.ctx.AChainID, testShortIDAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 			if err != nil {
@@ -1795,8 +1797,9 @@ func TestNewExportTx(t *testing.T) {
 			}
 
 			addr := GetEthAddress(testKeys[0])
-			if sdb.GetBalance(addr).Cmp(new(big.Int).SetUint64(test.bal*units.Dione)) != 0 {
-				t.Fatalf("address balance %s equal %s not %s", addr.String(), sdb.GetBalance(addr), new(big.Int).SetUint64(test.bal*units.Dione))
+			expectedBalance := new(big.Int).Mul(new(big.Int).SetUint64(test.bal), new(big.Int).SetUint64(units.Dione))
+			if sdb.GetBalance(addr).Cmp(expectedBalance) != 0 {
+				t.Fatalf("address balance %s equal %s not %s", addr.String(), sdb.GetBalance(addr), expectedBalance)
 			}
 		})
 	}
@@ -1814,29 +1817,29 @@ func TestNewExportTxMulticoin(t *testing.T) {
 			name:    "apricot phase 0",
 			genesis: genesisJSONApricotPhase0,
 			rules:   apricotRulesPhase0,
-			bal:     49000000,
-			balmc:   25000000,
+			bal:     45 * units.Dione,
+			balmc:   29 * units.Dione,
 		},
 		{
 			name:    "apricot phase 1",
 			genesis: genesisJSONApricotPhase1,
 			rules:   apricotRulesPhase1,
-			bal:     49000000,
-			balmc:   25000000,
+			bal:     45 * units.Dione,
+			balmc:   29 * units.Dione,
 		},
 		{
 			name:    "apricot phase 2",
 			genesis: genesisJSONApricotPhase2,
 			rules:   apricotRulesPhase2,
-			bal:     48000000,
-			balmc:   25000000,
+			bal:     40 * units.Dione,
+			balmc:   29 * units.Dione,
 		},
 		{
 			name:    "apricot phase 3",
 			genesis: genesisJSONApricotPhase3,
 			rules:   apricotRulesPhase3,
-			bal:     48947900,
-			balmc:   25000000,
+			bal:     48886666665,
+			balmc:   29 * units.Dione,
 		},
 	}
 	for _, test := range tests {
@@ -1850,7 +1853,7 @@ func TestNewExportTxMulticoin(t *testing.T) {
 			}()
 
 			parent := vm.LastAcceptedBlockInternal().(*Block)
-			importAmount := uint64(50000000)
+			importAmount := 50 * units.Dione
 			utxoID := dione.UTXOID{TxID: ids.GenerateTestID()}
 
 			utxo := &dione.UTXO{
@@ -1872,7 +1875,7 @@ func TestNewExportTxMulticoin(t *testing.T) {
 			inputID := utxo.InputID()
 
 			tid := ids.GenerateTestID()
-			importAmount2 := uint64(30000000)
+			importAmount2 := 30 * units.Dione
 			utxoID2 := dione.UTXOID{TxID: ids.GenerateTestID()}
 			utxo2 := &dione.UTXO{
 				UTXOID: utxoID2,
@@ -1940,7 +1943,7 @@ func TestNewExportTxMulticoin(t *testing.T) {
 			}
 
 			parent = vm.LastAcceptedBlockInternal().(*Block)
-			exportAmount := uint64(5000000)
+			exportAmount := 1 * units.Dione
 
 			testKeys0Addr := GetEthAddress(testKeys[0])
 			exportId, err := ids.ToShortID(testKeys0Addr[:])
@@ -1983,8 +1986,9 @@ func TestNewExportTxMulticoin(t *testing.T) {
 			}
 
 			addr := GetEthAddress(testKeys[0])
-			if stdb.GetBalance(addr).Cmp(new(big.Int).SetUint64(test.bal*units.Dione)) != 0 {
-				t.Fatalf("address balance %s equal %s not %s", addr.String(), stdb.GetBalance(addr), new(big.Int).SetUint64(test.bal*units.Dione))
+			expectedBalance := new(big.Int).Mul(new(big.Int).SetUint64(test.bal), new(big.Int).SetUint64(units.Dione))
+			if stdb.GetBalance(addr).Cmp(expectedBalance) != 0 {
+				t.Fatalf("address balance %s equal %s not %s", addr.String(), stdb.GetBalance(addr), expectedBalance)
 			}
 			if stdb.GetBalanceMultiCoin(addr, common.BytesToHash(tid[:])).Cmp(new(big.Int).SetUint64(test.balmc)) != 0 {
 				t.Fatalf("address balance multicoin %s equal %s not %s", addr.String(), stdb.GetBalanceMultiCoin(addr, common.BytesToHash(tid[:])), new(big.Int).SetUint64(test.balmc))

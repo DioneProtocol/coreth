@@ -12,6 +12,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/ids"
 	"github.com/DioneProtocol/odysseygo/utils"
 	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
+	"github.com/DioneProtocol/odysseygo/utils/units"
 	"github.com/DioneProtocol/odysseygo/vms/components/chain"
 	"github.com/DioneProtocol/odysseygo/vms/components/dione"
 	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
@@ -119,7 +120,7 @@ func TestMempoolMaxMempoolSizeHandling(t *testing.T) {
 }
 
 func createImportTx(t *testing.T, vm *VM, txID ids.ID, feeAmount uint64) *Tx {
-	var importAmount uint64 = 10000000
+	var importAmount uint64 = 10 * units.Dione
 	importTx := &UnsignedImportTx{
 		NetworkID:    testNetworkID,
 		BlockchainID: testDChainID,

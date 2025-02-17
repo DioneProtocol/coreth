@@ -20,6 +20,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
 	"github.com/DioneProtocol/odysseygo/utils/logging"
 	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/utils/units"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
@@ -36,7 +37,7 @@ func TestEthTxGossip(t *testing.T) {
 	require := require.New(t)
 
 	// set up prefunded address
-	importAmount := uint64(1_000_000_000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, _, sender := GenesisVMWithUTXOs(t, true, genesisJSONLatest, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})

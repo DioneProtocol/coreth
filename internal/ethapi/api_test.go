@@ -367,11 +367,12 @@ func TestEstimateGas(t *testing.T) {
 	t.Parallel()
 	// Initialize test accounts
 	var (
-		accounts = newAccounts(2)
-		genesis  = &core.Genesis{
+		accounts       = newAccounts(2)
+		initialBalance = new(big.Int).Mul(big.NewInt(params.Ether), big.NewInt(2000)) // 2000 ether
+		genesis        = &core.Genesis{
 			Config: params.TestChainConfig,
 			Alloc: core.GenesisAlloc{
-				accounts[0].addr: {Balance: big.NewInt(params.Ether)},
+				accounts[0].addr: {Balance: initialBalance},
 				accounts[1].addr: {Balance: big.NewInt(params.Ether)},
 			},
 		}
@@ -448,11 +449,12 @@ func TestCall(t *testing.T) {
 	t.Parallel()
 	// Initialize test accounts
 	var (
-		accounts = newAccounts(3)
-		genesis  = &core.Genesis{
+		accounts       = newAccounts(3)
+		initialBalance = new(big.Int).Mul(big.NewInt(params.Ether), big.NewInt(2000)) // 2000 ether
+		genesis        = &core.Genesis{
 			Config: params.TestChainConfig,
 			Alloc: core.GenesisAlloc{
-				accounts[0].addr: {Balance: big.NewInt(params.Ether)},
+				accounts[0].addr: {Balance: initialBalance},
 				accounts[1].addr: {Balance: big.NewInt(params.Ether)},
 				accounts[2].addr: {Balance: big.NewInt(params.Ether)},
 			},

@@ -31,7 +31,7 @@ import (
 )
 
 func fundAddressByGenesis(addrs []common.Address) (string, error) {
-	balance := big.NewInt(0xffffffffffffff)
+	balance := new(big.Int).Exp(big.NewInt(10), big.NewInt(23), nil)
 	genesis := &core.Genesis{
 		Difficulty: common.Big0,
 		GasLimit:   uint64(5000000),
@@ -311,7 +311,7 @@ func TestMempoolEthTxsRegossipSingleAccount(t *testing.T) {
 	vm.txPool.SetMinFee(common.Big0)
 
 	// create eth txes
-	ethTxs := getValidEthTxs(key, 10, big.NewInt(226*params.GWei))
+	ethTxs := getValidEthTxs(key, 10, big.NewInt(2_380_953*params.GWei))
 
 	// Notify VM about eth txs
 	errs := vm.txPool.AddRemotesSync(ethTxs)
@@ -354,7 +354,7 @@ func TestMempoolEthTxsRegossip(t *testing.T) {
 	ethTxs := make([]*types.Transaction, 20)
 	ethTxHashes := make([]common.Hash, 20)
 	for i := 0; i < 20; i++ {
-		txs := getValidEthTxs(keys[i], 1, big.NewInt(226*params.GWei))
+		txs := getValidEthTxs(keys[i], 1, big.NewInt(2_380_953*params.GWei))
 		tx := txs[0]
 		ethTxs[i] = tx
 		ethTxHashes[i] = tx.Hash()
