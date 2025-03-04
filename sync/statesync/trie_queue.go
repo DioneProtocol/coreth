@@ -5,8 +5,8 @@ package statesync
 
 import (
 	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
 )
 
 // trieQueue persists storage trie roots with their associated

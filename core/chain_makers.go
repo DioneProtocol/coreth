@@ -32,14 +32,15 @@ import (
 
 	"github.com/DioneProtocol/coreth/consensus"
 	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/consensus/misc/eip4844"
 	"github.com/DioneProtocol/coreth/core/rawdb"
 	"github.com/DioneProtocol/coreth/core/state"
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/core/vm"
-	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/DioneProtocol/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
 )
 
 // BlockGen creates blocks for testing.
@@ -79,6 +80,11 @@ func (b *BlockGen) SetExtra(data []byte) {
 	b.header.Extra = data
 }
 
+// AppendExtra appends data to the extra data field of the generated block.
+func (b *BlockGen) AppendExtra(data []byte) {
+	b.header.Extra = append(b.header.Extra, data...)
+}
+
 // SetNonce sets the nonce field of the generated block.
 func (b *BlockGen) SetNonce(nonce types.BlockNonce) {
 	b.header.Nonce = nonce
@@ -97,13 +103,14 @@ func (b *BlockGen) SetDifficulty(diff *big.Int) {
 // There are a few options can be passed as well in order to run some
 // customized rules.
 // - bc:       enables the ability to query historical block hashes for BLOCKHASH
-// - vmConfig: extends the flexibility for customizing delta rules, e.g. enable extra EIPs
+// - vmConfig: extends the flexibility for customizing evm rules, e.g. enable extra EIPs
 func (b *BlockGen) addTx(bc *BlockChain, vmConfig vm.Config, tx *types.Transaction) {
 	if b.gasPool == nil {
 		b.SetCoinbase(common.Address{})
 	}
 	b.statedb.SetTxContext(tx.Hash(), len(b.txs))
-	receipt, err := ApplyTransaction(b.config, bc, &b.header.Coinbase, b.gasPool, b.statedb, b.header, tx, &b.header.GasUsed, vmConfig)
+	blockContext := NewEVMBlockContext(b.header, bc, &b.header.Coinbase)
+	receipt, err := ApplyTransaction(b.config, bc, blockContext, b.gasPool, b.statedb, b.header, tx, &b.header.GasUsed, vmConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -137,7 +144,7 @@ func (b *BlockGen) AddTxWithChain(bc *BlockChain, tx *types.Transaction) {
 
 // AddTxWithVMConfig adds a transaction to the generated block. If no coinbase has
 // been set, the block's coinbase is set to the zero address.
-// The delta interpreter can be customized with the provided vm config.
+// The evm interpreter can be customized with the provided vm config.
 func (b *BlockGen) AddTxWithVMConfig(tx *types.Transaction, config vm.Config) {
 	b.addTx(nil, config, tx)
 }
@@ -258,7 +265,7 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 			}
 
 			// Write state changes to db
-			root, err := statedb.Commit(config.IsEIP158(b.header.Number), false)
+			root, err := statedb.Commit(b.header.Number.Uint64(), config.IsEIP158(b.header.Number), false)
 			if err != nil {
 				panic(fmt.Sprintf("state write error: %v", err))
 			}
@@ -338,6 +345,19 @@ func makeHeader(chain consensus.ChainReader, config *params.ChainConfig, parent 
 		if err != nil {
 			panic(err)
 		}
+	}
+	if chain.Config().IsCancun(header.Number, header.Time) {
+		var (
+			parentExcessBlobGas uint64
+			parentBlobGasUsed   uint64
+		)
+		if parent.ExcessBlobGas() != nil {
+			parentExcessBlobGas = *parent.ExcessBlobGas()
+			parentBlobGasUsed = *parent.BlobGasUsed()
+		}
+		excessBlobGas := eip4844.CalcExcessBlobGas(parentExcessBlobGas, parentBlobGasUsed)
+		header.ExcessBlobGas = &excessBlobGas
+		header.BlobGasUsed = new(uint64)
 	}
 	return header
 }

@@ -1,0 +1,2 @@
+github.com/DioneProtocol/coreth/precompile/precompileconfig=Predicater,Config,ChainConfig,Accepter=precompile/precompileconfig/mocks.go
+github.com/DioneProtocol/coreth/precompile/contract=BlockContext,AccessibleState,StateDB=precompile/contract/mocks.go

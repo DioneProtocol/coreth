@@ -29,6 +29,7 @@ package types
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 var (
@@ -38,7 +39,7 @@ var (
 	// EmptyUncleHash is the known hash of the empty uncle set.
 	EmptyUncleHash = rlpHash([]*Header(nil)) // 1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347
 
-	// EmptyCodeHash is the known hash of the empty DELTA bytecode.
+	// EmptyCodeHash is the known hash of the empty EVM bytecode.
 	EmptyCodeHash = crypto.Keccak256Hash(nil) // c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470
 
 	// EmptyTxsHash is the known hash of the empty transaction set.
@@ -50,3 +51,13 @@ var (
 	// EmptyExtDataHash is the known hash of empty extdata bytes.
 	EmptyExtDataHash = rlpHash([]byte(nil))
 )
+
+// TrieRootHash returns the hash itself if it's non-empty or the predefined
+// emptyHash one instead.
+func TrieRootHash(hash common.Hash) common.Hash {
+	if hash == (common.Hash{}) {
+		log.Error("Zero trie root hash!")
+		return EmptyRootHash
+	}
+	return hash
+}

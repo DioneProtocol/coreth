@@ -11,12 +11,12 @@ import (
 	"github.com/DioneProtocol/coreth/params"
 
 	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/ethdb/memorydb"
 	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	"github.com/DioneProtocol/coreth/sync/handlers/stats"
 	"github.com/DioneProtocol/odysseygo/ids"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -94,7 +94,7 @@ func TestCodeRequestHandler(t *testing.T) {
 			responseBytes, err := codeRequestHandler.OnCodeRequest(context.Background(), ids.GenerateTestNodeID(), 1, request)
 			assert.NoError(t, err)
 
-			// If the expected resposne is empty, assert that the handler returns an empty response and return early.
+			// If the expected response is empty, assert that the handler returns an empty response and return early.
 			if len(expectedResponse) == 0 {
 				assert.Len(t, responseBytes, 0, "expected response to be empty")
 				return

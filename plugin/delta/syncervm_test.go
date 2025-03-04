@@ -37,12 +37,12 @@ import (
 	"github.com/DioneProtocol/coreth/core"
 	"github.com/DioneProtocol/coreth/core/rawdb"
 	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/DioneProtocol/coreth/metrics"
 	"github.com/DioneProtocol/coreth/params"
 	statesyncclient "github.com/DioneProtocol/coreth/sync/client"
 	"github.com/DioneProtocol/coreth/sync/statesync"
 	"github.com/DioneProtocol/coreth/trie"
+	"github.com/ethereum/go-ethereum/ethdb"
 )
 
 func TestSkipStateSync(t *testing.T) {
@@ -287,7 +287,7 @@ func createSyncServerAndClientVMs(t *testing.T, test syncTest) *syncVMSetup {
 			// spend the UTXOs from shared memory
 			importTx, err = serverVM.newImportTx(serverVM.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 			require.NoError(err)
-			require.NoError(serverVM.issueTx(importTx, true /*=local*/))
+			require.NoError(serverVM.mempool.AddLocalTx(importTx))
 		case 1:
 			// export some of the imported UTXOs to test exportTx is properly synced
 			exportTx, err = serverVM.newExportTx(
@@ -299,7 +299,7 @@ func createSyncServerAndClientVMs(t *testing.T, test syncTest) *syncVMSetup {
 				[]*secp256k1.PrivateKey{testKeys[0]},
 			)
 			require.NoError(err)
-			require.NoError(serverVM.issueTx(exportTx, true /*=local*/))
+			require.NoError(serverVM.mempool.AddLocalTx(exportTx))
 		default: // Generate simple transfer transactions.
 			pk := testKeys[0].ToECDSA()
 			tx := types.NewTransaction(gen.TxNonce(testEthAddrs[0]), testEthAddrs[1], common.Big1, params.TxGas, initialBaseFee, nil)
@@ -540,7 +540,7 @@ func patchBlock(blk *types.Block, root common.Hash, db ethdb.Database) *types.Bl
 	header := blk.Header()
 	header.Root = root
 	receipts := rawdb.ReadRawReceipts(db, blk.Hash(), blk.NumberU64())
-	newBlk := types.NewBlock(
+	newBlk := types.NewBlockWithExtData(
 		header, blk.Transactions(), blk.Uncles(), receipts, trie.NewStackTrie(nil), blk.ExtData(), true,
 	)
 	rawdb.WriteBlock(db, newBlk)
@@ -575,7 +575,7 @@ func generateAndAcceptBlocks(t *testing.T, vm *VM, numBlocks int, gen func(int, 
 	_, _, err := core.GenerateChain(
 		vm.chainConfig,
 		vm.blockChain.LastAcceptedBlock(),
-		dummy.NewDummyEngine(vm.createConsensusCallbacks()),
+		dummy.NewFakerWithCallbacks(vm.createConsensusCallbacks()),
 		vm.chaindb,
 		numBlocks,
 		10,

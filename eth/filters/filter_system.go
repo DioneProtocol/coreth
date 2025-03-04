@@ -38,12 +38,11 @@ import (
 	"github.com/DioneProtocol/coreth/core"
 	"github.com/DioneProtocol/coreth/core/bloombits"
 	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/core/vm"
-	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/DioneProtocol/coreth/interfaces"
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/DioneProtocol/coreth/rpc"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 )
@@ -85,7 +84,7 @@ type Backend interface {
 	ServiceFilter(ctx context.Context, session *bloombits.MatcherSession)
 
 	// Added to the backend interface to support limiting of logs requests
-	GetVMConfig() *vm.Config
+	IsAllowUnfinalizedQueries() bool
 	LastAcceptedBlock() *types.Block
 	GetMaxBlocksPerRequest() int64
 }
@@ -519,15 +518,6 @@ func (es *EventSystem) handlePendingLogs(filters filterIndex, ev []*types.Log) {
 	}
 }
 
-func (es *EventSystem) handleRemovedLogs(filters filterIndex, ev core.RemovedLogsEvent) {
-	for _, f := range filters[LogsSubscription] {
-		matchedLogs := filterLogs(ev.Logs, f.logsCrit.FromBlock, f.logsCrit.ToBlock, f.logsCrit.Addresses, f.logsCrit.Topics)
-		if len(matchedLogs) > 0 {
-			f.logs <- matchedLogs
-		}
-	}
-}
-
 func (es *EventSystem) handleTxsEvent(filters filterIndex, ev core.NewTxsEvent, accepted bool) {
 	for _, f := range filters[PendingTransactionsSubscription] {
 		f.txs <- ev.Txs
@@ -579,7 +569,7 @@ func (es *EventSystem) eventLoop() {
 		case ev := <-es.logsAcceptedCh:
 			es.handleAcceptedLogs(index, ev)
 		case ev := <-es.rmLogsCh:
-			es.handleRemovedLogs(index, ev)
+			es.handleLogs(index, ev.Logs)
 		case ev := <-es.pendingLogsCh:
 			es.handlePendingLogs(index, ev)
 		case ev := <-es.chainCh:

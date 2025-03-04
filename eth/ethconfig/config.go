@@ -30,7 +30,8 @@ import (
 	"time"
 
 	"github.com/DioneProtocol/coreth/core"
-	"github.com/DioneProtocol/coreth/core/txpool"
+	"github.com/DioneProtocol/coreth/core/txpool/blobpool"
+	"github.com/DioneProtocol/coreth/core/txpool/legacypool"
 	"github.com/DioneProtocol/coreth/eth/gasprice"
 	"github.com/DioneProtocol/coreth/miner"
 	"github.com/ethereum/go-ethereum/common"
@@ -53,18 +54,20 @@ var DefaultConfig = NewDefaultConfig()
 
 func NewDefaultConfig() Config {
 	return Config{
-		NetworkId:             1,
-		TrieCleanCache:        512,
-		TrieDirtyCache:        256,
-		TrieDirtyCommitTarget: 20,
-		SnapshotCache:         256,
-		AcceptedCacheSize:     32,
-		Miner:                 miner.Config{},
-		TxPool:                txpool.DefaultConfig,
-		RPCGasCap:             25000000,
-		RPCDELTATimeout:       5 * time.Second,
-		GPO:                   DefaultFullGPOConfig,
-		RPCTxFeeCap:           1, // 1 DIONE
+		NetworkId:                 1,
+		TrieCleanCache:            512,
+		TrieDirtyCache:            256,
+		TrieDirtyCommitTarget:     20,
+		TriePrefetcherParallelism: 16,
+		SnapshotCache:             256,
+		AcceptedCacheSize:         32,
+		Miner:                     miner.Config{},
+		TxPool:                    legacypool.DefaultConfig,
+		BlobPool:                  blobpool.DefaultConfig,
+		RPCGasCap:                 25000000,
+		RPCEVMTimeout:             5 * time.Second,
+		GPO:                       DefaultFullGPOConfig,
+		RPCTxFeeCap:               1, // 1 DIONE
 	}
 }
 
@@ -94,13 +97,12 @@ type Config struct {
 	SkipBcVersionCheck bool `toml:"-"`
 
 	// TrieDB and snapshot options
-	TrieCleanCache        int
-	TrieCleanJournal      string
-	TrieCleanRejournal    time.Duration
-	TrieDirtyCache        int
-	TrieDirtyCommitTarget int
-	SnapshotCache         int
-	Preimages             bool
+	TrieCleanCache            int
+	TrieDirtyCache            int
+	TrieDirtyCommitTarget     int
+	TriePrefetcherParallelism int
+	SnapshotCache             int
+	Preimages                 bool
 
 	// AcceptedCacheSize is the depth of accepted headers cache and accepted
 	// logs cache at the accepted tip.
@@ -110,7 +112,8 @@ type Config struct {
 	Miner miner.Config
 
 	// Transaction pool options
-	TxPool txpool.Config
+	TxPool   legacypool.Config
+	BlobPool blobpool.Config
 
 	// Gas Price Oracle options
 	GPO gasprice.Config
@@ -121,8 +124,8 @@ type Config struct {
 	// RPCGasCap is the global gas cap for eth-call variants.
 	RPCGasCap uint64 `toml:",omitempty"`
 
-	// RPCDELTATimeout is the global timeout for eth-call.
-	RPCDELTATimeout time.Duration
+	// RPCEVMTimeout is the global timeout for eth-call.
+	RPCEVMTimeout time.Duration
 
 	// RPCTxFeeCap is the global transaction fee(price * gaslimit) cap for
 	// send-transaction variants. The unit is ether.
@@ -156,4 +159,9 @@ type Config struct {
 	//  * 0:   means no limit
 	//  * N:   means N block limit [HEAD-N+1, HEAD] and delete extra indexes
 	TxLookupLimit uint64
+
+	// SkipTxIndexing skips indexing transactions.
+	// This is useful for validators that don't need to index transactions.
+	// TxLookupLimit can be still used to control unindexing old transactions.
+	SkipTxIndexing bool
 }

@@ -31,9 +31,9 @@ import (
 	"github.com/DioneProtocol/coreth/core/state"
 	"github.com/DioneProtocol/coreth/core/state/snapshot"
 	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/DioneProtocol/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
 )
 
 func MakePreState(db ethdb.Database, accounts core.GenesisAlloc, snapshotter bool) (*snapshot.Tree, *state.StateDB) {
@@ -48,14 +48,14 @@ func MakePreState(db ethdb.Database, accounts core.GenesisAlloc, snapshotter boo
 		}
 	}
 	// Commit and re-open to start with a clean state.
-	root, _ := statedb.Commit(false, false)
+	root, _ := statedb.Commit(0, false, false)
 
 	var snaps *snapshot.Tree
 	if snapshotter {
 		snapconfig := snapshot.Config{
 			CacheSize:  1,
-			AsyncBuild: false,
 			NoBuild:    false,
+			AsyncBuild: false,
 			SkipVerify: true,
 		}
 		snaps, _ = snapshot.New(snapconfig, db, sdb.TrieDB(), common.Hash{}, root)

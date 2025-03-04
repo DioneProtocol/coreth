@@ -61,9 +61,9 @@ type Server struct {
 	codecs map[ServerCodec]struct{}
 	run    atomic.Bool
 
-	httpBodyLimit      int
-	batchItemLimit     int
-	batchResponseLimit int
+	maxRequestContentLength int
+	batchItemLimit          int
+	batchResponseLimit      int
 }
 
 // NewServer creates a new server instance with no registered handlers.
@@ -73,10 +73,10 @@ type Server struct {
 // incoming requests.
 func NewServer(maximumDuration time.Duration) *Server {
 	server := &Server{
-		idgen:           randomIDGenerator(),
-		codecs:          make(map[ServerCodec]struct{}),
-		maximumDuration: maximumDuration,
-		httpBodyLimit:   defaultBodyLimit,
+		idgen:                   randomIDGenerator(),
+		codecs:                  make(map[ServerCodec]struct{}),
+		maximumDuration:         maximumDuration,
+		maxRequestContentLength: maxRequestContentLength,
 	}
 	server.run.Store(true)
 	// Register the default service providing meta information about the RPC service such
@@ -101,7 +101,7 @@ func (s *Server) SetBatchLimits(itemLimit, maxResponseSize int) {
 //
 // This method should be called before processing any requests via ServeHTTP.
 func (s *Server) SetHTTPBodyLimit(limit int) {
-	s.httpBodyLimit = limit
+	s.maxRequestContentLength = limit
 }
 
 // RegisterName creates a service for the given receiver type under the given name. When no
@@ -125,7 +125,12 @@ func (s *Server) ServeCodec(codec ServerCodec, options CodecOption, apiMaxDurati
 	}
 	defer s.untrackCodec(codec)
 
-	c := initClient(codec, s.idgen, &s.services, apiMaxDuration, refillRate, maxStored)
+	cfg := &clientConfig{
+		idgen:              s.idgen,
+		batchItemLimit:     s.batchItemLimit,
+		batchResponseLimit: s.batchResponseLimit,
+	}
+	c := initClient(codec, &s.services, cfg, apiMaxDuration, refillRate, maxStored)
 	<-codec.closed()
 	c.Close()
 }

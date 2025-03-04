@@ -12,12 +12,12 @@ import (
 
 var _ CrossChainRequest = EthCallRequest{}
 
-// EthCallRequest has the JSON Data necessary to execute a new DELTA call on the blockchain
+// EthCallRequest has the JSON Data necessary to execute a new EVM call on the blockchain
 type EthCallRequest struct {
 	RequestArgs []byte `serialize:"true"`
 }
 
-// EthCallResponse represents the JSON return value of the executed DELTA call
+// EthCallResponse represents the JSON return value of the executed EVM call
 type EthCallResponse struct {
 	ExecutionResult []byte `serialize:"true"`
 }
@@ -27,7 +27,7 @@ func (e EthCallRequest) String() string {
 	return fmt.Sprintf("%#v", e)
 }
 
-// Handle returns the encoded EthCallResponse by executing DELTA call with the given EthCallRequest
+// Handle returns the encoded EthCallResponse by executing EVM call with the given EthCallRequest
 func (e EthCallRequest) Handle(ctx context.Context, requestingChainID ids.ID, requestID uint32, handler CrossChainRequestHandler) ([]byte, error) {
 	return handler.HandleEthCallRequest(ctx, requestingChainID, requestID, e)
 }

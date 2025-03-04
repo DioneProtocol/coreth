@@ -12,8 +12,6 @@ import (
 
 	"github.com/DioneProtocol/coreth/core/state/snapshot"
 	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/ethdb"
-	"github.com/DioneProtocol/coreth/ethdb/memorydb"
 	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	"github.com/DioneProtocol/coreth/sync/handlers/stats"
 	"github.com/DioneProtocol/coreth/sync/syncutils"
@@ -21,9 +19,10 @@ import (
 	"github.com/DioneProtocol/coreth/utils"
 	"github.com/DioneProtocol/odysseygo/codec"
 	"github.com/DioneProtocol/odysseygo/ids"
-	"github.com/DioneProtocol/odysseygo/utils/math"
 	"github.com/DioneProtocol/odysseygo/utils/wrappers"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/log"
 )
 
@@ -102,8 +101,8 @@ func (lrh *LeafsRequestHandler) OnLeafsRequest(ctx context.Context, nodeID ids.N
 	// TODO: We should know the state root that accounts correspond to,
 	// as this information will be necessary to access storage tries when
 	// the trie is path based.
-	stateRoot := common.Hash{}
-	t, err := trie.New(trie.StorageTrieID(stateRoot, leafsRequest.Account, leafsRequest.Root), lrh.trieDB)
+	// stateRoot := common.Hash{}
+	t, err := trie.New(trie.TrieID(leafsRequest.Root), lrh.trieDB)
 	if err != nil {
 		log.Debug("error opening trie when processing request, dropping request", "nodeID", nodeID, "requestID", requestID, "root", leafsRequest.Root, "err", err)
 		lrh.stats.IncMissingRoot()
@@ -284,7 +283,7 @@ func (rb *responseBuilder) fillFromSnapshot(ctx context.Context) (bool, error) {
 	// segments of the data and use them in the response.
 	hasGap := false
 	for i := 0; i < len(snapKeys); i += segmentLen {
-		segmentEnd := math.Min(i+segmentLen, len(snapKeys))
+		segmentEnd := min(i+segmentLen, len(snapKeys))
 		proof, ok, _, err := rb.isRangeValid(snapKeys[i:segmentEnd], snapVals[i:segmentEnd], hasGap)
 		if err != nil {
 			rb.stats.IncProofError()
@@ -320,7 +319,7 @@ func (rb *responseBuilder) fillFromSnapshot(ctx context.Context) (bool, error) {
 		// all the key/vals in the segment are valid, but possibly shorten segmentEnd
 		// here to respect limit. this is necessary in case the number of leafs we read
 		// from the trie is more than the length of a segment which cannot be validated. limit
-		segmentEnd = math.Min(segmentEnd, i+int(rb.limit)-len(rb.response.Keys))
+		segmentEnd = min(segmentEnd, i+int(rb.limit)-len(rb.response.Keys))
 		rb.response.Keys = append(rb.response.Keys, snapKeys[i:segmentEnd]...)
 		rb.response.Vals = append(rb.response.Vals, snapVals[i:segmentEnd]...)
 
@@ -342,14 +341,14 @@ func (rb *responseBuilder) generateRangeProof(start []byte, keys [][]byte) (*mem
 		start = bytes.Repeat([]byte{0x00}, rb.keyLength)
 	}
 
-	if err := rb.t.Prove(start, 0, proof); err != nil {
+	if err := rb.t.Prove(start, proof); err != nil {
 		_ = proof.Close() // closing memdb does not error
 		return nil, err
 	}
 	if len(keys) > 0 {
 		// If there is a non-zero number of keys, set [end] for the range proof to the last key.
 		end := keys[len(keys)-1]
-		if err := rb.t.Prove(end, 0, proof); err != nil {
+		if err := rb.t.Prove(end, proof); err != nil {
 			_ = proof.Close() // closing memdb does not error
 			return nil, err
 		}
@@ -432,7 +431,11 @@ func (rb *responseBuilder) fillFromTrie(ctx context.Context, end []byte) (bool, 
 	defer func() { rb.trieReadTime += time.Since(startTime) }()
 
 	// create iterator to iterate the trie
-	it := trie.NewIterator(rb.t.NodeIterator(rb.nextKey()))
+	nodeIt, err := rb.t.NodeIterator(rb.nextKey())
+	if err != nil {
+		return false, err
+	}
+	it := trie.NewIterator(nodeIt)
 	more := false
 	for it.Next() {
 		// if we're at the end, break this loop

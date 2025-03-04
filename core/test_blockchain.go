@@ -13,10 +13,10 @@ import (
 	"github.com/DioneProtocol/coreth/core/rawdb"
 	"github.com/DioneProtocol/coreth/core/state"
 	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb"
 )
 
 var TestCallbacks = dummy.ConsensusCallbacks{
@@ -1341,7 +1341,7 @@ func TestInsertChainInvalidBlockFee(t *testing.T, create func(db ethdb.Database,
 
 	// This call generates a chain of 3 blocks.
 	signer := types.LatestSigner(params.TestChainConfig)
-	eng := dummy.NewComplexETHFaker(&TestCallbacks)
+	eng := dummy.NewFakerWithMode(TestCallbacks, dummy.Mode{ModeSkipBlockFee: true, ModeSkipCoinbase: true})
 	_, chain, _, err := GenerateChainWithGenesis(gspec, eng, 3, 0, func(i int, gen *BlockGen) {
 		tx := types.NewTx(&types.DynamicFeeTx{
 			ChainID:   params.TestChainConfig.ChainID,

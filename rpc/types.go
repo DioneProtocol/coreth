@@ -31,7 +31,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"strconv"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -73,10 +72,11 @@ type jsonWriter interface {
 type BlockNumber int64
 
 const (
-	AcceptedBlockNumber = BlockNumber(-3)
-	LatestBlockNumber   = BlockNumber(-2)
-	PendingBlockNumber  = BlockNumber(-1)
-	EarliestBlockNumber = BlockNumber(0)
+	SafeBlockNumber      = BlockNumber(-4)
+	FinalizedBlockNumber = BlockNumber(-3)
+	LatestBlockNumber    = BlockNumber(-2)
+	PendingBlockNumber   = BlockNumber(-1)
+	EarliestBlockNumber  = BlockNumber(0)
 )
 
 // UnmarshalJSON parses the given JSON fragment into a BlockNumber. It supports:
@@ -101,10 +101,12 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 	case "pending":
 		*bn = PendingBlockNumber
 		return nil
-	// Include "finalized" and "safe" as an option for compatibility with
-	// FinalizedBlockNumber and SafeBlockNumber from geth.
-	case "accepted", "finalized", "safe":
-		*bn = AcceptedBlockNumber
+	// Include "finalized" as an option for compatibility with FinalizedBlockNumber from geth.
+	case "accepted", "finalized":
+		*bn = FinalizedBlockNumber
+		return nil
+	case "safe":
+		*bn = SafeBlockNumber
 		return nil
 	}
 
@@ -139,8 +141,10 @@ func (bn BlockNumber) String() string {
 		return "latest"
 	case PendingBlockNumber:
 		return "pending"
-	case AcceptedBlockNumber:
+	case FinalizedBlockNumber:
 		return "accepted"
+	case SafeBlockNumber:
+		return "safe"
 	default:
 		if bn < 0 {
 			return fmt.Sprintf("<invalid %d>", bn)
@@ -151,7 +155,11 @@ func (bn BlockNumber) String() string {
 
 // IsAccepted returns true if this blockNumber should be treated as a request for the last accepted block
 func (bn BlockNumber) IsAccepted() bool {
-	return bn < EarliestBlockNumber && bn >= AcceptedBlockNumber
+	return bn < EarliestBlockNumber && bn >= SafeBlockNumber
+}
+
+func (bn BlockNumber) IsLatest() bool {
+	return bn == LatestBlockNumber || bn == PendingBlockNumber
 }
 
 type BlockNumberOrHash struct {
@@ -191,10 +199,13 @@ func (bnh *BlockNumberOrHash) UnmarshalJSON(data []byte) error {
 		bn := PendingBlockNumber
 		bnh.BlockNumber = &bn
 		return nil
-	// Include "finalized" and "safe" as an option for compatibility with
-	// FinalizedBlockNumber and SafeBlockNumber from geth.
-	case "accepted", "finalized", "safe":
-		bn := AcceptedBlockNumber
+	// Include "finalized" as an option for compatibility with FinalizedBlockNumber from geth.
+	case "accepted", "finalized":
+		bn := FinalizedBlockNumber
+		bnh.BlockNumber = &bn
+		return nil
+	case "safe":
+		bn := SafeBlockNumber
 		bnh.BlockNumber = &bn
 		return nil
 	default:
@@ -230,7 +241,7 @@ func (bnh *BlockNumberOrHash) Number() (BlockNumber, bool) {
 
 func (bnh *BlockNumberOrHash) String() string {
 	if bnh.BlockNumber != nil {
-		return strconv.Itoa(int(*bnh.BlockNumber))
+		return bnh.BlockNumber.String()
 	}
 	if bnh.BlockHash != nil {
 		return bnh.BlockHash.String()

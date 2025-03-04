@@ -46,8 +46,8 @@ type ChainContext interface {
 	GetHeader(common.Hash, uint64) *types.Header
 }
 
-// NewDELTABlockContext creates a new context for use in the DELTA.
-func NewDELTABlockContext(header *types.Header, chain ChainContext, author *common.Address) vm.BlockContext {
+// NewEVMBlockContext creates a new context for use in the EVM.
+func NewEVMBlockContext(header *types.Header, chain ChainContext, author *common.Address) vm.BlockContext {
 	var (
 		beneficiary common.Address
 		baseFee     *big.Int
@@ -74,14 +74,16 @@ func NewDELTABlockContext(header *types.Header, chain ChainContext, author *comm
 		Difficulty:        new(big.Int).Set(header.Difficulty),
 		BaseFee:           baseFee,
 		GasLimit:          header.GasLimit,
+		ExcessBlobGas:     header.ExcessBlobGas,
 	}
 }
 
-// NewDELTATxContext creates a new transaction context for a single transaction.
-func NewDELTATxContext(msg *Message) vm.TxContext {
+// NewEVMTxContext creates a new transaction context for a single transaction.
+func NewEVMTxContext(msg *Message) vm.TxContext {
 	return vm.TxContext{
-		Origin:   msg.From,
-		GasPrice: new(big.Int).Set(msg.GasPrice),
+		Origin:     msg.From,
+		GasPrice:   new(big.Int).Set(msg.GasPrice),
+		BlobHashes: msg.BlobHashes,
 	}
 }
 

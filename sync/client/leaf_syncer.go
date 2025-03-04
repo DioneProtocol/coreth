@@ -9,12 +9,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/DioneProtocol/coreth/plugin/delta/message"
+	"github.com/DioneProtocol/coreth/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/DioneProtocol/coreth/plugin/delta/message"
-	"github.com/DioneProtocol/coreth/utils"
 )
 
 var (

@@ -1471,13 +1471,11 @@ var bindTests = []struct {
 		"github.com/DioneProtocol/coreth/accounts/abi/bind/backends"
 		"github.com/DioneProtocol/coreth/core"
 		"github.com/ethereum/go-ethereum/crypto"
-		"github.com/DioneProtocol/coreth/params"
 		`,
 		`
 		// Initialize test accounts
 		key, _ := crypto.GenerateKey()
 		auth, _ := bind.NewKeyedTransactorWithChainID(key, big.NewInt(1337))
-		auth.GasFeeCap = new(big.Int).SetInt64(params.ApricotPhase4MaxBaseFee)
 		initialBalance := new(big.Int).Mul(big.NewInt(1000000000000000000), big.NewInt(100000))
 		sim := backends.NewSimulatedBackend(core.GenesisAlloc{auth.From: {Balance: initialBalance}}, 10000000)
 		defer sim.Close()
@@ -1900,7 +1898,7 @@ var bindTests = []struct {
 			if count != 1 {
 				t.Fatal("Unexpected contract event number")
 			}
-	   `,
+			`,
 		nil,
 		nil,
 		nil,
@@ -2197,7 +2195,7 @@ func golangBindings(t *testing.T, overload bool) {
 	if out, err := replacer.CombinedOutput(); err != nil {
 		t.Fatalf("failed to replace binding test dependency to current source tree: %v\n%s", err, out)
 	}
-	tidier := exec.Command(gocmd, "mod", "tidy", "-compat=1.19")
+	tidier := exec.Command(gocmd, "mod", "tidy", "-compat=1.21")
 	tidier.Dir = pkg
 	if out, err := tidier.CombinedOutput(); err != nil {
 		t.Fatalf("failed to tidy Go module file: %v\n%s", err, out)

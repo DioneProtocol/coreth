@@ -37,13 +37,13 @@ import (
 
 var _ OrionNodesGetter = &orionNodesGetter{}
 
-type stateGetter interface {
+type StateGetter interface {
 	GetState(addr common.Address, hash common.Hash) common.Hash
 }
 
 type OrionNodesGetter interface {
-	GetLastUpdateTimestamp(stateGetter) uint64
-	GetNodesList(stateGetter) []ids.NodeID
+	GetLastUpdateTimestamp(StateGetter) uint64
+	GetNodesList(StateGetter) []ids.NodeID
 }
 
 type orionNodesGetter struct {
@@ -63,16 +63,16 @@ func NewOrionGetter(contract common.Address, lastUpdateSlot, orionsListSlot comm
 	}
 }
 
-func (o *orionNodesGetter) getUint64(state stateGetter, slot common.Hash) uint64 {
+func (o *orionNodesGetter) getUint64(state StateGetter, slot common.Hash) uint64 {
 	hash := state.GetState(o.contract, slot)
 	return binary.BigEndian.Uint64(hash[24:])
 }
 
-func (o *orionNodesGetter) GetLastUpdateTimestamp(state stateGetter) uint64 {
+func (o *orionNodesGetter) GetLastUpdateTimestamp(state StateGetter) uint64 {
 	return o.getUint64(state, o.lastUpdateSlot)
 }
 
-func (o *orionNodesGetter) GetNodesList(state stateGetter) []ids.NodeID {
+func (o *orionNodesGetter) GetNodesList(state StateGetter) []ids.NodeID {
 	size := o.getUint64(state, o.sizeSlot)
 	nodeIDs := make([]ids.NodeID, 0, size)
 

@@ -11,13 +11,13 @@ import (
 	"sync"
 
 	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	syncclient "github.com/DioneProtocol/coreth/sync/client"
 	"github.com/DioneProtocol/coreth/trie"
 	"github.com/DioneProtocol/coreth/utils"
 	"github.com/DioneProtocol/odysseygo/utils/wrappers"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
 )
 

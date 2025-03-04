@@ -31,7 +31,7 @@ func NewCrossChainHandler(b ethapi.Backend, codec codec.Manager) CrossChainReque
 }
 
 // HandleEthCallRequests returns an encoded EthCallResponse to the given [ethCallRequest]
-// This function executes DELTA Call against the state associated with [rpc.AcceptedBlockNumber] with the given
+// This function executes EVM Call against the state associated with [rpc.AcceptedBlockNumber] with the given
 // transaction call object [ethCallRequest].
 // This function does not return an error as errors are treated as FATAL to the node.
 func (c *crossChainHandler) HandleEthCallRequest(ctx context.Context, requestingChainID ids.ID, requestID uint32, ethCallRequest EthCallRequest) ([]byte, error) {
@@ -41,7 +41,7 @@ func (c *crossChainHandler) HandleEthCallRequest(ctx context.Context, requesting
 	transactionArgs := ethapi.TransactionArgs{}
 	err := json.Unmarshal(ethCallRequest.RequestArgs, &transactionArgs)
 	if err != nil {
-		log.Debug("error occurred with JSON unmarshalling ethCallRequest.RequestArgs", "err", err)
+		log.Error("error occurred with JSON unmarshalling ethCallRequest.RequestArgs", "err", err)
 		return nil, nil
 	}
 
@@ -52,16 +52,16 @@ func (c *crossChainHandler) HandleEthCallRequest(ctx context.Context, requesting
 		lastAcceptedBlockNumberOrHash,
 		nil,
 		nil,
-		c.backend.RPCDELTATimeout(),
+		c.backend.RPCEVMTimeout(),
 		c.backend.RPCGasCap())
 	if err != nil {
-		log.Debug("error occurred with EthCall", "err", err, "transactionArgs", ethCallRequest.RequestArgs, "blockNumberOrHash", lastAcceptedBlockNumberOrHash)
+		log.Error("error occurred with EthCall", "err", err, "transactionArgs", ethCallRequest.RequestArgs, "blockNumberOrHash", lastAcceptedBlockNumberOrHash)
 		return nil, nil
 	}
 
 	executionResult, err := json.Marshal(&result)
 	if err != nil {
-		log.Debug("error occurred with JSON marshalling result", "err", err)
+		log.Error("error occurred with JSON marshalling result", "err", err)
 		return nil, nil
 	}
 
@@ -71,7 +71,7 @@ func (c *crossChainHandler) HandleEthCallRequest(ctx context.Context, requesting
 
 	responseBytes, err := c.crossChainCodec.Marshal(Version, response)
 	if err != nil {
-		log.Warn("error occurred with marshalling EthCallResponse", "err", err, "EthCallResponse", response)
+		log.Error("error occurred with marshalling EthCallResponse", "err", err, "EthCallResponse", response)
 		return nil, nil
 	}
 

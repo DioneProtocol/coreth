@@ -35,8 +35,8 @@ import (
 	"strings"
 
 	"github.com/DioneProtocol/coreth/accounts/abi/bind"
+	"github.com/DioneProtocol/coreth/cmd/utils"
 	"github.com/DioneProtocol/coreth/internal/flags"
-	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/common/compiler"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"

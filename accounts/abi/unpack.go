@@ -28,6 +28,7 @@ package abi
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -77,7 +78,7 @@ func ReadInteger(typ Type, b []byte) (interface{}, error) {
 	}
 
 	// big.SetBytes can't tell if a number is negative or positive in itself.
-	// On DELTA, if the returned number > max int256, it is negative.
+	// On EVM, if the returned number > max int256, it is negative.
 	// A number is > max int256 if the bit at position 255 is set.
 	if ret.Bit(255) == 1 {
 		ret.Add(MaxUint256, new(big.Int).Neg(ret))
@@ -135,7 +136,7 @@ func readBool(word []byte) (bool, error) {
 // readFunctionType enforces that standard by always presenting it as a 24-array (address + sig = 24 bytes)
 func readFunctionType(t Type, word []byte) (funcTy [24]byte, err error) {
 	if t.T != FunctionTy {
-		return [24]byte{}, fmt.Errorf("abi: invalid type in call to make function type byte array")
+		return [24]byte{}, errors.New("abi: invalid type in call to make function type byte array")
 	}
 	if garbage := binary.BigEndian.Uint64(word[24:32]); garbage != 0 {
 		err = fmt.Errorf("abi: got improperly encoded function type, got %v", word)
@@ -148,7 +149,7 @@ func readFunctionType(t Type, word []byte) (funcTy [24]byte, err error) {
 // ReadFixedBytes uses reflection to create a fixed array to be read from.
 func ReadFixedBytes(t Type, word []byte) (interface{}, error) {
 	if t.T != FixedBytesTy {
-		return nil, fmt.Errorf("abi: invalid type in call to make fixed byte array")
+		return nil, errors.New("abi: invalid type in call to make fixed byte array")
 	}
 	// convert
 	array := reflect.New(t.GetType()).Elem()
@@ -176,7 +177,7 @@ func forEachUnpack(t Type, output []byte, start, size int) (interface{}, error) 
 		// declare our array
 		refSlice = reflect.New(t.GetType()).Elem()
 	} else {
-		return nil, fmt.Errorf("abi: invalid type in array/slice unpacking stage")
+		return nil, errors.New("abi: invalid type in array/slice unpacking stage")
 	}
 
 	// Arrays have packed elements, resulting in longer unpack steps.

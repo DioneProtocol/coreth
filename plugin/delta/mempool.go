@@ -11,6 +11,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/cache"
 	"github.com/DioneProtocol/odysseygo/ids"
 	"github.com/DioneProtocol/odysseygo/network/p2p/gossip"
+	"github.com/DioneProtocol/odysseygo/snow"
 
 	"github.com/DioneProtocol/coreth/metrics"
 	"github.com/ethereum/go-ethereum/log"
@@ -20,7 +21,12 @@ const (
 	discardedTxsCacheSize = 50
 )
 
-var errNoGasUsed = errors.New("no gas used")
+var (
+	errTxAlreadyKnown = errors.New("tx already known")
+	errNoGasUsed      = errors.New("no gas used")
+
+	_ gossip.Set[*GossipAtomicTx] = (*Mempool)(nil)
+)
 
 // mempoolMetrics defines the metrics for the atomic mempool
 type mempoolMetrics struct {
@@ -50,8 +56,7 @@ func newMempoolMetrics() *mempoolMetrics {
 type Mempool struct {
 	lock sync.RWMutex
 
-	// DIONEAssetID is the fee paying currency of any atomic transaction
-	DIONEAssetID ids.ID
+	ctx *snow.Context
 	// maxSize is the maximum number of transactions allowed to be kept in mempool
 	maxSize int
 	// currentTxs is the set of transactions about to be added to a block.
@@ -75,17 +80,19 @@ type Mempool struct {
 	bloom *gossip.BloomFilter
 
 	metrics *mempoolMetrics
+
+	verify func(tx *Tx) error
 }
 
 // NewMempool returns a Mempool with [maxSize]
-func NewMempool(DIONEAssetID ids.ID, maxSize int) (*Mempool, error) {
+func NewMempool(ctx *snow.Context, maxSize int, verify func(tx *Tx) error) (*Mempool, error) {
 	bloom, err := gossip.NewBloomFilter(txGossipBloomMaxItems, txGossipBloomFalsePositiveRate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize bloom filter: %w", err)
 	}
 
 	return &Mempool{
-		DIONEAssetID: DIONEAssetID,
+		ctx:          ctx,
 		issuedTxs:    make(map[ids.ID]*Tx),
 		discardedTxs: &cache.LRU[ids.ID, *Tx]{Size: discardedTxsCacheSize},
 		currentTxs:   make(map[ids.ID]*Tx),
@@ -95,6 +102,7 @@ func NewMempool(DIONEAssetID ids.ID, maxSize int) (*Mempool, error) {
 		utxoSpenders: make(map[ids.ID]*Tx),
 		bloom:        bloom,
 		metrics:      newMempoolMetrics(),
+		verify:       verify,
 	}, nil
 }
 
@@ -128,7 +136,7 @@ func (m *Mempool) atomicTxGasPrice(tx *Tx) (uint64, error) {
 	if gasUsed == 0 {
 		return 0, errNoGasUsed
 	}
-	burned, err := tx.Burned(m.DIONEAssetID)
+	burned, err := tx.Burned(m.ctx.DIONEAssetID)
 	if err != nil {
 		return 0, err
 	}
@@ -136,16 +144,63 @@ func (m *Mempool) atomicTxGasPrice(tx *Tx) (uint64, error) {
 }
 
 func (m *Mempool) Add(tx *GossipAtomicTx) error {
-	return m.AddTx(tx.Tx)
+	m.ctx.Lock.RLock()
+	defer m.ctx.Lock.RUnlock()
+
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	err := m.addTx(tx.Tx, false)
+	if errors.Is(err, errTxAlreadyKnown) {
+		return err
+	}
+
+	if err != nil {
+		txID := tx.Tx.ID()
+		m.discardedTxs.Put(txID, tx.Tx)
+		log.Debug("failed to issue remote tx to mempool",
+			"txID", txID,
+			"err", err,
+		)
+	}
+
+	return err
 }
 
-// Add attempts to add [tx] to the mempool and returns an error if
-// it could not be addeed to the mempool.
+// AddTx attempts to add [tx] to the mempool and returns an error if
+// it could not be added to the mempool.
 func (m *Mempool) AddTx(tx *Tx) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	return m.addTx(tx, false)
+	err := m.addTx(tx, false)
+	if errors.Is(err, errTxAlreadyKnown) {
+		return nil
+	}
+
+	if err != nil {
+		// unlike local txs, invalid remote txs are recorded as discarded
+		// so that they won't be requested again
+		txID := tx.ID()
+		m.discardedTxs.Put(tx.ID(), tx)
+		log.Debug("failed to issue remote tx to mempool",
+			"txID", txID,
+			"err", err,
+		)
+	}
+	return err
+}
+
+func (m *Mempool) AddLocalTx(tx *Tx) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	err := m.addTx(tx, false)
+	if errors.Is(err, errTxAlreadyKnown) {
+		return nil
+	}
+
+	return err
 }
 
 // forceAddTx forcibly adds a *Tx to the mempool and bypasses all verification.
@@ -153,7 +208,12 @@ func (m *Mempool) ForceAddTx(tx *Tx) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	return m.addTx(tx, true)
+	err := m.addTx(tx, true)
+	if errors.Is(err, errTxAlreadyKnown) {
+		return nil
+	}
+
+	return nil
 }
 
 // checkConflictTx checks for any transactions in the mempool that spend the same input UTXOs as [tx].
@@ -195,13 +255,18 @@ func (m *Mempool) addTx(tx *Tx, force bool) error {
 	// If [txID] has already been issued or is in the currentTxs map
 	// there's no need to add it.
 	if _, exists := m.issuedTxs[txID]; exists {
-		return nil
+		return fmt.Errorf("%w: tx %s was issued previously", errTxAlreadyKnown, tx.ID())
 	}
 	if _, exists := m.currentTxs[txID]; exists {
-		return nil
+		return fmt.Errorf("%w: tx %s is being built into a block", errTxAlreadyKnown, tx.ID())
 	}
 	if _, exists := m.txHeap.Get(txID); exists {
-		return nil
+		return fmt.Errorf("%w: tx %s is pending", errTxAlreadyKnown, tx.ID())
+	}
+	if !force && m.verify != nil {
+		if err := m.verify(tx); err != nil {
+			return err
+		}
 	}
 
 	utxoSet := tx.InputUTXOs()
@@ -369,6 +434,14 @@ func (m *Mempool) GetTx(txID ids.ID) (*Tx, bool, bool) {
 	}
 
 	return nil, false, false
+}
+
+// Has returns true if the mempool contains [txID] or it was issued.
+func (m *Mempool) Has(txID ids.ID) bool {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	return m.has(txID)
 }
 
 // IssueCurrentTx marks [currentTx] as issued if there is one

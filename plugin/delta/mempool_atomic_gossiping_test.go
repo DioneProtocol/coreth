@@ -5,17 +5,13 @@ package delta
 
 import (
 	"context"
+	"math/big"
 	"testing"
 
-	"github.com/DioneProtocol/coreth/params"
-
 	"github.com/DioneProtocol/odysseygo/ids"
-	"github.com/DioneProtocol/odysseygo/utils"
 	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
 	"github.com/DioneProtocol/odysseygo/utils/units"
 	"github.com/DioneProtocol/odysseygo/vms/components/chain"
-	"github.com/DioneProtocol/odysseygo/vms/components/dione"
-	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -50,13 +46,13 @@ func TestMempoolAddLocallyCreateAtomicTx(t *testing.T) {
 			conflictingTxID := conflictingTx.ID()
 
 			// add a tx to the mempool
-			err := vm.issueTx(tx, true /*=local*/)
+			err := vm.mempool.AddLocalTx(tx)
 			assert.NoError(err)
 			has := mempool.has(txID)
 			assert.True(has, "valid tx not recorded into mempool")
 
 			// try to add a conflicting tx
-			err = vm.issueTx(conflictingTx, true /*=local*/)
+			err = vm.mempool.AddLocalTx(conflictingTx)
 			assert.ErrorIs(err, errConflictingAtomicTx)
 			has = mempool.has(conflictingTxID)
 			assert.False(has, "conflicting tx in mempool")
@@ -119,73 +115,16 @@ func TestMempoolMaxMempoolSizeHandling(t *testing.T) {
 	assert.True(mempool.has(tx.ID()))
 }
 
-func createImportTx(t *testing.T, vm *VM, txID ids.ID, feeAmount uint64) *Tx {
-	var importAmount uint64 = 10 * units.Dione
-	importTx := &UnsignedImportTx{
-		NetworkID:    testNetworkID,
-		BlockchainID: testDChainID,
-		SourceChain:  testAChainID,
-		ImportedInputs: []*dione.TransferableInput{
-			{
-				UTXOID: dione.UTXOID{
-					TxID:        txID,
-					OutputIndex: uint32(0),
-				},
-				Asset: dione.Asset{ID: testDioneAssetID},
-				In: &secp256k1fx.TransferInput{
-					Amt: importAmount,
-					Input: secp256k1fx.Input{
-						SigIndices: []uint32{0},
-					},
-				},
-			},
-			{
-				UTXOID: dione.UTXOID{
-					TxID:        txID,
-					OutputIndex: uint32(1),
-				},
-				Asset: dione.Asset{ID: testDioneAssetID},
-				In: &secp256k1fx.TransferInput{
-					Amt: importAmount,
-					Input: secp256k1fx.Input{
-						SigIndices: []uint32{0},
-					},
-				},
-			},
-		},
-		Outs: []DELTAOutput{
-			{
-				Address: testEthAddrs[0],
-				Amount:  importAmount - feeAmount,
-				AssetID: testDioneAssetID,
-			},
-			{
-				Address: testEthAddrs[1],
-				Amount:  importAmount,
-				AssetID: testDioneAssetID,
-			},
-		},
-	}
-
-	// Sort the inputs and outputs to ensure the transaction is canonical
-	utils.Sort(importTx.ImportedInputs)
-	utils.Sort(importTx.Outs)
-
-	tx := &Tx{UnsignedAtomicTx: importTx}
-	// Sign with the correct key
-	if err := tx.Sign(vm.codec, [][]*secp256k1.PrivateKey{{testKeys[0]}}); err != nil {
-		t.Fatal(err)
-	}
-
-	return tx
-}
-
 // mempool will drop transaction with the lowest fee
 func TestMempoolPriorityDrop(t *testing.T) {
 	assert := assert.New(t)
 
 	// we use AP3 genesis here to not trip any block fees
-	_, vm, _, _, _ := GenesisVM(t, true, genesisJSONApricotPhase3, "", "")
+	importAmount := 10 * units.Dione
+	_, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase3, "", "", map[ids.ShortID]uint64{
+		testShortIDAddrs[0]: importAmount,
+		testShortIDAddrs[1]: importAmount,
+	})
 	defer func() {
 		err := vm.Shutdown(context.Background())
 		assert.NoError(err)
@@ -193,14 +132,25 @@ func TestMempoolPriorityDrop(t *testing.T) {
 	mempool := vm.mempool
 	mempool.maxSize = 1
 
-	tx1 := createImportTx(t, vm, ids.ID{1}, params.OdysseyAtomicTxFee)
+	tx1, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.NoError(mempool.AddTx(tx1))
 	assert.True(mempool.has(tx1.ID()))
-	tx2 := createImportTx(t, vm, ids.ID{2}, params.OdysseyAtomicTxFee)
+
+	tx2, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[1], initialBaseFee, []*secp256k1.PrivateKey{testKeys[1]})
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.ErrorIs(mempool.AddTx(tx2), errInsufficientAtomicTxFee)
 	assert.True(mempool.has(tx1.ID()))
 	assert.False(mempool.has(tx2.ID()))
-	tx3 := createImportTx(t, vm, ids.ID{3}, 2*params.OdysseyAtomicTxFee)
+
+	tx3, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[1], new(big.Int).Mul(initialBaseFee, big.NewInt(2)), []*secp256k1.PrivateKey{testKeys[1]})
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.NoError(mempool.AddTx(tx3))
 	assert.False(mempool.has(tx1.ID()))
 	assert.False(mempool.has(tx2.ID()))

@@ -10,8 +10,6 @@ import (
 	"math/big"
 	"sort"
 
-	"golang.org/x/exp/slices"
-
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/DioneProtocol/coreth/core/state"
@@ -21,6 +19,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/codec"
 	"github.com/DioneProtocol/odysseygo/ids"
 	"github.com/DioneProtocol/odysseygo/snow"
+	"github.com/DioneProtocol/odysseygo/utils"
 	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
 	"github.com/DioneProtocol/odysseygo/utils/hashing"
 	"github.com/DioneProtocol/odysseygo/utils/set"
@@ -56,12 +55,12 @@ type DELTAOutput struct {
 	AssetID ids.ID         `serialize:"true" json:"assetID"`
 }
 
-func (o DELTAOutput) Less(other DELTAOutput) bool {
+func (o DELTAOutput) Compare(other DELTAOutput) int {
 	addrComp := bytes.Compare(o.Address.Bytes(), other.Address.Bytes())
 	if addrComp != 0 {
-		return addrComp < 0
+		return addrComp
 	}
-	return bytes.Compare(o.AssetID[:], other.AssetID[:]) < 0
+	return bytes.Compare(o.AssetID[:], other.AssetID[:])
 }
 
 // DELTAInput defines an input created from the DELTA state to fund export transactions
@@ -72,12 +71,12 @@ type DELTAInput struct {
 	Nonce   uint64         `serialize:"true" json:"nonce"`
 }
 
-func (i DELTAInput) Less(other DELTAInput) bool {
+func (i DELTAInput) Compare(other DELTAInput) int {
 	addrComp := bytes.Compare(i.Address.Bytes(), other.Address.Bytes())
 	if addrComp != 0 {
-		return addrComp < 0
+		return addrComp
 	}
-	return bytes.Compare(i.AssetID[:], other.AssetID[:]) < 0
+	return bytes.Compare(i.AssetID[:], other.AssetID[:])
 }
 
 // Verify ...
@@ -143,8 +142,17 @@ type Tx struct {
 	Creds []verify.Verifiable `serialize:"true" json:"credentials"`
 }
 
-func (tx *Tx) Less(other *Tx) bool {
-	return tx.ID().Hex() < other.ID().Hex()
+func (tx *Tx) Compare(other *Tx) int {
+	txHex := tx.ID().Hex()
+	otherHex := other.ID().Hex()
+	switch {
+	case txHex < otherHex:
+		return -1
+	case txHex > otherHex:
+		return 1
+	default:
+		return 0
+	}
 }
 
 // Sign this transaction with the provided signers
@@ -267,9 +275,7 @@ func mergeAtomicOps(txs []*Tx) (map[ids.ID]*atomic.Requests, error) {
 		// with txs initialized from the txID index.
 		copyTxs := make([]*Tx, len(txs))
 		copy(copyTxs, txs)
-		slices.SortFunc(copyTxs, func(i, j *Tx) bool {
-			return i.Less(j)
-		})
+		utils.Sort(copyTxs)
 		txs = copyTxs
 	}
 	output := make(map[ids.ID]*atomic.Requests)
@@ -281,15 +287,4 @@ func mergeAtomicOps(txs []*Tx) (map[ids.ID]*atomic.Requests, error) {
 		mergeAtomicOpsToMap(output, chainID, txRequests)
 	}
 	return output, nil
-}
-
-// mergeAtomicOps merges atomic ops for [chainID] represented by [requests]
-// to the [output] map provided.
-func mergeAtomicOpsToMap(output map[ids.ID]*atomic.Requests, chainID ids.ID, requests *atomic.Requests) {
-	if request, exists := output[chainID]; exists {
-		request.PutRequests = append(request.PutRequests, requests.PutRequests...)
-		request.RemoveRequests = append(request.RemoveRequests, requests.RemoveRequests...)
-	} else {
-		output[chainID] = requests
-	}
 }

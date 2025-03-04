@@ -155,7 +155,7 @@ func executeTxTest(t *testing.T, test atomicTxTest) {
 		}
 	}
 
-	if err := vm.issueTx(tx, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(tx); err != nil {
 		t.Fatal(err)
 	}
 	<-issuer
@@ -188,16 +188,16 @@ func executeTxTest(t *testing.T, test atomicTxTest) {
 	}
 }
 
-func TestDELTAOutputLess(t *testing.T) {
+func TestDELTAOutputCompare(t *testing.T) {
 	type test struct {
 		name     string
 		a, b     DELTAOutput
-		expected bool
+		expected int
 	}
 
 	tests := []test{
 		{
-			name: "first address less",
+			name: "address less",
 			a: DELTAOutput{
 				Address: common.BytesToAddress([]byte{0x01}),
 				AssetID: ids.ID{1},
@@ -206,22 +206,10 @@ func TestDELTAOutputLess(t *testing.T) {
 				Address: common.BytesToAddress([]byte{0x02}),
 				AssetID: ids.ID{0},
 			},
-			expected: true,
+			expected: -1,
 		},
 		{
-			name: "first address greater",
-			a: DELTAOutput{
-				Address: common.BytesToAddress([]byte{0x02}),
-				AssetID: ids.ID{0},
-			},
-			b: DELTAOutput{
-				Address: common.BytesToAddress([]byte{0x01}),
-				AssetID: ids.ID{1},
-			},
-			expected: false,
-		},
-		{
-			name: "first address greater; assetIDs equal",
+			name: "address greater; assetIDs equal",
 			a: DELTAOutput{
 				Address: common.BytesToAddress([]byte{0x02}),
 				AssetID: ids.ID{},
@@ -230,10 +218,10 @@ func TestDELTAOutputLess(t *testing.T) {
 				Address: common.BytesToAddress([]byte{0x01}),
 				AssetID: ids.ID{},
 			},
-			expected: false,
+			expected: 1,
 		},
 		{
-			name: "addresses equal; first assetID less",
+			name: "addresses equal; assetID less",
 			a: DELTAOutput{
 				Address: common.BytesToAddress([]byte{0x01}),
 				AssetID: ids.ID{0},
@@ -242,33 +230,36 @@ func TestDELTAOutputLess(t *testing.T) {
 				Address: common.BytesToAddress([]byte{0x01}),
 				AssetID: ids.ID{1},
 			},
-			expected: true,
+			expected: -1,
 		},
 		{
 			name:     "equal",
 			a:        DELTAOutput{},
 			b:        DELTAOutput{},
-			expected: false,
+			expected: 0,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.expected, tt.a.Less(tt.b))
+			require := require.New(t)
+
+			require.Equal(tt.expected, tt.a.Compare(tt.b))
+			require.Equal(-tt.expected, tt.b.Compare(tt.a))
 		})
 	}
 }
 
-func TestDELTAInputLess(t *testing.T) {
+func TestDELTAInputCompare(t *testing.T) {
 	type test struct {
 		name     string
 		a, b     DELTAInput
-		expected bool
+		expected int
 	}
 
 	tests := []test{
 		{
-			name: "first address less",
+			name: "address less",
 			a: DELTAInput{
 				Address: common.BytesToAddress([]byte{0x01}),
 				AssetID: ids.ID{1},
@@ -277,22 +268,10 @@ func TestDELTAInputLess(t *testing.T) {
 				Address: common.BytesToAddress([]byte{0x02}),
 				AssetID: ids.ID{0},
 			},
-			expected: true,
+			expected: -1,
 		},
 		{
-			name: "first address greater",
-			a: DELTAInput{
-				Address: common.BytesToAddress([]byte{0x02}),
-				AssetID: ids.ID{0},
-			},
-			b: DELTAInput{
-				Address: common.BytesToAddress([]byte{0x01}),
-				AssetID: ids.ID{1},
-			},
-			expected: false,
-		},
-		{
-			name: "first address greater; assetIDs equal",
+			name: "address greater; assetIDs equal",
 			a: DELTAInput{
 				Address: common.BytesToAddress([]byte{0x02}),
 				AssetID: ids.ID{},
@@ -301,10 +280,10 @@ func TestDELTAInputLess(t *testing.T) {
 				Address: common.BytesToAddress([]byte{0x01}),
 				AssetID: ids.ID{},
 			},
-			expected: false,
+			expected: 1,
 		},
 		{
-			name: "addresses equal; first assetID less",
+			name: "addresses equal; assetID less",
 			a: DELTAInput{
 				Address: common.BytesToAddress([]byte{0x01}),
 				AssetID: ids.ID{0},
@@ -313,31 +292,22 @@ func TestDELTAInputLess(t *testing.T) {
 				Address: common.BytesToAddress([]byte{0x01}),
 				AssetID: ids.ID{1},
 			},
-			expected: true,
-		},
-		{
-			name: "addresses equal; first assetID greater",
-			a: DELTAInput{
-				Address: common.BytesToAddress([]byte{0x01}),
-				AssetID: ids.ID{1},
-			},
-			b: DELTAInput{
-				Address: common.BytesToAddress([]byte{0x01}),
-				AssetID: ids.ID{0},
-			},
-			expected: false,
+			expected: -1,
 		},
 		{
 			name:     "equal",
 			a:        DELTAInput{},
 			b:        DELTAInput{},
-			expected: false,
+			expected: 0,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.expected, tt.a.Less(tt.b))
+			require := require.New(t)
+
+			require.Equal(tt.expected, tt.a.Compare(tt.b))
+			require.Equal(-tt.expected, tt.b.Compare(tt.a))
 		})
 	}
 }

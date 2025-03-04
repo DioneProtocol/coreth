@@ -1,12 +1,12 @@
 # ============= Compilation Stage ================
-FROM golang:1.20.8-bullseye AS builder
+FROM golang:1.21.7-bullseye AS builder
 
-ARG AVALANCHE_VERSION
+ARG ODYSSEY_VERSION
 
 RUN mkdir -p $GOPATH/src/github.com/DioneProtocol
 WORKDIR $GOPATH/src/github.com/DioneProtocol
 
-RUN git clone -b $AVALANCHE_VERSION --single-branch https://github.com/DioneProtocol/odysseygo.git
+RUN git clone -b $ODYSSEY_VERSION --single-branch https://github.com/DioneProtocol/odysseygo.git
 
 # Copy coreth repo into desired location
 COPY . coreth

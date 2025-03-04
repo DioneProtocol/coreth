@@ -40,7 +40,7 @@ var (
 	ErrNoGenesis = errors.New("genesis not found in chain")
 )
 
-// List of delta-call-message pre-checking errors. All state transition messages will
+// List of evm-call-message pre-checking errors. All state transition messages will
 // be pre-checked before execution. If any invalidation detected, the corresponding
 // error should be returned which is defined here.
 //
@@ -105,4 +105,8 @@ var (
 
 	// ErrSenderNoEOA is returned if the sender of a transaction is a contract.
 	ErrSenderNoEOA = errors.New("sender not an eoa")
+
+	// ErrBlobFeeCapTooLow is returned if the transaction fee cap is less than the
+	// blob gas fee of the block.
+	ErrBlobFeeCapTooLow = errors.New("max fee per blob gas less than block blob gas fee")
 )

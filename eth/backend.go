@@ -30,6 +30,7 @@ package eth
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -41,13 +42,14 @@ import (
 	"github.com/DioneProtocol/coreth/core/rawdb"
 	"github.com/DioneProtocol/coreth/core/state/pruner"
 	"github.com/DioneProtocol/coreth/core/txpool"
+	"github.com/DioneProtocol/coreth/core/txpool/blobpool"
+	"github.com/DioneProtocol/coreth/core/txpool/legacypool"
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/core/vm"
 	"github.com/DioneProtocol/coreth/eth/ethconfig"
 	"github.com/DioneProtocol/coreth/eth/filters"
 	"github.com/DioneProtocol/coreth/eth/gasprice"
 	"github.com/DioneProtocol/coreth/eth/tracers"
-	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/DioneProtocol/coreth/internal/ethapi"
 	"github.com/DioneProtocol/coreth/internal/shutdowncheck"
 	"github.com/DioneProtocol/coreth/miner"
@@ -57,6 +59,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/utils/timer/mockable"
 	"github.com/DioneProtocol/odysseygo/vms/components/feecollector"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 )
@@ -76,7 +79,8 @@ type Ethereum struct {
 	config *Config
 
 	// Handlers
-	txPool     *txpool.TxPool
+	txPool *txpool.TxPool
+
 	blockchain *core.BlockChain
 
 	// DB interfaces
@@ -118,7 +122,7 @@ func roundUpCacheSize(input int, allocSize int) int {
 func New(
 	stack *node.Node,
 	config *Config,
-	cb *dummy.ConsensusCallbacks,
+	cb dummy.ConsensusCallbacks,
 	chainDb ethdb.Database,
 	settings Settings,
 	lastAcceptedHash common.Hash,
@@ -147,7 +151,7 @@ func New(
 	// Since RecoverPruning will only continue a pruning run that already began, we do not need to ensure that
 	// reprocessState has already been called and completed successfully. To ensure this, we must maintain
 	// that Prune is only run after reprocessState has finished successfully.
-	if err := pruner.RecoverPruning(config.OfflinePruningDataDirectory, chainDb, config.TrieCleanJournal); err != nil {
+	if err := pruner.RecoverPruning(config.OfflinePruningDataDirectory, chainDb); err != nil {
 		log.Error("Failed to recover state", "error", err)
 	}
 
@@ -156,7 +160,7 @@ func New(
 		chainDb:           chainDb,
 		eventMux:          new(event.TypeMux),
 		accountManager:    stack.AccountManager(),
-		engine:            dummy.NewDummyEngine(cb),
+		engine:            dummy.NewFakerWithClock(cb, clock),
 		closeBloomHandler: make(chan struct{}),
 		networkID:         config.NetworkId,
 		etherbase:         config.Miner.Etherbase,
@@ -184,14 +188,12 @@ func New(
 	var (
 		vmConfig = vm.Config{
 			EnablePreimageRecording: config.EnablePreimageRecording,
-			AllowUnfinalizedQueries: config.AllowUnfinalizedQueries,
 		}
 		cacheConfig = &core.CacheConfig{
 			TrieCleanLimit:                  config.TrieCleanCache,
-			TrieCleanJournal:                config.TrieCleanJournal,
-			TrieCleanRejournal:              config.TrieCleanRejournal,
 			TrieDirtyLimit:                  config.TrieDirtyCache,
 			TrieDirtyCommitTarget:           config.TrieDirtyCommitTarget,
+			TriePrefetcherParallelism:       config.TriePrefetcherParallelism,
 			Pruning:                         config.Pruning,
 			AcceptorQueueLimit:              config.AcceptorQueueLimit,
 			CommitInterval:                  config.CommitInterval,
@@ -206,13 +208,13 @@ func New(
 			Preimages:                       config.Preimages,
 			AcceptedCacheSize:               config.AcceptedCacheSize,
 			TxLookupLimit:                   config.TxLookupLimit,
+			SkipTxIndexing:                  config.SkipTxIndexing,
 		}
 	)
 
 	if err := eth.precheckPopulateMissingTries(); err != nil {
 		return nil, err
 	}
-
 	var err error
 	eth.blockchain, err = core.NewBlockChain(chainDb, cacheConfig, config.Genesis, eth.engine, vmConfig, lastAcceptedHash, config.SkipUpgradeCheck)
 	if err != nil {
@@ -225,8 +227,15 @@ func New(
 
 	eth.bloomIndexer.Start(eth.blockchain)
 
-	config.TxPool.Journal = ""
-	eth.txPool = txpool.NewTxPool(config.TxPool, eth.blockchain.Config(), eth.blockchain)
+	config.BlobPool.Datadir = ""
+	blobPool := blobpool.New(config.BlobPool, &chainWithFinalBlock{eth.blockchain})
+
+	legacyPool := legacypool.New(config.TxPool, eth.blockchain)
+
+	eth.txPool, err = txpool.New(new(big.Int).SetUint64(config.TxPool.PriceLimit), eth.blockchain, []txpool.SubPool{legacyPool, blobPool})
+	if err != nil {
+		return nil, err
+	}
 
 	eth.miner = miner.New(eth, &config.Miner, eth.blockchain.Config(), eth.EventMux(), eth.engine, clock, feeCollector)
 
@@ -239,6 +248,7 @@ func New(
 		extRPCEnabled:            stack.Config().ExtRPCEnabled(),
 		allowUnprotectedTxs:      config.AllowUnprotectedTxs,
 		allowUnprotectedTxHashes: allowUnprotectedTxHashes,
+		allowUnfinalizedQueries:  config.AllowUnfinalizedQueries,
 		eth:                      eth,
 	}
 	if config.AllowUnprotectedTxs {
@@ -352,15 +362,18 @@ func (s *Ethereum) Start() {
 func (s *Ethereum) Stop() error {
 	s.bloomIndexer.Close()
 	close(s.closeBloomHandler)
-	s.txPool.Stop()
+	s.txPool.Close()
 	s.blockchain.Stop()
 	s.engine.Close()
 
 	// Clean shutdown marker as the last thing before closing db
 	s.shutdownTracker.Stop()
+	log.Info("Stopped shutdownTracker")
 
 	s.chainDb.Close()
+	log.Info("Closed chaindb")
 	s.eventMux.Stop()
+	log.Info("Stopped EventMux")
 	return nil
 }
 
@@ -432,7 +445,6 @@ func (s *Ethereum) handleOfflinePruning(cacheConfig *core.CacheConfig, gspec *co
 	log.Info("Starting offline pruning", "dataDir", s.config.OfflinePruningDataDirectory, "bloomFilterSize", s.config.OfflinePruningBloomFilterSize)
 	prunerConfig := pruner.Config{
 		BloomSize: s.config.OfflinePruningBloomFilterSize,
-		Cachedir:  s.config.TrieCleanJournal,
 		Datadir:   s.config.OfflinePruningDataDirectory,
 	}
 
