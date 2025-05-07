@@ -130,7 +130,7 @@ func (l *limbo) finalize(final *types.Header) {
 	// Just in case there's no final block yet (network not yet merged, weird
 	// restart, sethead, etc), fail gracefully.
 	if final == nil {
-		log.Error("Nil finalized block cannot evict old blobs")
+		log.Debug("Nil finalized block cannot evict old blobs")
 		return
 	}
 	for block, ids := range l.groups {
