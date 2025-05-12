@@ -101,7 +101,7 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DurangoBlockTimestamp:           utils.NewUint64(0),
-		CancunTime:                      utils.NewUint64(1746615600),
+		CancunTime:                      utils.NewUint64(1747040400),
 	}
 
 	// OdysseyLocalChainConfig is the configuration for the Odyssey Local Network
