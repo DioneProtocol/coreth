@@ -428,7 +428,26 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	} else {
 		// Increment the nonce for the next transaction
 		st.state.SetNonce(msg.From, st.state.GetNonce(sender.Address())+1)
-		ret, st.gasRemaining, vmerr = st.evm.Call(sender, st.to(), msg.Data, st.gasRemaining, msg.Value)
+
+		// Apply additional gas cost for native token transfers to EOAs
+		codeSize := st.evm.StateDB.GetCodeSize(*msg.To)
+		if codeSize == 0 && msg.Value.Sign() > 0 {
+
+			// Make native transfers 10 times more expensive
+			nativeTransferGas := params.TxGas * 9
+			if st.gasRemaining >= nativeTransferGas {
+				st.gasRemaining -= nativeTransferGas
+
+				// Refund extra gas to the pool to maintain block transaction capacity
+				st.gp.AddGas(nativeTransferGas)
+			} else {
+				vmerr = vmerrs.ErrOutOfGas
+			}
+		}
+
+		if vmerr == nil {
+			ret, st.gasRemaining, vmerr = st.evm.Call(sender, st.to(), msg.Data, st.gasRemaining, msg.Value)
+		}
 	}
 	st.refundGas(rules.IsApricotPhase1)
 	st.state.AddBalance(st.evm.Context.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), msg.GasPrice))
