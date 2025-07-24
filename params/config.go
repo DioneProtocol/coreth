@@ -45,6 +45,12 @@ var (
 	// OdysseyLocalChainID ...
 	OdysseyLocalChainID = big.NewInt(131312)
 
+	// During the hardfork, the cost of transfers jumps instantly by 10x —
+	// from 5 to 50 Dione. Meanwhile, the cost of other transactions decreases gradually
+	// by 10x. To avoid an immediate spike in transfer cost, we apply a time offset
+	// before enforcing the new gas limit.
+	apricotPhase7GasLimitTimestampOffset = uint64(6 * 60 * 60)
+
 	errNonGenesisForkByHeight = errors.New("coreth only supports forking by height at the genesis block")
 )
 
@@ -1140,6 +1146,7 @@ type Rules struct {
 	IsCortina                                                                           bool
 	IsDurango                                                                           bool
 	IsApricotPhase7                                                                     bool
+	IsApricotPhase7TransferGasLimit                                                     bool
 
 	LpAllocation, GovernanceAllocation, AllocationDenominator *big.Int
 	OrionAllocation, MaxOrionAllocation                       *big.Int
@@ -1179,6 +1186,13 @@ func (c *ChainConfig) rules(num *big.Int, timestamp uint64) Rules {
 func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
 	rules := c.rules(blockNum, timestamp)
 
+	var gasLimitTimestamp uint64
+	if timestamp < apricotPhase7GasLimitTimestampOffset {
+		gasLimitTimestamp = 0
+	} else {
+		gasLimitTimestamp = timestamp - apricotPhase7GasLimitTimestampOffset
+	}
+
 	rules.IsApricotPhase1 = c.IsApricotPhase1(timestamp)
 	rules.IsApricotPhase2 = c.IsApricotPhase2(timestamp)
 	rules.IsApricotPhase3 = c.IsApricotPhase3(timestamp)
@@ -1191,6 +1205,7 @@ func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
 	rules.IsCortina = c.IsCortina(timestamp)
 	rules.IsDurango = c.IsDurango(timestamp)
 	rules.IsApricotPhase7 = c.IsApricotPhase7(timestamp)
+	rules.IsApricotPhase7TransferGasLimit = c.IsApricotPhase7(gasLimitTimestamp)
 	rules.LpAddress = c.LpAddress(timestamp)
 	rules.GovernanceAddress = c.GovernanceAddress(timestamp)
 	rules.LpAllocation = c.LpAllocation(timestamp)
