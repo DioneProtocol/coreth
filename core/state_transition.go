@@ -417,7 +417,8 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin/ApricotPhase2)
 	// - reset transient storage(eip 1153)
-	st.state.Prepare(rules, msg.From, st.evm.Context.Coinbase, msg.To, vm.ActivePrecompiles(rules), msg.AccessList)
+	precompiles := vm.ActivePrecompiles(rules)
+	st.state.Prepare(rules, msg.From, st.evm.Context.Coinbase, msg.To, precompiles, msg.AccessList)
 
 	var (
 		ret   []byte
@@ -428,7 +429,26 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	} else {
 		// Increment the nonce for the next transaction
 		st.state.SetNonce(msg.From, st.state.GetNonce(sender.Address())+1)
-		ret, st.gasRemaining, vmerr = st.evm.Call(sender, st.to(), msg.Data, st.gasRemaining, msg.Value)
+
+		// Apply additional gas cost for native token transfers to EOAs
+		if rules.IsApricotPhase7 && msg.Value.Sign() > 0 {
+			codeSize := st.evm.StateDB.GetCodeSize(*msg.To)
+			_, isPrecompile := vm.PrecompileAllNativeAddresses[*msg.To]
+
+			if codeSize == 0 && !isPrecompile {
+				// Make native transfers 10 times more expensive
+				nativeTransferGas := params.TxGas * 9
+				if st.gasRemaining >= nativeTransferGas {
+					st.gasRemaining -= nativeTransferGas
+				} else {
+					vmerr = vmerrs.ErrOutOfGas
+				}
+			}
+		}
+
+		if vmerr == nil {
+			ret, st.gasRemaining, vmerr = st.evm.Call(sender, st.to(), msg.Data, st.gasRemaining, msg.Value)
+		}
 	}
 	st.refundGas(rules.IsApricotPhase1)
 	st.state.AddBalance(st.evm.Context.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), msg.GasPrice))

@@ -102,8 +102,8 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DurangoBlockTimestamp:           utils.NewUint64(0),
-		ApricotPhase7BlockTimestamp:     utils.NewUint64(0),
 		CancunTime:                      utils.NewUint64(1747040400),
+		ApricotPhase7BlockTimestamp:     nil,
 	}
 
 	// OdysseyLocalChainConfig is the configuration for the Odyssey Local Network
@@ -523,6 +523,8 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DurangoBlockTimestamp:           utils.NewUint64(0),
+		CancunTime:                      utils.NewUint64(0),
+		ApricotPhase7BlockTimestamp:     utils.NewUint64(0),
 	}
 
 	TestRules = TestChainConfig.OdysseyRules(new(big.Int), 0)
