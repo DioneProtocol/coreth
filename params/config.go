@@ -49,7 +49,7 @@ var (
 	// from 5 to 50 Dione. Meanwhile, the cost of other transactions decreases gradually
 	// by 10x. To avoid an immediate spike in transfer cost, we apply a time offset
 	// before enforcing the new gas limit.
-	apricotPhase7GasLimitTimestampOffset = uint64(6 * 60 * 60)
+	apricotPhase7GasLimitTimestampOffset = uint64(60 * 60)
 
 	errNonGenesisForkByHeight = errors.New("coreth only supports forking by height at the genesis block")
 )
@@ -109,7 +109,7 @@ var (
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DurangoBlockTimestamp:           utils.NewUint64(0),
 		CancunTime:                      utils.NewUint64(1747040400),
-		ApricotPhase7BlockTimestamp:     nil,
+		ApricotPhase7BlockTimestamp:     utils.NewUint64(1754046000),
 	}
 
 	// OdysseyLocalChainConfig is the configuration for the Odyssey Local Network
