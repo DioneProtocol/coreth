@@ -186,9 +186,11 @@ func (b *Block) Accept(context.Context) error {
 	if err := b.vm.ctx.ParamManager.SetMinValidatorStakeDuration(150000); err != nil {
 		return fmt.Errorf("failed to accept param manager: %w", err)
 	}
-
-	// TODO: Remove this after testing, this will be fetched from governance config contract 
-	if err := b.vm.ctx.ParamManager.SetMinValidatorStake(150000); err != nil {
+	
+	governanceMinStakeParam := b.ethBlock.GovernanceMinStakeParam()
+	// TODO: Remove this after testing, this will be fetched from governance config contract
+	fmt.Println("governanceMinStakeParam", governanceMinStakeParam.Uint64())
+	if err := b.vm.ctx.ParamManager.SetMinValidatorStake(governanceMinStakeParam.Uint64()); err != nil {
 		return fmt.Errorf("failed to accept param manager: %w", err)
 	}
 
