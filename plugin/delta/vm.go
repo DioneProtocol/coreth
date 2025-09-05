@@ -646,6 +646,7 @@ func (vm *VM) initializeChain(lastAcceptedHash common.Hash) error {
 		lastAcceptedHash,
 		&vm.clock,
 		vm.ctx.FeeCollector,
+		vm.ctx.ParamManager,
 	)
 	if err != nil {
 		return err

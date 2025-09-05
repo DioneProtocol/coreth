@@ -182,6 +182,16 @@ func (b *Block) Accept(context.Context) error {
 		}
 	}
 
+	// TODO: Remove this after testing, this will be fetched from governance config contract
+	if err := b.vm.ctx.ParamManager.SetMinValidatorStakeDuration(150000); err != nil {
+		return fmt.Errorf("failed to accept param manager: %w", err)
+	}
+
+	// TODO: Remove this after testing, this will be fetched from governance config contract 
+	if err := b.vm.ctx.ParamManager.SetMinValidatorStake(150000); err != nil {
+		return fmt.Errorf("failed to accept param manager: %w", err)
+	}
+
 	// Update VM state for atomic txs in this block. This includes updating the
 	// atomic tx repo, atomic trie, and shared memory.
 	atomicState, err := b.vm.atomicBackend.GetVerifiedAtomicState(common.Hash(b.ID()))
