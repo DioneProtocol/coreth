@@ -646,6 +646,7 @@ func (vm *VM) initializeChain(lastAcceptedHash common.Hash) error {
 		lastAcceptedHash,
 		&vm.clock,
 		vm.ctx.FeeCollector,
+		vm.ctx.ParamManager,
 	)
 	if err != nil {
 		return err
@@ -989,10 +990,11 @@ func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB, recei
 	totalBaseFee, totalPriorityFee := vm.calculateTxFees(block.BaseFee(), block.Transactions(), receipts, &rules)
 	totalBaseFee, totalPriorityFee, orionFee := vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
 	vm.distributeUndistributedRewards(header.UndistributedReward, state, &rules)
-
+	governanceMinStakeParam := rules.StakeGovernance.GetStakingValue(state)
 	block.SetTotalBaseFee(totalBaseFee)
 	block.SetTotalPriorityFee(totalPriorityFee)
 	block.SetOrionNodeFee(orionFee)
+	block.SetGovernanceMinStakeParam(new(big.Int).SetUint64(governanceMinStakeParam))
 
 	txs, err := ExtractAtomicTxs(block.ExtData(), rules.IsApricotPhase5, vm.codec)
 	if err != nil {

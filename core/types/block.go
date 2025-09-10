@@ -176,6 +176,7 @@ type Block struct {
 	totalPriorityFee *big.Int
 	totalAtomicFee   *big.Int
 	orionFees        *big.Int
+	minStakeParam    *big.Int
 
 	// caches
 	hash atomic.Value
@@ -312,6 +313,17 @@ func (b *Block) OrionNodeFee() *big.Int {
 		return big.NewInt(0)
 	}
 	return new(big.Int).Set(b.orionFees)
+}
+
+func (b *Block) GovernanceMinStakeParam() *big.Int {
+	if b.minStakeParam == nil {
+		return big.NewInt(0)
+	}
+	return new(big.Int).Set(b.minStakeParam)
+}
+
+func (b *Block) SetGovernanceMinStakeParam(f *big.Int) {
+	b.minStakeParam = new(big.Int).Set(f)
 }
 
 // DecodeRLP decodes the Ethereum

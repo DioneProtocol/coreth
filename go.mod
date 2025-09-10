@@ -2,6 +2,8 @@ module github.com/DioneProtocol/coreth
 
 go 1.20
 
+replace github.com/DioneProtocol/odysseygo => github.com/lucanali/odysseygo v0.0.0-20250905075700-fcbe6c954604
+
 require (
 	github.com/DioneProtocol/odysseygo v1.10.10
 	github.com/VictoriaMetrics/fastcache v1.10.0
@@ -114,7 +116,7 @@ require (
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/subosito/gotenv v1.3.0 // indirect
-	github.com/supranational/blst v0.3.11 // indirect
+	github.com/supranational/blst v0.3.15 // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
