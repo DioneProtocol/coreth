@@ -68,8 +68,8 @@ var (
 	orionLastUpdateTimestampSlot = common.HexToHash("0x0000000000000000000000000000000000000001")
 	orionNodesSlot               = common.HexToHash("0x0000000000000000000000000000000000000002")
 
-	governanceConfigContractAddress = common.HexToAddress("0x0000000000000000000000000000000000000009")
-	governanceConfigSlot = common.HexToHash("0x0000000000000000000000000000000000000000")
+	governanceConfigContractAddress = common.HexToAddress("0x000000000000000000000000000000000000012a")
+	governanceConfigSlot            = common.HexToHash("0x0000000000000000000000000000000000000000")
 
 	OrionGetter = NewOrionGetter(orionContractAddress, orionLastUpdateTimestampSlot, orionNodesSlot, governanceConfigSlot, governanceConfigContractAddress)
 )

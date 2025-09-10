@@ -960,15 +960,13 @@ func (vm *VM) distributeUndistributedRewards(rewards *big.Int, state *state.Stat
 	}
 }
 
-func (vm *VM) distributeFees(totalBaseFee *big.Int, totalPriorityFee *big.Int, state *state.StateDB, rules *params.Rules) (*big.Int, *big.Int, *big.Int, *big.Int) {
+func (vm *VM) distributeFees(totalBaseFee *big.Int, totalPriorityFee *big.Int, state *state.StateDB, rules *params.Rules) (*big.Int, *big.Int, *big.Int) {
 	timestamp := rules.OrionNodes.GetLastUpdateTimestamp(state)
 	if vm.orionSyncTimestamp != timestamp {
 		nodes := rules.OrionNodes.GetNodesList(state)
 		vm.orionNodes = nodes
 		vm.orionSyncTimestamp = timestamp
 	}
-
-	governanceMinStakeParam := rules.OrionNodes.GetStakingValue(state)
 
 	orionNodesAmount := uint64(len(vm.orionNodes))
 	fees := CalculateFees(totalBaseFee, totalPriorityFee, orionNodesAmount, rules)
@@ -978,7 +976,7 @@ func (vm *VM) distributeFees(totalBaseFee *big.Int, totalPriorityFee *big.Int, s
 		state.AddBalance(rules.GovernanceAddress, fees.GovernanceAllocation)
 	}
 
-	return fees.BaseFee, fees.PriorityFee, fees.OrionFee, new(big.Int).SetUint64(governanceMinStakeParam)
+	return fees.BaseFee, fees.PriorityFee, fees.OrionFee
 }
 
 func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB, receipts types.Receipts) (*big.Int, *big.Int, error) {
@@ -990,13 +988,13 @@ func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB, recei
 	)
 
 	totalBaseFee, totalPriorityFee := vm.calculateTxFees(block.BaseFee(), block.Transactions(), receipts, &rules)
-	totalBaseFee, totalPriorityFee, orionFee, governanceMinStakeParam := vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
+	totalBaseFee, totalPriorityFee, orionFee := vm.distributeFees(totalBaseFee, totalPriorityFee, state, &rules)
 	vm.distributeUndistributedRewards(header.UndistributedReward, state, &rules)
-
+	governanceMinStakeParam := rules.OrionNodes.GetStakingValue(state)
 	block.SetTotalBaseFee(totalBaseFee)
 	block.SetTotalPriorityFee(totalPriorityFee)
 	block.SetOrionNodeFee(orionFee)
-	block.SetGovernanceMinStakeParam(governanceMinStakeParam)
+	block.SetGovernanceMinStakeParam(new(big.Int).SetUint64(governanceMinStakeParam))
 
 	txs, err := ExtractAtomicTxs(block.ExtData(), rules.IsApricotPhase5, vm.codec)
 	if err != nil {
