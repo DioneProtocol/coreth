@@ -762,6 +762,9 @@ func (c *ChainConfig) AllocationDenominator(time uint64) *big.Int {
 func (c *ChainConfig) OrionNodesGetter(time uint64) OrionNodesGetter {
 	return OrionGetter
 }
+func (c *ChainConfig) StakeGovernanceGetter(time uint64) StakeGovernanceGetter {
+	return StakeGovernance
+}
 
 func (c *ChainConfig) OrionAllocation(time uint64) *big.Int {
 	return OrionAllocation
@@ -1070,6 +1073,7 @@ type Rules struct {
 	PriorityFeeOrionAllocation                                *big.Int
 	LpAddress, GovernanceAddress                              common.Address
 	OrionNodes                                                OrionNodesGetter
+	StakeGovernance                                           StakeGovernanceGetter
 
 	// Precompiles maps addresses to stateful precompiled contracts that are enabled
 	// for this rule set.
@@ -1120,6 +1124,7 @@ func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
 	rules.GovernanceAllocation = c.GovernanceAllocation(timestamp)
 	rules.AllocationDenominator = c.AllocationDenominator(timestamp)
 	rules.OrionNodes = c.OrionNodesGetter(timestamp)
+	rules.StakeGovernance = c.StakeGovernanceGetter(timestamp)
 	rules.OrionAllocation = c.OrionAllocation(timestamp)
 	rules.MaxOrionAllocation = c.MaxOrionAllocation(timestamp)
 	rules.PriorityFeeOrionAllocation = c.PriorityFeeOrionAllocation(timestamp)

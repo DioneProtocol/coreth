@@ -44,27 +44,22 @@ type stateGetter interface {
 type OrionNodesGetter interface {
 	GetLastUpdateTimestamp(stateGetter) uint64
 	GetNodesList(stateGetter) []ids.NodeID
-	GetStakingValue(stateGetter) uint64
 }
 
 type orionNodesGetter struct {
-	contract                        common.Address
-	lastUpdateSlot                  common.Hash
-	sizeSlot                        common.Hash
-	listStartSlot                   *big.Int
-	governanceConfigSlot            common.Hash
-	governanceConfigContractAddress common.Address
+	contract       common.Address
+	lastUpdateSlot common.Hash
+	sizeSlot       common.Hash
+	listStartSlot  *big.Int
 }
 
-func NewOrionGetter(contract common.Address, lastUpdateSlot, orionsListSlot, governanceConfigSlot common.Hash, governanceConfigContractAddress common.Address) OrionNodesGetter {
+func NewOrionGetter(contract common.Address, lastUpdateSlot, orionsListSlot common.Hash) OrionNodesGetter {
 	listStartSlot := crypto.Keccak256Hash(orionsListSlot[:])
 	return &orionNodesGetter{
-		contract:                        contract,
-		lastUpdateSlot:                  lastUpdateSlot,
-		sizeSlot:                        orionsListSlot,
-		listStartSlot:                   listStartSlot.Big(),
-		governanceConfigSlot:            governanceConfigSlot,
-		governanceConfigContractAddress: governanceConfigContractAddress,
+		contract:       contract,
+		lastUpdateSlot: lastUpdateSlot,
+		sizeSlot:       orionsListSlot,
+		listStartSlot:  listStartSlot.Big(),
 	}
 }
 
@@ -89,13 +84,4 @@ func (o *orionNodesGetter) GetNodesList(state stateGetter) []ids.NodeID {
 	}
 
 	return nodeIDs
-}
-
-func (o *orionNodesGetter) GetStakingValue(state stateGetter) uint64 {
-	return o.getUint64ForGovernanceConfig(state, o.governanceConfigSlot)
-}
-
-func (o *orionNodesGetter) getUint64ForGovernanceConfig(state stateGetter, slot common.Hash) uint64 {
-	hash := state.GetState(o.governanceConfigContractAddress, slot)
-	return binary.BigEndian.Uint64(hash[24:])
 }
