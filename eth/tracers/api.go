@@ -1085,6 +1085,10 @@ func overrideConfig(original *params.ChainConfig, override *params.ChainConfig) 
 		copy.CancunTime = timestamp
 		canon = false
 	}
+	if timestamp := override.BaseFeeCutTimestamp; timestamp != nil {
+		copy.BaseFeeCutTimestamp = timestamp
+		canon = false
+	}
 
 	return copy, canon
 }

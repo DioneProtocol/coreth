@@ -53,8 +53,21 @@ func (gpu *gasPriceUpdater) start() {
 	if disabled := gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.ApricotPhase3BlockTimestamp, big.NewInt(params.ApricotPhase3MinBaseFee)); disabled {
 		return
 	}
+	if disabled := gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.ApricotPhase4BlockTimestamp, big.NewInt(params.ApricotPhase4MinBaseFee)); disabled {
+		return
+	}
 	// Updates to the minimum gas price as of ApricotPhase4 if it's already in effect or starts a goroutine to enable it at the correct time
-	gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.ApricotPhase4BlockTimestamp, big.NewInt(params.ApricotPhase4MinBaseFee))
+	// gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.ApricotPhase4BlockTimestamp, big.NewInt(params.ApricotPhase4MinBaseFee))
+
+	// If/when the BaseFeeCut fork activates, update the node's minimum fee default
+	// to reflect the reduced base-fee scale so RPC suggestions align with consensus.
+	den := new(big.Int).SetUint64(params.BaseFeeReductionDenominator)
+	// Use AP4 min as a representative floor (equal to AP3 min in current params)
+	reducedMin := new(big.Int).Div(big.NewInt(params.ApricotPhase4MinBaseFee), den)
+	if reducedMin.Sign() == 0 {
+		reducedMin = big.NewInt(1)
+	}
+	gpu.handleUpdate(gpu.setter.SetMinFee, gpu.chainConfig.BaseFeeCutTimestamp, reducedMin)
 }
 
 // handleUpdate handles calling update(price) at the appropriate time based on

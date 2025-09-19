@@ -33,6 +33,9 @@ const (
 	ApricotPhase5TargetGas                uint64 = 15_000_000
 	ApricotPhase5BaseFeeChangeDenominator uint64 = 36
 
+	// Base fee reduction denominator applied at BaseFeeCutTimestamp
+	BaseFeeReductionDenominator uint64 = 1000
+
 	LpAddressDefault         string = "0x0000000000000000000000000000000000000001"
 	GovernanceAddressDefault string = "0x0000000000000000000000000000000000000002"
 	LpAddressMainnet         string = "0xD72C3d7957950197EcAa68d41E2E6803b61874E3"

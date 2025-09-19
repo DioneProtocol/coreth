@@ -449,6 +449,8 @@ func (vm *VM) Initialize(
 		extDataHashes = testnetExtDataHashes
 	case g.Config.ChainID.Cmp(params.OdysseyLocalChainID) == 0:
 		g.Config = params.OdysseyLocalChainConfig
+	case g.Config.ChainID.Cmp(params.OdysseyDevnetChainID) == 0:
+		g.Config = params.OdysseyDevnetChainConfig
 	}
 	// Set the Odyssey Context on the ChainConfig
 	g.Config.OdysseyContext = params.OdysseyContext{

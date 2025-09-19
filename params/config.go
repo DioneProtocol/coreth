@@ -44,6 +44,8 @@ var (
 	OdysseyTestnetChainID = big.NewInt(131313)
 	// OdysseyLocalChainID ...
 	OdysseyLocalChainID = big.NewInt(131312)
+	// OdysseyDevnetChainID ...
+	OdysseyDevnetChainID = big.NewInt(43112)
 
 	errNonGenesisForkByHeight = errors.New("coreth only supports forking by height at the genesis block")
 )
@@ -74,6 +76,7 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	// OdysseyTestnetChainConfig is the configuration for the Testnet Test Network
@@ -101,6 +104,7 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	// OdysseyLocalChainConfig is the configuration for the Odyssey Local Network
@@ -128,6 +132,34 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		BaseFeeCutTimestamp:             nil,
+	}
+
+	OdysseyDevnetChainConfig = &ChainConfig{
+		ChainID:                         OdysseyDevnetChainID,
+		HomesteadBlock:                  big.NewInt(0),
+		DAOForkBlock:                    big.NewInt(0),
+		DAOForkSupport:                  true,
+		EIP150Block:                     big.NewInt(0),
+		EIP155Block:                     big.NewInt(0),
+		EIP158Block:                     big.NewInt(0),
+		ByzantiumBlock:                  big.NewInt(0),
+		ConstantinopleBlock:             big.NewInt(0),
+		PetersburgBlock:                 big.NewInt(0),
+		IstanbulBlock:                   big.NewInt(0),
+		MuirGlacierBlock:                big.NewInt(0),
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+		ApricotPhase6BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
+		BanffBlockTimestamp:             utils.NewUint64(0),
+		CortinaBlockTimestamp:           utils.NewUint64(0),
+		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		BaseFeeCutTimestamp:             utils.NewUint64(1758349800),
 	}
 
 	TestChainConfig = &ChainConfig{
@@ -155,6 +187,7 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	TestLaunchConfig = &ChainConfig{
@@ -182,6 +215,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	TestApricotPhase1Config = &ChainConfig{
@@ -209,6 +243,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	TestApricotPhase2Config = &ChainConfig{
@@ -236,6 +271,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	TestApricotPhase3Config = &ChainConfig{
@@ -263,6 +299,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	TestApricotPhase4Config = &ChainConfig{
@@ -290,6 +327,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	TestApricotPhase5Config = &ChainConfig{
@@ -317,6 +355,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	TestApricotPhasePre6Config = &ChainConfig{
@@ -344,6 +383,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	TestApricotPhase6Config = &ChainConfig{
@@ -371,6 +411,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	TestApricotPhasePost6Config = &ChainConfig{
@@ -398,6 +439,7 @@ var (
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	TestBanffChainConfig = &ChainConfig{
@@ -425,6 +467,7 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           nil,
 		DUpgradeBlockTimestamp:          nil,
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	TestCortinaChainConfig = &ChainConfig{
@@ -452,6 +495,7 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          nil,
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	TestDUpgradeChainConfig = &ChainConfig{
@@ -478,6 +522,7 @@ var (
 		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
+		BaseFeeCutTimestamp:             nil,
 	}
 
 	TestRules = TestChainConfig.OdysseyRules(new(big.Int), 0)
@@ -534,6 +579,8 @@ type ChainConfig struct {
 	DUpgradeBlockTimestamp *uint64 `json:"dUpgradeBlockTimestamp,omitempty"`
 	// Cancun activates the Cancun upgrade from Ethereum. (nil = no fork, 0 = already activated)
 	CancunTime *uint64 `json:"cancunTime,omitempty"`
+	// BaseFeeCutTimestamp activates the base-fee scale reduction hard fork.
+	BaseFeeCutTimestamp *uint64 `json:"baseFeeCutTimestamp,omitempty"`
 }
 
 // OdysseyContext provides Odyssey specific context directly into the DELTA.
@@ -708,6 +755,12 @@ func (c *ChainConfig) IsCancun(time uint64) bool {
 	return utils.IsTimestampForked(c.CancunTime, time)
 }
 
+// IsBaseFeeCut returns whether [time] represents a block
+// with a timestamp after the base-fee reduction activation.
+func (c *ChainConfig) IsBaseFeeCut(time uint64) bool {
+	return utils.IsTimestampForked(c.BaseFeeCutTimestamp, time)
+}
+
 // CheckCompatible checks whether scheduled fork transitions have been imported
 // with a mismatching chain configuration.
 func (c *ChainConfig) CheckCompatible(newcfg *ChainConfig, height uint64, time uint64) *ConfigCompatError {
@@ -841,6 +894,7 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 		{name: "banffBlockTimestamp", timestamp: c.BanffBlockTimestamp},
 		{name: "cortinaBlockTimestamp", timestamp: c.CortinaBlockTimestamp},
 		{name: "dUpgradeBlockTimestamp", timestamp: c.DUpgradeBlockTimestamp},
+		{name: "baseFeeCutTimestamp", timestamp: c.BaseFeeCutTimestamp},
 		{name: "cancunTime", timestamp: c.CancunTime},
 	} {
 		if lastFork.name != "" {
@@ -944,6 +998,9 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, height *big.Int, time
 	}
 	if isForkTimestampIncompatible(c.CancunTime, newcfg.CancunTime, time) {
 		return newTimestampCompatError("Cancun fork block timestamp", c.DUpgradeBlockTimestamp, newcfg.DUpgradeBlockTimestamp)
+	}
+	if isForkTimestampIncompatible(c.BaseFeeCutTimestamp, newcfg.BaseFeeCutTimestamp, time) {
+		return newTimestampCompatError("BaseFeeCut fork block timestamp", c.BaseFeeCutTimestamp, newcfg.BaseFeeCutTimestamp)
 	}
 
 	return nil
@@ -1068,6 +1125,9 @@ type Rules struct {
 	IsCortina                                                                           bool
 	IsDUpgrade                                                                          bool
 
+	// Custom fork flags
+	IsBaseFeeCut bool
+
 	LpAllocation, GovernanceAllocation, AllocationDenominator *big.Int
 	OrionAllocation, MaxOrionAllocation                       *big.Int
 	PriorityFeeOrionAllocation                                *big.Int
@@ -1118,6 +1178,7 @@ func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
 	rules.IsBanff = c.IsBanff(timestamp)
 	rules.IsCortina = c.IsCortina(timestamp)
 	rules.IsDUpgrade = c.IsDUpgrade(timestamp)
+	rules.IsBaseFeeCut = c.IsBaseFeeCut(timestamp)
 	rules.LpAddress = c.LpAddress(timestamp)
 	rules.GovernanceAddress = c.GovernanceAddress(timestamp)
 	rules.LpAllocation = c.LpAllocation(timestamp)
