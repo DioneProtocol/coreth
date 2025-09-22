@@ -159,7 +159,7 @@ var (
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
 		DUpgradeBlockTimestamp:          utils.NewUint64(0),
-		BaseFeeCutTimestamp:             utils.NewUint64(1758537000),
+		BaseFeeCutTimestamp:             utils.NewUint64(1758538900),
 	}
 
 	TestChainConfig = &ChainConfig{
