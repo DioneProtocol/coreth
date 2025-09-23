@@ -45,6 +45,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/utils/timer/mockable"
 	"github.com/DioneProtocol/odysseygo/utils/units"
 	"github.com/DioneProtocol/odysseygo/vms/components/feecollector"
+	"github.com/DioneProtocol/odysseygo/vms/components/parammanager"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
@@ -99,9 +100,10 @@ type worker struct {
 	clock    *mockable.Clock // Allows us mock the clock for testing
 
 	feeCollector feecollector.FeeCollector
+	paramManager parammanager.ParamManager
 }
 
-func newWorker(config *Config, chainConfig *params.ChainConfig, engine consensus.Engine, eth Backend, mux *event.TypeMux, clock *mockable.Clock, feeCollector feecollector.FeeCollector) *worker {
+func newWorker(config *Config, chainConfig *params.ChainConfig, engine consensus.Engine, eth Backend, mux *event.TypeMux, clock *mockable.Clock, feeCollector feecollector.FeeCollector, paramManager parammanager.ParamManager) *worker {
 	worker := &worker{
 		config:       config,
 		chainConfig:  chainConfig,
@@ -112,6 +114,7 @@ func newWorker(config *Config, chainConfig *params.ChainConfig, engine consensus
 		coinbase:     config.Etherbase,
 		clock:        clock,
 		feeCollector: feeCollector,
+		paramManager: paramManager,
 	}
 
 	return worker

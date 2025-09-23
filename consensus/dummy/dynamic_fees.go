@@ -79,6 +79,14 @@ func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uin
 	}
 	parentGasTargetBig := new(big.Int).SetUint64(parentGasTarget)
 
+	// Apply one-time scaling at the fork boundary
+	if config.IsBaseFeeCut(timestamp) {
+		baseFee.Div(baseFee, new(big.Int).SetUint64(params.BaseFeeReductionDenominator))
+		if baseFee.Sign() == 0 {
+			baseFee = common.Big1
+		}
+	}
+
 	// Add in the gas used by the parent block in the correct place
 	// If the parent consumed gas within the rollup window, add the consumed
 	// gas in.
@@ -174,6 +182,10 @@ func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uin
 
 	// Ensure that the base fee does not increase/decrease outside of the bounds
 	switch {
+	case config.IsBaseFeeCut(timestamp):
+		min := new(big.Int).Set(ApricotPhase4MinBaseFee)
+		min.Div(min, new(big.Int).SetUint64(params.BaseFeeReductionDenominator))
+		baseFee = selectBigWithinBounds(min, baseFee, ApricotPhase4MaxBaseFee)
 	case isApricotPhase5:
 		baseFee = selectBigWithinBounds(ApricotPhase4MinBaseFee, baseFee, nil)
 	case isApricotPhase4:

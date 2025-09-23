@@ -33,6 +33,9 @@ const (
 	ApricotPhase5TargetGas                uint64 = 15_000_000
 	ApricotPhase5BaseFeeChangeDenominator uint64 = 36
 
+	// Base fee reduction denominator applied at BaseFeeCutTimestamp
+	BaseFeeReductionDenominator uint64 = 1000
+
 	LpAddressDefault         string = "0x0000000000000000000000000000000000000001"
 	GovernanceAddressDefault string = "0x0000000000000000000000000000000000000002"
 	LpAddressMainnet         string = "0xD72C3d7957950197EcAa68d41E2E6803b61874E3"
@@ -68,5 +71,9 @@ var (
 	orionLastUpdateTimestampSlot = common.HexToHash("0x0000000000000000000000000000000000000001")
 	orionNodesSlot               = common.HexToHash("0x0000000000000000000000000000000000000002")
 
-	OrionGetter = NewOrionGetter(orionContractAddress, orionLastUpdateTimestampSlot, orionNodesSlot)
+	governanceConfigContractAddress = common.HexToAddress("0x000000000000000000000000000000000000012a")
+	governanceConfigSlot            = common.HexToHash("0x0000000000000000000000000000000000000000")
+
+	OrionGetter     = NewOrionGetter(orionContractAddress, orionLastUpdateTimestampSlot, orionNodesSlot)
+	StakeGovernance = NewStakingGovernanceGetter(governanceConfigSlot, governanceConfigContractAddress)
 )
