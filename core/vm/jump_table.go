@@ -96,6 +96,7 @@ func newCancunInstructionSet() JumpTable {
 	enable1153(&instructionSet) // EIP-1153 "Transient Storage"
 	enable5656(&instructionSet) // EIP-5656 (MCOPY opcode)
 	enable6780(&instructionSet) // EIP-6780 SELFDESTRUCT only in same transaction
+	// @TEMP here will add to apricotPhase7 after testing is done locally
 	enable7939(&instructionSet) // EIP-7939 (CLZ opcode)
 	return validate(instructionSet)
 }
