@@ -57,9 +57,11 @@ type twoOperandParams struct {
 	y string
 }
 
-var alphabetSoup = "ABCDEF090807060504030201ffffffffffffffffffffffffffffffffffffffff"
-var commonParams []*twoOperandParams
-var twoOpMethods map[string]executionFunc
+var (
+	alphabetSoup = "ABCDEF090807060504030201ffffffffffffffffffffffffffffffffffffffff"
+	commonParams []*twoOperandParams
+	twoOpMethods map[string]executionFunc
+)
 
 type contractRef struct {
 	addr common.Address
@@ -226,7 +228,8 @@ func TestAddMod(t *testing.T) {
 		z        string
 		expected string
 	}{
-		{"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		{
+			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 			"fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
 			"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 			"fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
@@ -471,11 +474,13 @@ func BenchmarkOpEq(b *testing.B) {
 
 	opBenchmark(b, opEq, x, y)
 }
+
 func BenchmarkOpEq2(b *testing.B) {
 	x := "FBCDEF090807060504030201ffffffffFBCDEF090807060504030201ffffffff"
 	y := "FBCDEF090807060504030201ffffffffFBCDEF090807060504030201fffffffe"
 	opBenchmark(b, opEq, x, y)
 }
+
 func BenchmarkOpAnd(b *testing.B) {
 	x := alphabetSoup
 	y := alphabetSoup
@@ -526,18 +531,21 @@ func BenchmarkOpSHL(b *testing.B) {
 
 	opBenchmark(b, opSHL, x, y)
 }
+
 func BenchmarkOpSHR(b *testing.B) {
 	x := "FBCDEF090807060504030201ffffffffFBCDEF090807060504030201ffffffff"
 	y := "ff"
 
 	opBenchmark(b, opSHR, x, y)
 }
+
 func BenchmarkOpSAR(b *testing.B) {
 	x := "FBCDEF090807060504030201ffffffffFBCDEF090807060504030201ffffffff"
 	y := "ff"
 
 	opBenchmark(b, opSAR, x, y)
 }
+
 func BenchmarkOpIsZero(b *testing.B) {
 	x := "FBCDEF090807060504030201ffffffffFBCDEF090807060504030201ffffffff"
 	opBenchmark(b, opIszero, x)
@@ -940,6 +948,45 @@ func TestOpMCopy(t *testing.T) {
 		wantGas := tc.wantGas
 		if haveGas != wantGas {
 			t.Errorf("case %d: gas wrong, want %d have %d\n", i, wantGas, haveGas)
+		}
+	}
+}
+
+func TestOpCLZ(t *testing.T) {
+	evm := NewEVM(BlockContext{}, TxContext{}, nil, params.TestChainConfig, Config{})
+	tests := []struct {
+		inputHex string
+		want     uint64 // expected CLZ result
+	}{
+		{"0x0", 256},
+		{"0x1", 255},
+		{"0x6ff", 245},        // 0x6ff = 0b11011111111 (11 bits), so 256-11 = 245
+		{"0xffffffffff", 216}, // 40 bits, so 256-40 = 216
+		{"0x4000000000000000000000000000000000000000000000000000000000000000", 1},
+		{"0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 1},
+		{"0x8000000000000000000000000000000000000000000000000000000000000000", 0},
+		{"0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 0},
+	}
+	for _, tc := range tests {
+		// prepare a fresh stack and PC
+		stack := newstack()
+		pc := uint64(0)
+
+		// parse input
+		val := new(uint256.Int)
+		if err := val.SetFromHex(tc.inputHex); err != nil {
+			t.Fatal("invalid hex uint256:", tc.inputHex)
+		}
+
+		stack.push(val)
+		opCLZ(&pc, evm.interpreter, &ScopeContext{Stack: stack})
+
+		if gotLen := stack.len(); gotLen != 1 {
+			t.Fatalf("stack length = %d; want 1", gotLen)
+		}
+		result := stack.pop()
+		if got := result.Uint64(); got != tc.want {
+			t.Fatalf("clz(%q) = %d; want %d", tc.inputHex, got, tc.want)
 		}
 	}
 }
