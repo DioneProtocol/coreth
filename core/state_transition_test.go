@@ -169,7 +169,7 @@ func TestNativeAssetContractCall(t *testing.T) {
 			want:    "",
 		},
 		"phase7": {
-			config:  params.TestApricotPhase7Config,
+			config:  params.TestPyruniConfig,
 			txs:     txs,
 			gasUsed: []uint64{132117, 24118},
 			want:    "",
@@ -219,7 +219,7 @@ func TestNativeAssetContractConstructor(t *testing.T) {
 			want:    "",
 		},
 		"phase7": {
-			config:  params.TestApricotPhase7Config,
+			config:  params.TestPyruniConfig,
 			txs:     txs,
 			gasUsed: []uint64{74572},
 			want:    "",
@@ -270,7 +270,7 @@ func TestNativeAssetDirectEOACall(t *testing.T) {
 			want:    "",
 		},
 		"phase7": {
-			config:  params.TestApricotPhase7Config,
+			config:  params.TestPyruniConfig,
 			txs:     txs,
 			gasUsed: []uint64{21000, 21000},
 			want:    "",
@@ -316,7 +316,7 @@ func TestDioneEOATransfer(t *testing.T) {
 			want:    "",
 		},
 		"phase7": {
-			config:  params.TestApricotPhase7Config,
+			config:  params.TestPyruniConfig,
 			txs:     txs,
 			gasUsed: []uint64{21000, 210000},
 			want:    "",

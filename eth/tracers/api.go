@@ -1086,8 +1086,8 @@ func overrideConfig(original *params.ChainConfig, override *params.ChainConfig) 
 		copy.CancunTime = timestamp
 		canon = false
 	}
-	if timestamp := override.ApricotPhase7BlockTimestamp; timestamp != nil {
-		copy.ApricotPhase7BlockTimestamp = timestamp
+	if timestamp := override.PyruniBlockTimestamp; timestamp != nil {
+		copy.PyruniBlockTimestamp = timestamp
 		canon = false
 	}
 
