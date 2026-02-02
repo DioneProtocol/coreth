@@ -35,11 +35,12 @@ import (
 	"time"
 
 	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/metrics"
 	"github.com/DioneProtocol/coreth/trie"
 	"github.com/DioneProtocol/coreth/utils"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
 )
 
@@ -124,7 +125,7 @@ type Snapshot interface {
 
 	// Account directly retrieves the account associated with a particular hash in
 	// the snapshot slim data format.
-	Account(hash common.Hash) (*Account, error)
+	Account(hash common.Hash) (*types.SlimAccount, error)
 
 	// AccountRLP directly retrieves the account RLP associated with a particular
 	// hash in the snapshot slim data format.
@@ -944,7 +945,7 @@ func NewDiskLayer(diskdb ethdb.KeyValueStore) Snapshot {
 
 		// state sync uses iterators to access data, so this cache is not used.
 		// initializing it out of caution.
-		cache: utils.NewMeteredCache(32*1024, "", "", 0),
+		cache: utils.NewMeteredCache(32*1024, "", 0),
 	}
 }
 
@@ -954,7 +955,7 @@ func NewTestTree(diskdb ethdb.KeyValueStore, blockHash, root common.Hash) *Tree 
 		diskdb:    diskdb,
 		root:      root,
 		blockHash: blockHash,
-		cache:     utils.NewMeteredCache(128*256, "", "", 0),
+		cache:     utils.NewMeteredCache(128*256, "", 0),
 		created:   time.Now(),
 	}
 	return &Tree{

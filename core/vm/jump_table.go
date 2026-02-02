@@ -33,8 +33,8 @@ import (
 )
 
 type (
-	executionFunc func(pc *uint64, interpreter *DELTAInterpreter, callContext *ScopeContext) ([]byte, error)
-	gasFunc       func(*DELTA, *Contract, *Stack, *Memory, uint64) (uint64, error) // last parameter is the requested memory size as a uint64
+	executionFunc func(pc *uint64, interpreter *EVMInterpreter, callContext *ScopeContext) ([]byte, error)
+	gasFunc       func(*EVM, *Contract, *Stack, *Memory, uint64) (uint64, error) // last parameter is the requested memory size as a uint64
 	// memorySizeFunc returns the required size, and whether the operation overflowed a uint64
 	memorySizeFunc func(*Stack) (size uint64, overflow bool)
 )
@@ -65,10 +65,11 @@ var (
 	apricotPhase1InstructionSet    = newApricotPhase1InstructionSet()
 	apricotPhase2InstructionSet    = newApricotPhase2InstructionSet()
 	apricotPhase3InstructionSet    = newApricotPhase3InstructionSet()
-	dUpgradeInstructionSet         = newDUpgradeInstructionSet()
+	durangoInstructionSet          = newDurangoInstructionSet()
+	cancunInstructionSet           = newCancunInstructionSet()
 )
 
-// JumpTable contains the DELTA opcodes supported at a given fork.
+// JumpTable contains the EVM opcodes supported at a given fork.
 type JumpTable [256]*operation
 
 func validate(jt JumpTable) JumpTable {
@@ -89,10 +90,22 @@ func validate(jt JumpTable) JumpTable {
 	return jt
 }
 
-func newDUpgradeInstructionSet() JumpTable {
+func newCancunInstructionSet() JumpTable {
+	instructionSet := newDurangoInstructionSet()
+	enable4844(&instructionSet) // EIP-4844 (DATAHASH opcode)
+	enable1153(&instructionSet) // EIP-1153 "Transient Storage"
+	enable5656(&instructionSet) // EIP-5656 (MCOPY opcode)
+	enable6780(&instructionSet) // EIP-6780 SELFDESTRUCT only in same transaction
+	return validate(instructionSet)
+}
+
+// newDurangoInstructionSet returns the frontier, homestead, byzantium,
+// constantinople, istanbul, petersburg, apricotPhase1, 2, and 3, durango instructions.
+func newDurangoInstructionSet() JumpTable {
 	instructionSet := newApricotPhase3InstructionSet()
 	enable3855(&instructionSet) // PUSH0 instruction
 	enable3860(&instructionSet) // Limit and meter initcode
+
 	return validate(instructionSet)
 }
 

@@ -35,12 +35,12 @@ import (
 	"github.com/DioneProtocol/coreth/consensus/dummy"
 	"github.com/DioneProtocol/coreth/core/rawdb"
 	"github.com/DioneProtocol/coreth/core/vm"
-	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/DioneProtocol/coreth/trie"
 	"github.com/DioneProtocol/coreth/utils"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,7 +49,7 @@ func setupGenesisBlock(db ethdb.Database, triedb *trie.Database, genesis *Genesi
 }
 
 func TestGenesisBlockForTesting(t *testing.T) {
-	genesisBlockForTestingHash := common.HexToHash("0xb378f22ccd9ad52c6c42f5d46ef2aad6d6866cfcb778ea97a0b6dfde13387330")
+	genesisBlockForTestingHash := common.HexToHash("0xbb0ee25428a49a8d08bca73aa4612ffc16da1ee2c7ad8c8898a177a2e479bc2a")
 	block := GenesisBlockForTesting(rawdb.NewMemoryDatabase(), common.Address{1}, big.NewInt(1))
 	if block.Hash() != genesisBlockForTestingHash {
 		t.Errorf("wrong testing genesis hash, got %v, want %v", block.Hash(), genesisBlockForTestingHash)
@@ -175,7 +175,6 @@ func TestSetupGenesis(t *testing.T) {
 // regression test for precompile activation after header block
 func TestNetworkUpgradeBetweenHeadAndAcceptedBlock(t *testing.T) {
 	db := rawdb.NewMemoryDatabase()
-
 	customg := Genesis{
 		Config: params.TestApricotPhase1Config,
 		Alloc: GenesisAlloc{

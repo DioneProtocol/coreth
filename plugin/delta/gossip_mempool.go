@@ -86,7 +86,7 @@ func (g *GossipEthTxPool) Subscribe(ctx context.Context) {
 				if reset {
 					log.Debug("resetting bloom filter", "reason", "reached max filled ratio")
 
-					g.mempool.IteratePending(func(tx *types.Transaction) bool {
+					g.mempool.IteratePending(func(tx *txpool.Transaction) bool {
 						g.bloom.Add(&GossipEthTx{Tx: pendingTx})
 						return true
 					})
@@ -100,12 +100,13 @@ func (g *GossipEthTxPool) Subscribe(ctx context.Context) {
 // Add enqueues the transaction to the mempool. Subscribe should be called
 // to receive an event if tx is actually added to the mempool or not.
 func (g *GossipEthTxPool) Add(tx *GossipEthTx) error {
-	return g.mempool.AddRemotes([]*types.Transaction{tx.Tx})[0]
+	wrapped := []*txpool.Transaction{{Tx: tx.Tx}}
+	return g.mempool.Add(wrapped, false, false)[0]
 }
 
 func (g *GossipEthTxPool) Iterate(f func(tx *GossipEthTx) bool) {
-	g.mempool.IteratePending(func(tx *types.Transaction) bool {
-		return f(&GossipEthTx{Tx: tx})
+	g.mempool.IteratePending(func(tx *txpool.Transaction) bool {
+		return f(&GossipEthTx{Tx: tx.Tx})
 	})
 }
 

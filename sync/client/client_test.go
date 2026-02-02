@@ -17,13 +17,14 @@ import (
 
 	"github.com/DioneProtocol/coreth/consensus/dummy"
 	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/rawdb"
 	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/ethdb/memorydb"
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	clientstats "github.com/DioneProtocol/coreth/sync/client/stats"
 	"github.com/DioneProtocol/coreth/sync/handlers"
 	handlerstats "github.com/DioneProtocol/coreth/sync/handlers/stats"
+	"github.com/DioneProtocol/coreth/sync/syncutils"
 	"github.com/DioneProtocol/coreth/trie"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -141,7 +142,7 @@ func TestGetBlocks(t *testing.T) {
 	var gspec = &core.Genesis{
 		Config: params.TestChainConfig,
 	}
-	memdb := memorydb.New()
+	memdb := rawdb.NewMemoryDatabase()
 	genesis := gspec.MustCommit(memdb)
 	engine := dummy.NewETHFaker()
 	numBlocks := 110
@@ -409,9 +410,9 @@ func TestGetLeafs(t *testing.T) {
 
 	const leafsLimit = 1024
 
-	trieDB := trie.NewDatabase(memorydb.New())
-	largeTrieRoot, largeTrieKeys, _ := trie.GenerateTrie(t, trieDB, 100_000, common.HashLength)
-	smallTrieRoot, _, _ := trie.GenerateTrie(t, trieDB, leafsLimit, common.HashLength)
+	trieDB := trie.NewDatabase(rawdb.NewMemoryDatabase())
+	largeTrieRoot, largeTrieKeys, _ := syncutils.GenerateTrie(t, trieDB, 100_000, common.HashLength)
+	smallTrieRoot, _, _ := syncutils.GenerateTrie(t, trieDB, leafsLimit, common.HashLength)
 
 	handler := handlers.NewLeafsRequestHandler(trieDB, nil, message.Codec, handlerstats.NewNoopHandlerStats())
 	client := NewClient(&ClientConfig{
@@ -792,8 +793,8 @@ func TestGetLeafs(t *testing.T) {
 func TestGetLeafsRetries(t *testing.T) {
 	rand.Seed(1)
 
-	trieDB := trie.NewDatabase(memorydb.New())
-	root, _, _ := trie.GenerateTrie(t, trieDB, 100_000, common.HashLength)
+	trieDB := trie.NewDatabase(rawdb.NewMemoryDatabase())
+	root, _, _ := syncutils.GenerateTrie(t, trieDB, 100_000, common.HashLength)
 
 	handler := handlers.NewLeafsRequestHandler(trieDB, nil, message.Codec, handlerstats.NewNoopHandlerStats())
 	mockNetClient := &mockNetwork{}

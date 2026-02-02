@@ -31,8 +31,8 @@ import (
 	"testing"
 
 	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 

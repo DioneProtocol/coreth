@@ -68,6 +68,7 @@ var noopReleaser = tracers.StateReleaseFunc(func() {})
 //     provided, it would be preferable to start from a fresh state, if we have it
 //     on disk.
 func (eth *Ethereum) StateAtBlock(ctx context.Context, block *types.Block, reexec uint64, base *state.StateDB, readOnly bool, preferDisk bool) (statedb *state.StateDB, release tracers.StateReleaseFunc, err error) {
+	reexec = 0 // Do not support re-executing historical blocks to grab state
 	var (
 		current  *types.Block
 		database state.Database
@@ -175,7 +176,7 @@ func (eth *Ethereum) StateAtBlock(ctx context.Context, block *types.Block, reexe
 			return nil, nil, fmt.Errorf("processing block %d failed: %v", current.NumberU64(), err)
 		}
 		// Finalize the state so any modifications are written to the trie
-		root, err := statedb.Commit(eth.blockchain.Config().IsEIP158(current.Number()), true)
+		root, err := statedb.Commit(current.NumberU64(), eth.blockchain.Config().IsEIP158(current.Number()), true)
 		if err != nil {
 			return nil, nil, fmt.Errorf("stateAtBlock commit failed, number %d root %v: %w",
 				current.NumberU64(), current.Root().Hex(), err)
@@ -211,7 +212,7 @@ func (eth *Ethereum) stateAtTransaction(ctx context.Context, block *types.Block,
 	}
 	// Lookup the statedb of parent block from the live database,
 	// otherwise regenerate it on the flight.
-	statedb, release, err := eth.StateAtBlock(ctx, parent, reexec, nil, true, false)
+	statedb, release, err := eth.StateAtNextBlock(ctx, parent, block, reexec, nil, true, false)
 	if err != nil {
 		return nil, vm.BlockContext{}, nil, nil, err
 	}
@@ -223,13 +224,13 @@ func (eth *Ethereum) stateAtTransaction(ctx context.Context, block *types.Block,
 	for idx, tx := range block.Transactions() {
 		// Assemble the transaction call message and return if the requested offset
 		msg, _ := core.TransactionToMessage(tx, signer, block.BaseFee())
-		txContext := core.NewDELTATxContext(msg)
-		context := core.NewDELTABlockContext(block.Header(), eth.blockchain, nil)
+		txContext := core.NewEVMTxContext(msg)
+		context := core.NewEVMBlockContext(block.Header(), eth.blockchain, nil)
 		if idx == txIndex {
 			return msg, context, statedb, release, nil
 		}
 		// Not yet the searched for transaction, execute on top of the current state
-		vmenv := vm.NewDELTA(context, txContext, statedb, eth.blockchain.Config(), vm.Config{})
+		vmenv := vm.NewEVM(context, txContext, statedb, eth.blockchain.Config(), vm.Config{})
 		statedb.SetTxContext(tx.Hash(), idx)
 		if _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(tx.Gas())); err != nil {
 			return nil, vm.BlockContext{}, nil, nil, fmt.Errorf("transaction %#x failed: %v", tx.Hash(), err)
@@ -239,4 +240,18 @@ func (eth *Ethereum) stateAtTransaction(ctx context.Context, block *types.Block,
 		statedb.Finalise(vmenv.ChainConfig().IsEIP158(block.Number()))
 	}
 	return nil, vm.BlockContext{}, nil, nil, fmt.Errorf("transaction index %d out of range for block %#x", txIndex, block.Hash())
+}
+
+// StateAtNextBlock is a helper function that returns the state at the next block.
+// It wraps StateAtBlock and handles the case where Upgrades are applied to the
+// next block.
+// This is different than using StateAtBlock with [nextBlock] because it will
+// apply the upgrades to the [parent] state before returning it.
+func (eth *Ethereum) StateAtNextBlock(ctx context.Context, parent *types.Block, nextBlock *types.Block, reexec uint64, base *state.StateDB, readOnly bool, preferDisk bool) (*state.StateDB, tracers.StateReleaseFunc, error) {
+	// Get state for [parent]
+	statedb, release, err := eth.StateAtBlock(ctx, parent, reexec, base, readOnly, preferDisk)
+	if err != nil {
+		return nil, nil, err
+	}
+	return statedb, release, nil
 }

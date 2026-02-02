@@ -6,9 +6,9 @@ package rawdb
 import (
 	"encoding/binary"
 
-	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/DioneProtocol/odysseygo/utils/wrappers"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
 )
 

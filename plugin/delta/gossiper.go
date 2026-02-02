@@ -140,7 +140,7 @@ func (n *pushGossiper) queueExecutableTxs(state *state.StateDB, baseFee *big.Int
 		}
 
 		// Don't try to regossip a transaction too frequently
-		if time.Since(tx.FirstSeen()) < n.config.RegossipFrequency.Duration {
+		if time.Since(tx.Time()) < n.config.RegossipFrequency.Duration {
 			continue
 		}
 
@@ -178,7 +178,16 @@ func (n *pushGossiper) queueRegossipTxs() types.Transactions {
 
 	// Split the pending transactions into locals and remotes
 	localTxs := make(map[common.Address]types.Transactions)
-	remoteTxs := pending
+	remoteTxs := make(map[common.Address]types.Transactions)
+
+	for address, lazyTxs := range pending {
+		var txs []*types.Transaction
+		for _, lazyTx := range lazyTxs {
+			txs = append(txs, lazyTx.Resolve().Tx)
+		}
+		remoteTxs[address] = txs
+	}
+
 	for _, account := range n.txPool.Locals() {
 		if txs := remoteTxs[account]; len(txs) > 0 {
 			delete(remoteTxs, account)
@@ -344,7 +353,7 @@ func (n *pushGossiper) gossipEthTxs(force bool) (int, error) {
 	selectedTxs := make([]*types.Transaction, 0)
 	for _, tx := range txs {
 		txHash := tx.Hash()
-		txStatus := n.txPool.Status([]common.Hash{txHash})[0]
+		txStatus := n.txPool.Status(txHash)
 		if txStatus != txpool.TxStatusPending {
 			continue
 		}
@@ -465,12 +474,16 @@ func (h *GossipHandler) HandleAtomicTx(nodeID ids.NodeID, msg message.AtomicTxGo
 	}
 
 	h.stats.IncAtomicGossipReceivedNew()
-	if err := h.vm.issueTx(&tx, false /*=local*/); err != nil {
+
+	h.vm.ctx.Lock.RLock()
+	defer h.vm.ctx.Lock.RUnlock()
+	if err := h.vm.mempool.AddTx(&tx); err != nil {
 		log.Trace(
 			"AppGossip provided invalid transaction",
 			"peerID", nodeID,
 			"err", err,
 		)
+		h.stats.IncAtomicGossipReceivedError()
 	}
 
 	return nil
@@ -502,7 +515,11 @@ func (h *GossipHandler) HandleEthTxs(nodeID ids.NodeID, msg message.EthTxsGossip
 		return nil
 	}
 	h.stats.IncEthTxsGossipReceived()
-	errs := h.txPool.AddRemotes(txs)
+	wrapped := make([]*txpool.Transaction, len(txs))
+	for i, tx := range txs {
+		wrapped[i] = &txpool.Transaction{Tx: tx}
+	}
+	errs := h.txPool.Add(wrapped, false, false)
 	for i, err := range errs {
 		if err != nil {
 			log.Trace(

@@ -107,6 +107,7 @@ type test struct {
 
 func TestDynamicFees(t *testing.T) {
 	spacedTimestamps := []uint64{1, 1, 2, 5, 15, 120}
+
 	var tests []test = []test{
 		// Test minimal gas usage
 		{
@@ -276,7 +277,7 @@ func TestSelectBigWithinBounds(t *testing.T) {
 		lower, value, upper, expected *big.Int
 	}
 
-	var tests = map[string]test{
+	tests := map[string]test{
 		"value within bounds": {
 			lower:    big.NewInt(0),
 			value:    big.NewInt(5),
@@ -332,6 +333,7 @@ func TestCalcBaseFeeAP4(t *testing.T) {
 				gasUsed:        1_000_000,
 				extDataGasUsed: big.NewInt(100_000),
 			},
+			extDataFeeGreater: true,
 		},
 		{
 			block: blockDefinition{
@@ -363,7 +365,6 @@ func TestCalcBaseFeeAP4(t *testing.T) {
 				gasUsed:        6_000_000,
 				extDataGasUsed: big.NewInt(0),
 			},
-			extDataFeeGreater: true,
 		},
 		{
 			block: blockDefinition{
@@ -371,6 +372,7 @@ func TestCalcBaseFeeAP4(t *testing.T) {
 				gasUsed:        6_000_000,
 				extDataGasUsed: big.NewInt(0),
 			},
+			extDataFeeGreater: true,
 		},
 		{
 			block: blockDefinition{
@@ -378,6 +380,7 @@ func TestCalcBaseFeeAP4(t *testing.T) {
 				gasUsed:        6_000_000,
 				extDataGasUsed: big.NewInt(10_000),
 			},
+			extDataFeeGreater: true,
 		},
 		{
 			block: blockDefinition{
@@ -385,7 +388,6 @@ func TestCalcBaseFeeAP4(t *testing.T) {
 				gasUsed:        6_000_000,
 				extDataGasUsed: big.NewInt(0),
 			},
-			extDataFeeGreater: true,
 		},
 	}
 
@@ -393,14 +395,14 @@ func TestCalcBaseFeeAP4(t *testing.T) {
 		Time:    0,
 		GasUsed: 1_000_000,
 		Number:  big.NewInt(0),
-		BaseFee: big.NewInt(225 * params.GWei),
+		BaseFee: big.NewInt(2_380_952_380_952_381),
 		Extra:   nil,
 	}
 	extDataHeader := &types.Header{
 		Time:    0,
 		GasUsed: 1_000_000,
 		Number:  big.NewInt(0),
-		BaseFee: big.NewInt(225 * params.GWei),
+		BaseFee: big.NewInt(2_380_952_380_952_381),
 		Extra:   nil,
 		// ExtDataGasUsage is set to be nil to ensure CalcBaseFee can handle the
 		// AP3/AP4 boundary.
@@ -431,7 +433,7 @@ func TestCalcBaseFeeAP4(t *testing.T) {
 			ExtDataGasUsed: block.extDataGasUsed,
 		}
 
-		assert.Equal(t, event.extDataFeeGreater, extDataHeader.BaseFee.Cmp(header.BaseFee) == 1, "unexpected cmp for index %d", index)
+		assert.Equal(t, event.extDataFeeGreater, extDataHeader.BaseFee.Cmp(header.BaseFee) < 1, "unexpected cmp for index %d", index)
 	}
 }
 

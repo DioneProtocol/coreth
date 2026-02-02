@@ -38,9 +38,26 @@ import (
 	"github.com/DioneProtocol/coreth/core/vm"
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	ethCrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 )
+
+var (
+	signer     = types.LatestSigner(params.TestChainConfig)
+	testKey, _ = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	testAddr   = crypto.PubkeyToAddress(testKey.PublicKey)
+)
+
+func makeContractTx(nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte) *types.Transaction {
+	tx, _ := types.SignTx(types.NewContractCreation(nonce, amount, gasLimit, gasPrice, data), signer, testKey)
+	return tx
+}
+
+func makeTx(nonce uint64, to common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte) *types.Transaction {
+	tx, _ := types.SignTx(types.NewTransaction(nonce, to, amount, gasLimit, gasPrice, data), signer, testKey)
+	return tx
+}
 
 /*
 //SPDX-License-Identifier: MIT
@@ -78,12 +95,13 @@ func executeStateTransitionTest(t *testing.T, st stateTransitionTest) {
 	require.Equal(len(st.txs), len(st.gasUsed), "length of gas used must match length of txs")
 
 	var (
-		db    = rawdb.NewMemoryDatabase()
-		gspec = &Genesis{
+		db             = rawdb.NewMemoryDatabase()
+		initialBalance = new(big.Int).Mul(big.NewInt(params.Ether), big.NewInt(2000)) // 2000 ether
+		gspec          = &Genesis{
 			Config: st.config,
 			Alloc: GenesisAlloc{
 				common.HexToAddress("0x71562b71999873DB5b286dF957af199Ec94617F7"): GenesisAccount{
-					Balance: big.NewInt(2000000000000000000), // 2 ether
+					Balance: initialBalance,
 					Nonce:   0,
 				},
 			},
@@ -122,10 +140,10 @@ func TestNativeAssetContractCall(t *testing.T) {
 	contractAddr := ethCrypto.CreateAddress(testAddr, 0)
 	txs := []*types.Transaction{
 		makeContractTx(0, common.Big0, 500_000, big.NewInt(params.LaunchMinGasPrice), data),
-		makeTx(1, contractAddr, common.Big0, 100_000, big.NewInt(params.LaunchMinGasPrice), nil), // No input data is necessary, since this will hit the contract's fallback function.
+		makeTx(1, contractAddr, common.Big0, 300_000, big.NewInt(params.LaunchMinGasPrice), nil), // No input data is necessary, since this will hit the contract's fallback function.
 	}
 
-	phase6Tests := map[string]stateTransitionTest{
+	phase7Tests := map[string]stateTransitionTest{
 		"phase5": {
 			config:  params.TestApricotPhase5Config,
 			txs:     txs,
@@ -150,9 +168,15 @@ func TestNativeAssetContractCall(t *testing.T) {
 			gasUsed: []uint64{132091, 21618},
 			want:    "",
 		},
+		"phase7": {
+			config:  params.TestPyruniConfig,
+			txs:     txs,
+			gasUsed: []uint64{132117, 24118},
+			want:    "",
+		},
 	}
 
-	for name, stTest := range phase6Tests {
+	for name, stTest := range phase7Tests {
 		t.Run(name, func(t *testing.T) {
 			executeStateTransitionTest(t, stTest)
 		})
@@ -166,10 +190,10 @@ func TestNativeAssetContractConstructor(t *testing.T) {
 	require.NoError(err)
 
 	txs := []*types.Transaction{
-		makeContractTx(0, common.Big0, 100_000, big.NewInt(params.LaunchMinGasPrice), data),
+		makeContractTx(0, common.Big0, 300_000, big.NewInt(params.LaunchMinGasPrice), data),
 	}
 
-	phase6Tests := map[string]stateTransitionTest{
+	phase7Tests := map[string]stateTransitionTest{
 		"phase5": {
 			config:  params.TestApricotPhase5Config,
 			txs:     txs,
@@ -194,9 +218,15 @@ func TestNativeAssetContractConstructor(t *testing.T) {
 			gasUsed: []uint64{72046},
 			want:    "",
 		},
+		"phase7": {
+			config:  params.TestPyruniConfig,
+			txs:     txs,
+			gasUsed: []uint64{74572},
+			want:    "",
+		},
 	}
 
-	for name, stTest := range phase6Tests {
+	for name, stTest := range phase7Tests {
 		t.Run(name, func(t *testing.T) {
 			executeStateTransitionTest(t, stTest)
 		})
@@ -205,14 +235,15 @@ func TestNativeAssetContractConstructor(t *testing.T) {
 
 func TestNativeAssetDirectEOACall(t *testing.T) {
 	txs := []*types.Transaction{
-		makeTx(0, vm.NativeAssetCallAddr, common.Big0, 100_000, big.NewInt(params.LaunchMinGasPrice), nil),
+		makeTx(0, vm.NativeAssetCallAddr, common.Big0, 300_000, big.NewInt(params.LaunchMinGasPrice), nil),
+		makeTx(1, vm.NativeAssetCallAddr, common.Big1, 300_000, big.NewInt(params.LaunchMinGasPrice), nil),
 	}
 
-	phase6Tests := map[string]stateTransitionTest{
+	phase7Tests := map[string]stateTransitionTest{
 		"phase5": {
 			config:  params.TestApricotPhase5Config,
 			txs:     txs,
-			gasUsed: []uint64{41000},
+			gasUsed: []uint64{41000, 41000},
 			want:    "",
 		},
 		// Note: PrePhase6 used a soft error to ensure the Native Asset Call precompile was not used from an EOA, however,
@@ -223,24 +254,76 @@ func TestNativeAssetDirectEOACall(t *testing.T) {
 		"prePhase6": {
 			config:  params.TestApricotPhasePre6Config,
 			txs:     txs,
-			gasUsed: []uint64{21000},
+			gasUsed: []uint64{21000, 21000},
 			want:    "",
 		},
 		"phase6": {
 			config:  params.TestApricotPhase6Config,
 			txs:     txs,
-			gasUsed: []uint64{41000},
+			gasUsed: []uint64{41000, 41000},
 			want:    "",
 		},
 		"banff": {
 			config:  params.TestBanffChainConfig,
 			txs:     txs,
-			gasUsed: []uint64{21000},
+			gasUsed: []uint64{21000, 21000},
+			want:    "",
+		},
+		"phase7": {
+			config:  params.TestPyruniConfig,
+			txs:     txs,
+			gasUsed: []uint64{21000, 21000},
 			want:    "",
 		},
 	}
 
-	for name, stTest := range phase6Tests {
+	for name, stTest := range phase7Tests {
+		t.Run(name, func(t *testing.T) {
+			executeStateTransitionTest(t, stTest)
+		})
+	}
+}
+
+func TestDioneEOATransfer(t *testing.T) {
+	txs := []*types.Transaction{
+		makeTx(0, testAddr, common.Big0, 300_000, big.NewInt(params.LaunchMinGasPrice), nil),
+		makeTx(1, testAddr, common.Big1, 300_000, big.NewInt(params.LaunchMinGasPrice), nil),
+	}
+
+	phase7Tests := map[string]stateTransitionTest{
+		"phase5": {
+			config:  params.TestApricotPhase5Config,
+			txs:     txs,
+			gasUsed: []uint64{21000, 21000},
+			want:    "",
+		},
+		"prePhase6": {
+			config:  params.TestApricotPhasePre6Config,
+			txs:     txs,
+			gasUsed: []uint64{21000, 21000},
+			want:    "",
+		},
+		"phase6": {
+			config:  params.TestApricotPhase6Config,
+			txs:     txs,
+			gasUsed: []uint64{21000, 21000},
+			want:    "",
+		},
+		"banff": {
+			config:  params.TestBanffChainConfig,
+			txs:     txs,
+			gasUsed: []uint64{21000, 21000},
+			want:    "",
+		},
+		"phase7": {
+			config:  params.TestPyruniConfig,
+			txs:     txs,
+			gasUsed: []uint64{21000, 210000},
+			want:    "",
+		},
+	}
+
+	for name, stTest := range phase7Tests {
 		t.Run(name, func(t *testing.T) {
 			executeStateTransitionTest(t, stTest)
 		})

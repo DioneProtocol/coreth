@@ -20,6 +20,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
 	"github.com/DioneProtocol/odysseygo/utils/logging"
 	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/utils/units"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
@@ -28,6 +29,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/txpool"
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/params"
 )
@@ -36,7 +38,7 @@ func TestEthTxGossip(t *testing.T) {
 	require := require.New(t)
 
 	// set up prefunded address
-	importAmount := uint64(1_000_000_000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, _, sender := GenesisVMWithUTXOs(t, true, genesisJSONLatest, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -49,7 +51,7 @@ func TestEthTxGossip(t *testing.T) {
 
 	importTx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 	require.NoError(err)
-	require.NoError(vm.issueTx(importTx, true))
+	require.NoError(vm.mempool.AddLocalTx(importTx))
 	<-issuer
 
 	blk, err := vm.BuildBlock(context.Background())
@@ -127,7 +129,7 @@ func TestEthTxGossip(t *testing.T) {
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(vm.chainID), key)
 	require.NoError(err)
 
-	errs := vm.txPool.AddLocals([]*types.Transaction{signedTx})
+	errs := vm.txPool.Add([]*txpool.Transaction{{Tx: signedTx}}, true, true)
 	require.Len(errs, 1)
 	require.Nil(errs[0])
 
@@ -228,7 +230,7 @@ func TestAtomicTxGossip(t *testing.T) {
 	importTx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 	require.NoError(err)
 
-	require.NoError(vm.issueTx(importTx, true /*=local*/))
+	require.NoError(vm.mempool.AddLocalTx(importTx))
 	<-issuer
 
 	// wait so we aren't throttled by the vm

@@ -66,7 +66,7 @@ func TestWaitDeployed(t *testing.T) {
 	for name, test := range waitDeployedTests {
 		backend := backends.NewSimulatedBackend(
 			core.GenesisAlloc{
-				crypto.PubkeyToAddress(testKey.PublicKey): {Balance: new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(1000))},
+				crypto.PubkeyToAddress(testKey.PublicKey): {Balance: new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(100000))},
 			},
 			10000000,
 		)
@@ -113,9 +113,10 @@ func TestWaitDeployed(t *testing.T) {
 }
 
 func TestWaitDeployedCornerCases(t *testing.T) {
+	initialBalance := new(big.Int).Mul(big.NewInt(1000000000000000000), big.NewInt(1000))
 	backend := backends.NewSimulatedBackend(
 		core.GenesisAlloc{
-			crypto.PubkeyToAddress(testKey.PublicKey): {Balance: big.NewInt(1000000000000000000)},
+			crypto.PubkeyToAddress(testKey.PublicKey): {Balance: initialBalance},
 		},
 		10000000,
 	)

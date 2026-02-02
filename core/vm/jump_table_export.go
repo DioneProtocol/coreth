@@ -24,8 +24,10 @@ import (
 // the rules.
 func LookupInstructionSet(rules params.Rules) (JumpTable, error) {
 	switch {
-	case rules.IsDUpgrade:
-		return newDUpgradeInstructionSet(), nil
+	case rules.IsCancun:
+		return newCancunInstructionSet(), nil
+	case rules.IsDurango, rules.IsPyruni:
+		return newDurangoInstructionSet(), nil
 	case rules.IsApricotPhase3, rules.IsApricotPhase4,
 		rules.IsApricotPhase5, rules.IsApricotPhasePre6,
 		rules.IsApricotPhase6, rules.IsApricotPhasePost6,

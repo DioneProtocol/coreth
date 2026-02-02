@@ -38,9 +38,12 @@ import (
 
 	"github.com/DioneProtocol/coreth/consensus"
 	"github.com/DioneProtocol/coreth/consensus/dummy"
+	"github.com/DioneProtocol/coreth/consensus/misc/eip4844"
 	"github.com/DioneProtocol/coreth/core"
 	"github.com/DioneProtocol/coreth/core/state"
+	"github.com/DioneProtocol/coreth/core/txpool"
 	"github.com/DioneProtocol/coreth/core/types"
+	"github.com/DioneProtocol/coreth/core/vm"
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/DioneProtocol/odysseygo/utils/timer/mockable"
 	"github.com/DioneProtocol/odysseygo/utils/units"
@@ -64,8 +67,7 @@ var (
 
 // environment is the worker's current environment and holds all of the current state information.
 type environment struct {
-	signer types.Signer
-
+	signer  types.Signer
 	state   *state.StateDB // apply state changes here
 	tcount  int            // tx count in cycle
 	gasPool *core.GasPool  // available gas used to pack transactions
@@ -76,6 +78,7 @@ type environment struct {
 	receipts []*types.Receipt
 	size     uint64
 
+	rules params.Rules
 	start time.Time // Time that block building began
 }
 
@@ -172,6 +175,20 @@ func (w *worker) commitNewWork() (*types.Block, error) {
 			return nil, fmt.Errorf("failed to calculate new base fee: %w", err)
 		}
 	}
+
+	// Apply EIP-4844
+	if w.chainConfig.IsCancun(header.Number, header.Time) {
+		var excessBlobGas uint64
+		if w.chainConfig.IsCancun(parent.Number, parent.Time) {
+			excessBlobGas = eip4844.CalcExcessBlobGas(*parent.ExcessBlobGas, *parent.BlobGasUsed)
+		} else {
+			// For the first post-fork block, both parent.data_gas_used and parent.excess_data_gas are evaluated as 0
+			excessBlobGas = eip4844.CalcExcessBlobGas(0, 0)
+		}
+		header.BlobGasUsed = new(uint64)
+		header.ExcessBlobGas = &excessBlobGas
+	}
+
 	if w.coinbase == (common.Address{}) {
 		return nil, errors.New("cannot mine without etherbase")
 	}
@@ -180,18 +197,28 @@ func (w *worker) commitNewWork() (*types.Block, error) {
 		return nil, fmt.Errorf("failed to prepare header for mining: %w", err)
 	}
 
+	// Instantiate stateDB and kick off prefetcher.
 	env, err := w.createCurrentEnvironment(parent, header, tstart)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new current environment: %w", err)
 	}
+
+	// Ensure we always stop prefetcher after block building is complete.
+	defer func() {
+		if env.state == nil {
+			return
+		}
+		env.state.StopPrefetcher()
+	}()
+
 	// Configure any stateful precompiles that should go into effect during this block.
 	w.chainConfig.CheckConfigurePrecompiles(&parent.Time, types.NewBlockWithHeader(header), env.state)
 
 	// Fill the block with all available pending transactions.
-	pending := w.eth.TxPool().Pending(true)
+	pending := w.eth.TxPool().PendingWithBaseFee(true, header.BaseFee)
 
 	// Split the pending transactions into locals and remotes
-	localTxs := make(map[common.Address]types.Transactions)
+	localTxs := make(map[common.Address][]*txpool.LazyTransaction)
 	remoteTxs := pending
 	for _, account := range w.eth.TxPool().Locals() {
 		if txs := remoteTxs[account]; len(txs) > 0 {
@@ -200,22 +227,25 @@ func (w *worker) commitNewWork() (*types.Block, error) {
 		}
 	}
 	if len(localTxs) > 0 {
-		txs := types.NewTransactionsByPriceAndNonce(env.signer, localTxs, header.BaseFee)
-		w.commitTransactions(env, txs, w.coinbase)
+		txs := newTransactionsByPriceAndNonce(env.signer, localTxs, header.BaseFee)
+		w.commitTransactions(env, txs, header.Coinbase)
 	}
 	if len(remoteTxs) > 0 {
-		txs := types.NewTransactionsByPriceAndNonce(env.signer, remoteTxs, header.BaseFee)
-		w.commitTransactions(env, txs, w.coinbase)
+		txs := newTransactionsByPriceAndNonce(env.signer, remoteTxs, header.BaseFee)
+		w.commitTransactions(env, txs, header.Coinbase)
 	}
 
 	return w.commit(env)
 }
 
 func (w *worker) createCurrentEnvironment(parent *types.Header, header *types.Header, tstart time.Time) (*environment, error) {
+	// Retrieve the parent state to apply transactions to and kickoff prefetcher,
+	// which will retrieve intermediate nodes for all modified state.
 	state, err := w.chain.StateAt(parent.Root)
 	if err != nil {
 		return nil, err
 	}
+	state.StartPrefetcher("miner", w.eth.BlockChain().CacheConfig().TriePrefetcherParallelism)
 	return &environment{
 		signer:  types.MakeSigner(w.chainConfig, header.Number, header.Time),
 		state:   state,
@@ -223,30 +253,33 @@ func (w *worker) createCurrentEnvironment(parent *types.Header, header *types.He
 		header:  header,
 		tcount:  0,
 		gasPool: new(core.GasPool).AddGas(header.GasLimit),
+		rules:   w.chainConfig.OdysseyRules(header.Number, header.Time),
 		start:   tstart,
 	}, nil
 }
 
-func (w *worker) commitTransaction(env *environment, tx *types.Transaction, coinbase common.Address) ([]*types.Log, error) {
+func (w *worker) commitTransaction(env *environment, tx *txpool.Transaction, coinbase common.Address) ([]*types.Log, error) {
 	var (
-		snap = env.state.Snapshot()
-		gp   = env.gasPool.Gas()
+		snap         = env.state.Snapshot()
+		gp           = env.gasPool.Gas()
+		blockContext vm.BlockContext
 	)
 
-	receipt, err := core.ApplyTransaction(w.chainConfig, w.chain, &coinbase, env.gasPool, env.state, env.header, tx, &env.header.GasUsed, *w.chain.GetVMConfig())
+	blockContext = core.NewEVMBlockContext(env.header, w.chain, &coinbase)
+	receipt, err := core.ApplyTransaction(w.chainConfig, w.chain, blockContext, env.gasPool, env.state, env.header, tx.Tx, &env.header.GasUsed, *w.chain.GetVMConfig())
 	if err != nil {
 		env.state.RevertToSnapshot(snap)
 		env.gasPool.SetGas(gp)
 		return nil, err
 	}
-	env.txs = append(env.txs, tx)
+	env.txs = append(env.txs, tx.Tx)
 	env.receipts = append(env.receipts, receipt)
-	env.size += tx.Size()
+	env.size += tx.Tx.Size()
 
 	return receipt.Logs, nil
 }
 
-func (w *worker) commitTransactions(env *environment, txs *types.TransactionsByPriceAndNonce, coinbase common.Address) {
+func (w *worker) commitTransactions(env *environment, txs *transactionsByPriceAndNonce, coinbase common.Address) {
 	for {
 		// If we don't have enough gas for any further transactions then we're done.
 		if env.gasPool.Gas() < params.TxGas {
@@ -254,38 +287,45 @@ func (w *worker) commitTransactions(env *environment, txs *types.TransactionsByP
 			break
 		}
 		// Retrieve the next transaction and abort if all done.
-		tx := txs.Peek()
-		if tx == nil {
+		ltx := txs.Peek()
+		if ltx == nil {
 			break
 		}
+		tx := ltx.Resolve()
+		if tx == nil {
+			log.Warn("Ignoring evicted transaction")
+
+			txs.Pop()
+			continue
+		}
 		// Abort transaction if it won't fit in the block and continue to search for a smaller
-		// transction that will fit.
-		if totalTxsSize := env.size + tx.Size(); totalTxsSize > targetTxsSize {
-			log.Trace("Skipping transaction that would exceed target size", "hash", tx.Hash(), "totalTxsSize", totalTxsSize, "txSize", tx.Size())
+		// transaction that will fit.
+		if totalTxsSize := env.size + tx.Tx.Size(); totalTxsSize > targetTxsSize {
+			log.Trace("Skipping transaction that would exceed target size", "hash", tx.Tx.Hash(), "totalTxsSize", totalTxsSize, "txSize", tx.Tx.Size())
 
 			txs.Pop()
 			continue
 		}
 		// Error may be ignored here. The error has already been checked
 		// during transaction acceptance is the transaction pool.
-		from, _ := types.Sender(env.signer, tx)
+		from, _ := types.Sender(env.signer, tx.Tx)
 
 		// Check whether the tx is replay protected. If we're not in the EIP155 hf
 		// phase, start ignoring the sender until we do.
-		if tx.Protected() && !w.chainConfig.IsEIP155(env.header.Number) {
-			log.Trace("Ignoring reply protected transaction", "hash", tx.Hash(), "eip155", w.chainConfig.EIP155Block)
+		if tx.Tx.Protected() && !w.chainConfig.IsEIP155(env.header.Number) {
+			log.Trace("Ignoring reply protected transaction", "hash", tx.Tx.Hash(), "eip155", w.chainConfig.EIP155Block)
 
 			txs.Pop()
 			continue
 		}
 		// Start executing the transaction
-		env.state.SetTxContext(tx.Hash(), env.tcount)
+		env.state.SetTxContext(tx.Tx.Hash(), env.tcount)
 
 		_, err := w.commitTransaction(env, tx, coinbase)
 		switch {
 		case errors.Is(err, core.ErrNonceTooLow):
 			// New head notification data race between the transaction pool and miner, shift
-			log.Trace("Skipping transaction with low nonce", "sender", from, "nonce", tx.Nonce())
+			log.Trace("Skipping transaction with low nonce", "sender", from, "nonce", tx.Tx.Nonce())
 			txs.Shift()
 
 		case errors.Is(err, nil):
@@ -295,7 +335,7 @@ func (w *worker) commitTransactions(env *environment, txs *types.TransactionsByP
 		default:
 			// Transaction is regarded as invalid, drop all consecutive transactions from
 			// the same sender because of `nonce-too-high` clause.
-			log.Debug("Transaction failed, account skipped", "hash", tx.Hash(), "err", err)
+			log.Debug("Transaction failed, account skipped", "hash", tx.Tx.Hash(), "err", err)
 			txs.Pop()
 		}
 	}

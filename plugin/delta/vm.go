@@ -29,7 +29,6 @@ import (
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/eth"
 	"github.com/DioneProtocol/coreth/eth/ethconfig"
-	"github.com/DioneProtocol/coreth/ethdb"
 	corethPrometheus "github.com/DioneProtocol/coreth/metrics/prometheus"
 	"github.com/DioneProtocol/coreth/miner"
 	"github.com/DioneProtocol/coreth/node"
@@ -43,6 +42,7 @@ import (
 	handlerstats "github.com/DioneProtocol/coreth/sync/handlers/stats"
 	"github.com/DioneProtocol/coreth/trie"
 	"github.com/DioneProtocol/coreth/utils"
+	"github.com/ethereum/go-ethereum/ethdb"
 
 	"github.com/prometheus/client_golang/prometheus"
 	// Force-load tracer engine to trigger registration
@@ -387,6 +387,7 @@ func (vm *VM) Initialize(
 	// Create logger
 	alias, err := vm.ctx.BCLookup.PrimaryAlias(vm.ctx.ChainID)
 	if err != nil {
+		// fallback to ChainID string instead of erroring
 		alias = vm.ctx.ChainID.String()
 	}
 
@@ -419,7 +420,7 @@ func (vm *VM) Initialize(
 	baseDB := dbManager.Current().Database
 	// Use NewNested rather than New so that the structure of the database
 	// remains the same regardless of the provided baseDB type.
-	vm.chaindb = Database{prefixdb.NewNested(ethDBPrefix, baseDB)}
+	vm.chaindb = rawdb.NewDatabase(Database{prefixdb.NewNested(ethDBPrefix, baseDB)})
 	vm.db = versiondb.New(baseDB)
 	vm.acceptedBlockDB = prefixdb.New(acceptedPrefix, vm.db)
 	vm.metadataDB = prefixdb.New(metadataPrefix, vm.db)
@@ -442,13 +443,16 @@ func (vm *VM) Initialize(
 	// Set the chain config for mainnet/testnet chain IDs
 	switch {
 	case g.Config.ChainID.Cmp(params.OdysseyMainnetChainID) == 0:
-		g.Config = params.OdysseyMainnetChainConfig
+		config := *params.OdysseyMainnetChainConfig
+		g.Config = &config
 		extDataHashes = mainnetExtDataHashes
 	case g.Config.ChainID.Cmp(params.OdysseyTestnetChainID) == 0:
-		g.Config = params.OdysseyTestnetChainConfig
+		config := *params.OdysseyTestnetChainConfig
+		g.Config = &config
 		extDataHashes = testnetExtDataHashes
 	case g.Config.ChainID.Cmp(params.OdysseyLocalChainID) == 0:
-		g.Config = params.OdysseyLocalChainConfig
+		config := *params.OdysseyLocalChainConfig
+		g.Config = &config
 	}
 	// Set the Odyssey Context on the ChainConfig
 	g.Config.OdysseyContext = params.OdysseyContext{
@@ -486,7 +490,7 @@ func (vm *VM) Initialize(
 	// Set minimum price for mining and default gas price oracle value to the min
 	// gas price to prevent so transactions and blocks all use the correct fees
 	vm.ethConfig.RPCGasCap = vm.config.RPCGasCap
-	vm.ethConfig.RPCDELTATimeout = vm.config.APIMaxDuration.Duration
+	vm.ethConfig.RPCEVMTimeout = vm.config.APIMaxDuration.Duration
 	vm.ethConfig.RPCTxFeeCap = vm.config.RPCTxFeeCap
 
 	vm.ethConfig.TxPool.NoLocals = !vm.config.LocalTxsEnabled
@@ -498,18 +502,18 @@ func (vm *VM) Initialize(
 	vm.ethConfig.TxPool.GlobalSlots = vm.config.TxPoolGlobalSlots
 	vm.ethConfig.TxPool.AccountQueue = vm.config.TxPoolAccountQueue
 	vm.ethConfig.TxPool.GlobalQueue = vm.config.TxPoolGlobalQueue
+	vm.ethConfig.TxPool.Lifetime = vm.config.TxPoolLifetime.Duration
 
 	vm.ethConfig.AllowUnfinalizedQueries = vm.config.AllowUnfinalizedQueries
 	vm.ethConfig.AllowUnprotectedTxs = vm.config.AllowUnprotectedTxs
 	vm.ethConfig.AllowUnprotectedTxHashes = vm.config.AllowUnprotectedTxHashes
 	vm.ethConfig.Preimages = vm.config.Preimages
+	vm.ethConfig.Pruning = vm.config.Pruning
 	vm.ethConfig.TrieCleanCache = vm.config.TrieCleanCache
-	vm.ethConfig.TrieCleanJournal = vm.config.TrieCleanJournal
-	vm.ethConfig.TrieCleanRejournal = vm.config.TrieCleanRejournal.Duration
 	vm.ethConfig.TrieDirtyCache = vm.config.TrieDirtyCache
 	vm.ethConfig.TrieDirtyCommitTarget = vm.config.TrieDirtyCommitTarget
+	vm.ethConfig.TriePrefetcherParallelism = vm.config.TriePrefetcherParallelism
 	vm.ethConfig.SnapshotCache = vm.config.SnapshotCache
-	vm.ethConfig.Pruning = vm.config.Pruning
 	vm.ethConfig.AcceptorQueueLimit = vm.config.AcceptorQueueLimit
 	vm.ethConfig.PopulateMissingTries = vm.config.PopulateMissingTries
 	vm.ethConfig.PopulateMissingTriesParallelism = vm.config.PopulateMissingTriesParallelism
@@ -524,6 +528,7 @@ func (vm *VM) Initialize(
 	vm.ethConfig.SkipUpgradeCheck = vm.config.SkipUpgradeCheck
 	vm.ethConfig.AcceptedCacheSize = vm.config.AcceptedCacheSize
 	vm.ethConfig.TxLookupLimit = vm.config.TxLookupLimit
+	vm.ethConfig.SkipTxIndexing = vm.config.SkipTxIndexing
 
 	// Create directory for offline pruning
 	if len(vm.ethConfig.OfflinePruningDataDirectory) != 0 {
@@ -543,14 +548,14 @@ func (vm *VM) Initialize(
 
 	vm.codec = Codec
 
-	// TODO: read size from settings
-	vm.mempool, err = NewMempool(chainCtx.DIONEAssetID, defaultMempoolSize)
-	if err != nil {
-		return fmt.Errorf("failed to initialize mempool: %w", err)
-	}
-
 	if err := vm.initializeMetrics(); err != nil {
 		return err
+	}
+
+	// TODO: read size from settings
+	vm.mempool, err = NewMempool(chainCtx, defaultMempoolSize, vm.verifyTxAtTip)
+	if err != nil {
+		return fmt.Errorf("failed to initialize mempool: %w", err)
 	}
 
 	// initialize peer network
@@ -565,30 +570,44 @@ func (vm *VM) Initialize(
 	}
 	// initialize bonus blocks on mainnet
 	var (
-		bonusBlockHeights     map[uint64]ids.ID
-		canonicalBlockHeights []uint64
+		bonusBlockHeights map[uint64]ids.ID
+		bonusBlockRepair  map[uint64]*types.Block
 	)
 	if vm.chainID.Cmp(params.OdysseyMainnetChainID) == 0 {
 		bonusBlockHeights = bonusBlockMainnetHeights
-		canonicalBlockHeights = canonicalBlockMainnetHeights
+		bonusBlockRepair = mainnetBonusBlocksParsed
 	}
+	defer func() {
+		// Free memory after VM is initialized
+		mainnetBonusBlocksParsed = nil
+		mainnetBonusBlocksJson = nil
+	}()
 
 	// initialize atomic repository
 	vm.atomicTxRepository, err = NewAtomicTxRepository(
 		vm.db, vm.codec, lastAcceptedHeight,
-		bonusBlockHeights, canonicalBlockHeights,
 		vm.getAtomicTxFromPreApricot5BlockByHeight,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create atomic repository: %w", err)
 	}
-	vm.atomicBackend, err = NewAtomicBackend(
-		vm.db, vm.ctx.SharedMemory, bonusBlockHeights, vm.atomicTxRepository, lastAcceptedHeight, lastAcceptedHash, vm.config.CommitInterval,
+	vm.atomicBackend, _, err = NewAtomicBackendWithBonusBlockRepair(
+		vm.db, vm.ctx.SharedMemory, bonusBlockHeights, bonusBlockRepair,
+		vm.atomicTxRepository, lastAcceptedHeight, lastAcceptedHash,
+		vm.config.CommitInterval,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create atomic backend: %w", err)
 	}
 	vm.atomicTrie = vm.atomicBackend.AtomicTrie()
+
+	// Run the atomic trie height map repair in the background on mainnet/testnet
+	// TODO: remove after Durango
+	if vm.chainID.Cmp(params.OdysseyMainnetChainID) == 0 ||
+		vm.chainID.Cmp(params.OdysseyTestnetChainID) == 0 {
+		_, lastCommitted := vm.atomicTrie.LastCommitted()
+		go vm.atomicTrie.RepairHeightMap(lastCommitted)
+	}
 
 	go vm.ctx.Log.RecoverAndPanic(vm.startContinuousProfiler)
 
@@ -655,8 +674,10 @@ func (vm *VM) initializeChain(lastAcceptedHash common.Hash) error {
 	vm.blockChain = vm.eth.BlockChain()
 	vm.miner = vm.eth.Miner()
 
-	// start goroutines to update the tx pool gas minimum gas price when upgrades go into effect
-	vm.handleGasPriceUpdates()
+	// Set the gas parameters for the tx pool to the minimum gas price for the
+	// latest upgrade.
+	vm.txPool.SetGasTip(big.NewInt(0))
+	vm.txPool.SetMinFee(big.NewInt(params.PyruniMinBaseFee))
 
 	vm.eth.Start()
 	return vm.initChainState(vm.blockChain.LastAcceptedBlock())
@@ -735,15 +756,16 @@ func (vm *VM) initChainState(lastAcceptedBlock *types.Block) error {
 	block.status = choices.Accepted
 
 	config := &chain.Config{
-		DecidedCacheSize:    decidedCacheSize,
-		MissingCacheSize:    missingCacheSize,
-		UnverifiedCacheSize: unverifiedCacheSize,
-		BytesToIDCacheSize:  bytesToIDCacheSize,
-		GetBlockIDAtHeight:  vm.GetBlockIDAtHeight,
-		GetBlock:            vm.getBlock,
-		UnmarshalBlock:      vm.parseBlock,
-		BuildBlock:          vm.buildBlock,
-		LastAcceptedBlock:   block,
+		DecidedCacheSize:      decidedCacheSize,
+		MissingCacheSize:      missingCacheSize,
+		UnverifiedCacheSize:   unverifiedCacheSize,
+		BytesToIDCacheSize:    bytesToIDCacheSize,
+		GetBlockIDAtHeight:    vm.GetBlockIDAtHeight,
+		GetBlock:              vm.getBlock,
+		UnmarshalBlock:        vm.parseBlock,
+		BuildBlock:            vm.buildBlock,
+		BuildBlockWithContext: vm.buildBlockWithContext,
+		LastAcceptedBlock:     block,
 	}
 
 	// Register chain state metrics
@@ -757,8 +779,8 @@ func (vm *VM) initChainState(lastAcceptedBlock *types.Block) error {
 	return vm.multiGatherer.Register(chainStateMetricsPrefix, chainStateRegisterer)
 }
 
-func (vm *VM) createConsensusCallbacks() *dummy.ConsensusCallbacks {
-	return &dummy.ConsensusCallbacks{
+func (vm *VM) createConsensusCallbacks() dummy.ConsensusCallbacks {
+	return dummy.ConsensusCallbacks{
 		OnFinalizeAndAssemble: vm.onFinalizeAndAssemble,
 		OnExtraStateChange:    vm.onExtraStateChange,
 	}
@@ -1010,6 +1032,9 @@ func (vm *VM) onExtraStateChange(block *types.Block, state *state.StateDB, recei
 			}
 		}
 		// Update the atomic backend with [txs] from this block.
+		//
+		// Note: The atomic trie canonically contains the duplicate operations
+		// from any bonus blocks.
 		_, err := vm.atomicBackend.InsertTxs(block.Hash(), block.NumberU64(), block.ParentHash(), txs)
 		if err != nil {
 			return nil, nil, err
@@ -1199,7 +1224,7 @@ func (vm *VM) setAppRequestHandlers() {
 	// Create separate DELTA TrieDB (read only) for serving leafs requests.
 	// We create a separate TrieDB here, so that it has a separate cache from the one
 	// used by the node when processing blocks.
-	deltaTrieDB := trie.NewDatabaseWithConfig(
+	evmTrieDB := trie.NewDatabaseWithConfig(
 		vm.chaindb,
 		&trie.Config{
 			Cache: vm.config.StateSyncServerTrieCache,
@@ -1208,7 +1233,7 @@ func (vm *VM) setAppRequestHandlers() {
 	syncRequestHandler := handlers.NewSyncHandler(
 		vm.blockChain,
 		vm.chaindb,
-		deltaTrieDB,
+		evmTrieDB,
 		vm.atomicTrie.TrieDB(),
 		vm.networkCodec,
 		handlerstats.NewHandlerStats(metrics.Enabled),
@@ -1242,7 +1267,16 @@ func (vm *VM) Shutdown(context.Context) error {
 }
 
 // buildBlock builds a block to be wrapped by ChainState
-func (vm *VM) buildBlock(_ context.Context) (snowman.Block, error) {
+func (vm *VM) buildBlock(ctx context.Context) (snowman.Block, error) {
+	return vm.buildBlockWithContext(ctx, nil)
+}
+
+func (vm *VM) buildBlockWithContext(ctx context.Context, proposerVMBlockCtx *block.Context) (snowman.Block, error) {
+	if proposerVMBlockCtx != nil {
+		log.Debug("Building block with context", "oChainBlockHeight", proposerVMBlockCtx.OChainHeight)
+	} else {
+		log.Debug("Building block without context")
+	}
 	block, err := vm.miner.GenerateBlock()
 	vm.builder.handleGenerateBlock()
 	if err != nil {
@@ -1255,9 +1289,6 @@ func (vm *VM) buildBlock(_ context.Context) (snowman.Block, error) {
 	if err != nil {
 		log.Debug("discarding txs due to error making new block", "err", err)
 		vm.mempool.DiscardCurrentTxs()
-		return nil, err
-	}
-	if err != nil {
 		return nil, err
 	}
 
@@ -1346,8 +1377,7 @@ func (vm *VM) VerifyHeightIndex(context.Context) error {
 	return nil
 }
 
-// GetBlockAtHeight implements the HeightIndexedChainVM interface and returns the
-// canonical block at [blkHeight].
+// GetBlockAtHeight returns the canonical block at [blkHeight].
 // If [blkHeight] is less than the height of the last accepted block, this will return
 // the block accepted at that height. Otherwise, it may return a blkID that has not yet
 // been accepted.
@@ -1371,22 +1401,14 @@ func (vm *VM) Version(context.Context) (string, error) {
 //   - The handler's functionality is defined by [service]
 //     [service] should be a gorilla RPC service (see https://www.gorillatoolkit.org/pkg/rpc/v2)
 //   - The name of the service is [name]
-//   - The LockOption is the first element of [lockOption]
-//     By default the LockOption is WriteLock
-//     [lockOption] should have either 0 or 1 elements. Elements beside the first are ignored.
-func newHandler(name string, service interface{}, lockOption ...commonEng.LockOption) (*commonEng.HTTPHandler, error) {
+func newHandler(name string, service interface{}) (*commonEng.HTTPHandler, error) {
 	server := odysseyRPC.NewServer()
 	server.RegisterCodec(odysseyJSON.NewCodec(), "application/json")
 	server.RegisterCodec(odysseyJSON.NewCodec(), "application/json;charset=UTF-8")
 	if err := server.RegisterService(service, name); err != nil {
 		return nil, err
 	}
-
-	var lock commonEng.LockOption = commonEng.WriteLock
-	if len(lockOption) != 0 {
-		lock = lockOption[0]
-	}
-	return &commonEng.HTTPHandler{LockOptions: lock, Handler: server}, nil
+	return &commonEng.HTTPHandler{LockOptions: commonEng.NoLock, Handler: server}, nil
 }
 
 // CreateHandlers makes new http handlers that can handle API calls
@@ -1555,44 +1577,19 @@ func (vm *VM) ParseAddress(addrStr string) (ids.ID, ids.ShortID, error) {
 	return chainID, addr, nil
 }
 
-// issueTx verifies [tx] as valid to be issued on top of the currently preferred block
-// and then issues [tx] into the mempool if valid.
-func (vm *VM) issueTx(tx *Tx, local bool) error {
-	if err := vm.verifyTxAtTip(tx); err != nil {
-		if !local {
-			// unlike local txs, invalid remote txs are recorded as discarded
-			// so that they won't be requested again
-			txID := tx.ID()
-			vm.mempool.discardedTxs.Put(txID, tx)
-			log.Debug("failed to verify remote tx being issued to the mempool",
-				"txID", txID,
-				"err", err,
-			)
-			return nil
-		}
-		return err
-	}
-	// add to mempool and possibly re-gossip
-	if err := vm.mempool.AddTx(tx); err != nil {
-		if !local {
-			// unlike local txs, invalid remote txs are recorded as discarded
-			// so that they won't be requested again
-			txID := tx.ID()
-			vm.mempool.discardedTxs.Put(tx.ID(), tx)
-			log.Debug("failed to issue remote tx to mempool",
-				"txID", txID,
-				"err", err,
-			)
-			return nil
-		}
-		return err
-	}
-
-	return nil
-}
-
 // verifyTxAtTip verifies that [tx] is valid to be issued on top of the currently preferred block
 func (vm *VM) verifyTxAtTip(tx *Tx) error {
+	if txByteLen := len(tx.SignedBytes()); txByteLen > targetAtomicTxsSize {
+		return fmt.Errorf("tx size (%d) exceeds total atomic txs size target (%d)", txByteLen, targetAtomicTxsSize)
+	}
+	gasUsed, err := tx.GasUsed(true)
+	if err != nil {
+		return err
+	}
+	if new(big.Int).SetUint64(gasUsed).Cmp(params.AtomicGasLimit) > 0 {
+		return fmt.Errorf("tx gas usage (%d) exceeds atomic gas limit (%d)", gasUsed, params.AtomicGasLimit.Uint64())
+	}
+
 	// Note: we fetch the current block and then the state at that block instead of the current state directly
 	// since we need the header of the current block below.
 	preferredBlock := vm.blockChain.CurrentBlock()
@@ -1612,6 +1609,8 @@ func (vm *VM) verifyTxAtTip(tx *Tx) error {
 		}
 	}
 
+	// We don’t need to revert the state here in case verifyTx errors, because
+	// [preferredState] is thrown away either way.
 	return vm.verifyTx(tx, parentHeader.Hash(), nextBaseFee, preferredState, rules)
 }
 

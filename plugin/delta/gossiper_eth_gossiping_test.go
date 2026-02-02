@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/txpool"
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/DioneProtocol/coreth/plugin/delta/message"
@@ -31,7 +32,7 @@ import (
 )
 
 func fundAddressByGenesis(addrs []common.Address) (string, error) {
-	balance := big.NewInt(0xffffffffffffff)
+	balance := new(big.Int).Exp(big.NewInt(10), big.NewInt(23), nil)
 	genesis := &core.Genesis{
 		Difficulty: common.Big0,
 		GasLimit:   uint64(5000000),
@@ -73,7 +74,7 @@ func getValidEthTxs(key *ecdsa.PrivateKey, count int, gasPrice *big.Int) []*type
 				gasPrice,
 				[]byte(strings.Repeat("aaaaaaaaaa", 100))),
 			types.HomesteadSigner{}, key)
-		tx.SetFirstSeen(time.Now().Add(-1 * time.Minute))
+		tx.SetTime(time.Now().Add(-1 * time.Minute))
 		res[i] = tx
 	}
 	return res
@@ -102,7 +103,7 @@ func TestMempoolEthTxsAddedTxsGossipedAfterActivation(t *testing.T) {
 		err := vm.Shutdown(context.Background())
 		assert.NoError(err)
 	}()
-	vm.txPool.SetGasPrice(common.Big1)
+	// vm.txPool.SetGasPrice(common.Big1)
 	vm.txPool.SetMinFee(common.Big0)
 
 	// create eth txes
@@ -190,7 +191,7 @@ func TestMempoolEthTxsAddedTxsGossipedAfterActivationChunking(t *testing.T) {
 		err := vm.Shutdown(context.Background())
 		assert.NoError(err)
 	}()
-	vm.txPool.SetGasPrice(common.Big1)
+	// vm.txPool.SetGasPrice(common.Big1)
 	vm.txPool.SetMinFee(common.Big0)
 
 	// create eth txes
@@ -252,7 +253,7 @@ func TestMempoolEthTxsAppGossipHandling(t *testing.T) {
 		err := vm.Shutdown(context.Background())
 		assert.NoError(err)
 	}()
-	vm.txPool.SetGasPrice(common.Big1)
+	vm.txPool.SetGasTip(common.Big1)
 	vm.txPool.SetMinFee(common.Big0)
 
 	var (
@@ -307,11 +308,11 @@ func TestMempoolEthTxsRegossipSingleAccount(t *testing.T) {
 		err := vm.Shutdown(context.Background())
 		assert.NoError(err)
 	}()
-	vm.txPool.SetGasPrice(common.Big1)
+	// vm.txPool.SetGasPrice(common.Big1)
 	vm.txPool.SetMinFee(common.Big0)
 
 	// create eth txes
-	ethTxs := getValidEthTxs(key, 10, big.NewInt(226*params.GWei))
+	ethTxs := getValidEthTxs(key, 10, big.NewInt(2_380_953*params.GWei))
 
 	// Notify VM about eth txs
 	errs := vm.txPool.AddRemotesSync(ethTxs)
@@ -347,25 +348,25 @@ func TestMempoolEthTxsRegossip(t *testing.T) {
 		err := vm.Shutdown(context.Background())
 		assert.NoError(err)
 	}()
-	vm.txPool.SetGasPrice(common.Big1)
+	// vm.txPool.SetGasPrice(common.Big1)
 	vm.txPool.SetMinFee(common.Big0)
 
 	// create eth txes
-	ethTxs := make([]*types.Transaction, 20)
+	ethTxs := make([]*txpool.Transaction, 20)
 	ethTxHashes := make([]common.Hash, 20)
 	for i := 0; i < 20; i++ {
-		txs := getValidEthTxs(keys[i], 1, big.NewInt(226*params.GWei))
+		txs := getValidEthTxs(keys[i], 1, big.NewInt(2_380_953*params.GWei))
 		tx := txs[0]
-		ethTxs[i] = tx
+		ethTxs[i] = &txpool.Transaction{Tx: tx}
 		ethTxHashes[i] = tx.Hash()
 	}
 
 	// Notify VM about eth txs
-	errs := vm.txPool.AddRemotesSync(ethTxs[:10])
+	errs := vm.txPool.Add(ethTxs[:10], false, true)
 	for _, err := range errs {
 		assert.NoError(err, "failed adding coreth tx to remote mempool")
 	}
-	errs = vm.txPool.AddLocals(ethTxs[10:])
+	errs = vm.txPool.Add(ethTxs[10:], true, true)
 	for _, err := range errs {
 		assert.NoError(err, "failed adding coreth tx to local mempool")
 	}

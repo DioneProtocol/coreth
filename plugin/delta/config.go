@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/DioneProtocol/coreth/core/txpool"
+	"github.com/DioneProtocol/coreth/core/txpool/legacypool"
 	"github.com/DioneProtocol/coreth/eth"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cast"
@@ -21,6 +21,7 @@ const (
 	defaultTrieCleanCache                             = 512
 	defaultTrieDirtyCache                             = 512
 	defaultTrieDirtyCommitTarget                      = 20
+	defaultTriePrefetcherParallelism                  = 16
 	defaultSnapshotCache                              = 256
 	defaultSyncableCommitInterval                     = defaultCommitInterval * 4
 	defaultSnapshotWait                               = false
@@ -38,9 +39,9 @@ const (
 	defaultOfflinePruningBloomFilterSize       uint64 = 512 // Default size (MB) for the offline pruner to use
 	defaultLogLevel                                   = "info"
 	defaultLogJSONFormat                              = false
-	defaultPopulateMissingTriesParallelism            = 1024
 	defaultMaxOutboundActiveRequests                  = 16
 	defaultMaxOutboundActiveCrossChainRequests        = 64
+	defaultPopulateMissingTriesParallelism            = 1024
 	defaultStateSyncServerTrieCache                   = 64 // MB
 	defaultAcceptedCacheSize                          = 32 // blocks
 
@@ -92,17 +93,16 @@ type Config struct {
 	ContinuousProfilerFrequency Duration `json:"continuous-profiler-frequency"` // Frequency to run continuous profiler if enabled
 	ContinuousProfilerMaxFiles  int      `json:"continuous-profiler-max-files"` // Maximum number of files to maintain
 
-	// Coreth API Gas/Price Caps
+	// API Gas/Price Caps
 	RPCGasCap   uint64  `json:"rpc-gas-cap"`
 	RPCTxFeeCap float64 `json:"rpc-tx-fee-cap"`
 
 	// Cache settings
-	TrieCleanCache        int      `json:"trie-clean-cache"`         // Size of the trie clean cache (MB)
-	TrieCleanJournal      string   `json:"trie-clean-journal"`       // Directory to use to save the trie clean cache (must be populated to enable journaling the trie clean cache)
-	TrieCleanRejournal    Duration `json:"trie-clean-rejournal"`     // Frequency to re-journal the trie clean cache to disk (minimum 1 minute, must be populated to enable journaling the trie clean cache)
-	TrieDirtyCache        int      `json:"trie-dirty-cache"`         // Size of the trie dirty cache (MB)
-	TrieDirtyCommitTarget int      `json:"trie-dirty-commit-target"` // Memory limit to target in the dirty cache before performing a commit (MB)
-	SnapshotCache         int      `json:"snapshot-cache"`           // Size of the snapshot disk layer clean cache (MB)
+	TrieCleanCache            int `json:"trie-clean-cache"`            // Size of the trie clean cache (MB)
+	TrieDirtyCache            int `json:"trie-dirty-cache"`            // Size of the trie dirty cache (MB)
+	TrieDirtyCommitTarget     int `json:"trie-dirty-commit-target"`    // Memory limit to target in the dirty cache before performing a commit (MB)
+	TriePrefetcherParallelism int `json:"trie-prefetcher-parallelism"` // Max concurrent disk reads trie prefetcher should perform at once
+	SnapshotCache             int `json:"snapshot-cache"`              // Size of the snapshot disk layer clean cache (MB)
 
 	// Eth Settings
 	Preimages      bool `json:"preimages-enabled"`
@@ -112,7 +112,7 @@ type Config struct {
 	// Pruning Settings
 	Pruning                         bool    `json:"pruning-enabled"`                    // If enabled, trie roots are only persisted every 4096 blocks
 	AcceptorQueueLimit              int     `json:"accepted-queue-limit"`               // Maximum blocks to queue before blocking during acceptance
-	CommitInterval                  uint64  `json:"commit-interval"`                    // Specifies the commit interval at which to persist DELTA and atomic tries.
+	CommitInterval                  uint64  `json:"commit-interval"`                    // Specifies the commit interval at which to persist EVM and atomic tries.
 	AllowMissingTries               bool    `json:"allow-missing-tries"`                // If enabled, warnings preventing an incomplete trie index are suppressed
 	PopulateMissingTries            *uint64 `json:"populate-missing-tries,omitempty"`   // Sets the starting point for re-populating missing tries. Disables re-generation if nil.
 	PopulateMissingTriesParallelism int     `json:"populate-missing-tries-parallelism"` // Number of concurrent readers to use when re-populating missing tries on startup.
@@ -131,6 +131,7 @@ type Config struct {
 	TxPoolGlobalSlots  uint64   `json:"tx-pool-global-slots"`
 	TxPoolAccountQueue uint64   `json:"tx-pool-account-queue"`
 	TxPoolGlobalQueue  uint64   `json:"tx-pool-global-queue"`
+	TxPoolLifetime     Duration `json:"tx-pool-lifetime"`
 
 	APIMaxDuration           Duration      `json:"api-max-duration"`
 	WSCPURefillRate          Duration      `json:"ws-cpu-refill-rate"`
@@ -197,6 +198,11 @@ type Config struct {
 	//  * N:   means N block limit [HEAD-N+1, HEAD] and delete extra indexes
 	TxLookupLimit uint64 `json:"tx-lookup-limit"`
 
+	// SkipTxIndexing skips indexing transactions.
+	// This is useful for validators that don't need to index transactions.
+	// TxLookupLimit can be still used to control unindexing old transactions.
+	SkipTxIndexing bool `json:"skip-tx-indexing"`
+
 	// RPC settings
 	HttpBodyLimit      uint64 `json:"http-body-limit"`
 	BatchItemLimit     uint64 `json:"batch-item-limit"`
@@ -218,14 +224,15 @@ func (c *Config) SetDefaults() {
 	c.RPCTxFeeCap = defaultRpcTxFeeCap
 	c.MetricsExpensiveEnabled = defaultMetricsExpensiveEnabled
 
-	c.TxPoolJournal = txpool.DefaultConfig.Journal
-	c.TxPoolRejournal = Duration{txpool.DefaultConfig.Rejournal}
-	c.TxPoolPriceLimit = txpool.DefaultConfig.PriceLimit
-	c.TxPoolPriceBump = txpool.DefaultConfig.PriceBump
-	c.TxPoolAccountSlots = txpool.DefaultConfig.AccountSlots
-	c.TxPoolGlobalSlots = txpool.DefaultConfig.GlobalSlots
-	c.TxPoolAccountQueue = txpool.DefaultConfig.AccountQueue
-	c.TxPoolGlobalQueue = txpool.DefaultConfig.GlobalQueue
+	c.TxPoolJournal = legacypool.DefaultConfig.Journal
+	c.TxPoolRejournal = Duration{legacypool.DefaultConfig.Rejournal}
+	c.TxPoolPriceLimit = legacypool.DefaultConfig.PriceLimit
+	c.TxPoolPriceBump = legacypool.DefaultConfig.PriceBump
+	c.TxPoolAccountSlots = legacypool.DefaultConfig.AccountSlots
+	c.TxPoolGlobalSlots = legacypool.DefaultConfig.GlobalSlots
+	c.TxPoolAccountQueue = legacypool.DefaultConfig.AccountQueue
+	c.TxPoolGlobalQueue = legacypool.DefaultConfig.GlobalQueue
+	c.TxPoolLifetime.Duration = legacypool.DefaultConfig.Lifetime
 
 	c.APIMaxDuration.Duration = defaultApiMaxDuration
 	c.WSCPURefillRate.Duration = defaultWsCpuRefillRate
@@ -237,19 +244,20 @@ func (c *Config) SetDefaults() {
 	c.TrieCleanCache = defaultTrieCleanCache
 	c.TrieDirtyCache = defaultTrieDirtyCache
 	c.TrieDirtyCommitTarget = defaultTrieDirtyCommitTarget
+	c.TriePrefetcherParallelism = defaultTriePrefetcherParallelism
 	c.SnapshotCache = defaultSnapshotCache
 	c.AcceptorQueueLimit = defaultAcceptorQueueLimit
+	c.CommitInterval = defaultCommitInterval
 	c.SnapshotWait = defaultSnapshotWait
 	c.RegossipFrequency.Duration = defaultTxRegossipFrequency
 	c.RegossipMaxTxs = defaultTxRegossipMaxSize
 	c.OfflinePruningBloomFilterSize = defaultOfflinePruningBloomFilterSize
 	c.LogLevel = defaultLogLevel
-	c.PopulateMissingTriesParallelism = defaultPopulateMissingTriesParallelism
 	c.LogJSONFormat = defaultLogJSONFormat
 	c.MaxOutboundActiveRequests = defaultMaxOutboundActiveRequests
 	c.MaxOutboundActiveCrossChainRequests = defaultMaxOutboundActiveCrossChainRequests
+	c.PopulateMissingTriesParallelism = defaultPopulateMissingTriesParallelism
 	c.StateSyncServerTrieCache = defaultStateSyncServerTrieCache
-	c.CommitInterval = defaultCommitInterval
 	c.StateSyncCommitInterval = defaultSyncableCommitInterval
 	c.StateSyncMinBlocks = defaultStateSyncMinBlocks
 	c.StateSyncRequestSize = defaultStateSyncRequestSize

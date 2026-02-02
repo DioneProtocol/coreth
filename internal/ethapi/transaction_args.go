@@ -90,7 +90,6 @@ func (args *TransactionArgs) setDefaults(ctx context.Context, b Backend) error {
 	if err := args.setFeeDefaults(ctx, b); err != nil {
 		return err
 	}
-
 	if args.Value == nil {
 		args.Value = new(hexutil.Big)
 	}
@@ -123,7 +122,7 @@ func (args *TransactionArgs) setDefaults(ctx context.Context, b Backend) error {
 			AccessList:           args.AccessList,
 		}
 		pendingBlockNr := rpc.BlockNumberOrHashWithNumber(rpc.PendingBlockNumber)
-		estimated, err := DoEstimateGas(ctx, b, callArgs, pendingBlockNr, b.RPCGasCap())
+		estimated, err := DoEstimateGas(ctx, b, callArgs, pendingBlockNr, nil, b.RPCGasCap())
 		if err != nil {
 			return err
 		}
@@ -217,7 +216,7 @@ func (args *TransactionArgs) setApricotPhase3FeeDefault(ctx context.Context, hea
 }
 
 // ToMessage converts the transaction arguments to the Message type used by the
-// core delta. This method is used in calls and traces that do not require a real
+// core evm. This method is used in calls and traces that do not require a real
 // live transaction.
 func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int) (*core.Message, error) {
 	// Reject invalid combinations of pre- and post-1559 fee styles
@@ -236,7 +235,7 @@ func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int) (*
 		gas = uint64(*args.Gas)
 	}
 	if globalGasCap != 0 && globalGasCap < gas {
-		log.Warn("Caller gas above allowance, capping", "requested", gas, "cap", globalGasCap)
+		log.Info("Caller gas above allowance, capping", "requested", gas, "cap", globalGasCap)
 		gas = globalGasCap
 	}
 	var (
@@ -258,7 +257,7 @@ func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int) (*
 			gasPrice = args.GasPrice.ToInt()
 			gasFeeCap, gasTipCap = gasPrice, gasPrice
 		} else {
-			// User specified 1559 gas feilds (or none), use those
+			// User specified 1559 gas fields (or none), use those
 			gasFeeCap = new(big.Int)
 			if args.MaxFeePerGas != nil {
 				gasFeeCap = args.MaxFeePerGas.ToInt()
@@ -267,7 +266,7 @@ func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int) (*
 			if args.MaxPriorityFeePerGas != nil {
 				gasTipCap = args.MaxPriorityFeePerGas.ToInt()
 			}
-			// Backfill the legacy gasPrice for DELTA execution, unless we're all zeroes
+			// Backfill the legacy gasPrice for EVM execution, unless we're all zeroes
 			gasPrice = new(big.Int)
 			if gasFeeCap.BitLen() > 0 || gasTipCap.BitLen() > 0 {
 				gasPrice = math.BigMin(new(big.Int).Add(gasTipCap, baseFee), gasFeeCap)

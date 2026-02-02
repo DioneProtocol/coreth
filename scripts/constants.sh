@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 
+# Ignore warnings about variables appearing unused since this file is not the consumer of the variables it defines.
+# shellcheck disable=SC2034
+
+set -euo pipefail
+
 # Set the PATHS
 GOPATH="$(go env GOPATH)"
 
 # Set binary location
 binary_path=${CORETH_BINARY_PATH:-"$GOPATH/src/github.com/DioneProtocol/odysseygo/build/plugins/delta"}
 
-# Avalabs docker hub
-dockerhub_repo="avaplatform/odysseygo"
+# Odyssey docker hub
+dockerhub_repo="dioneprotocol/odysseygo"
 
 # Current branch
 current_branch=${CURRENT_BRANCH:-$(git describe --tags --exact-match 2> /dev/null || git symbolic-ref -q --short HEAD || git rev-parse --short HEAD)}

@@ -32,11 +32,14 @@ const (
 	ApricotPhase4BaseFeeChangeDenominator uint64 = 12
 	ApricotPhase5TargetGas                uint64 = 15_000_000
 	ApricotPhase5BaseFeeChangeDenominator uint64 = 36
+	PyruniMinBaseFee                      int64  = 23_809_523_809_524
 
 	LpAddressDefault         string = "0x0000000000000000000000000000000000000001"
 	GovernanceAddressDefault string = "0x0000000000000000000000000000000000000002"
 	LpAddressMainnet         string = "0xD72C3d7957950197EcAa68d41E2E6803b61874E3"
 	GovernanceAddressMannet  string = "0xD21A82BB789dCa05271711902F9E7FDDE158Bfd7"
+
+	DynamicFeeExtraDataSize = 80
 
 	// The base cost to charge per atomic transaction. Added in Apricot Phase 5.
 	AtomicTxBaseCost uint64 = 21_000

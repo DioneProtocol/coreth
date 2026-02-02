@@ -32,10 +32,11 @@ import (
 	"time"
 
 	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/ethdb"
+	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/trie"
 	"github.com/DioneProtocol/coreth/utils"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -88,7 +89,7 @@ func (dl *diskLayer) Stale() bool {
 
 // Account directly retrieves the account associated with a particular hash in
 // the snapshot slim data format.
-func (dl *diskLayer) Account(hash common.Hash) (*Account, error) {
+func (dl *diskLayer) Account(hash common.Hash) (*types.SlimAccount, error) {
 	data, err := dl.AccountRLP(hash)
 	if err != nil {
 		return nil, err
@@ -96,7 +97,7 @@ func (dl *diskLayer) Account(hash common.Hash) (*Account, error) {
 	if len(data) == 0 { // can be both nil and []byte{}
 		return nil, nil
 	}
-	account := new(Account)
+	account := new(types.SlimAccount)
 	if err := rlp.DecodeBytes(data, account); err != nil {
 		panic(err)
 	}

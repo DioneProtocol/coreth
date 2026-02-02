@@ -16,6 +16,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/utils/constants"
 	"github.com/DioneProtocol/odysseygo/utils/crypto/secp256k1"
 	"github.com/DioneProtocol/odysseygo/utils/set"
+	"github.com/DioneProtocol/odysseygo/utils/units"
 	"github.com/DioneProtocol/odysseygo/vms/components/dione"
 	"github.com/DioneProtocol/odysseygo/vms/secp256k1fx"
 )
@@ -23,11 +24,12 @@ import (
 // createImportTxOptions adds a UTXO to shared memory and generates a list of import transactions sending this UTXO
 // to each of the three test keys (conflicting transactions)
 func createImportTxOptions(t *testing.T, vm *VM, sharedMemory *atomic.Memory) []*Tx {
+	importAmount := 50 * units.Dione
 	utxo := &dione.UTXO{
 		UTXOID: dione.UTXOID{TxID: ids.GenerateTestID()},
 		Asset:  dione.Asset{ID: vm.ctx.DIONEAssetID},
 		Out: &secp256k1fx.TransferOutput{
-			Amt: uint64(50000000),
+			Amt: importAmount,
 			OutputOwners: secp256k1fx.OutputOwners{
 				Threshold: 1,
 				Addrs:     []ids.ShortID{testKeys[0].PublicKey().Address()},
@@ -422,7 +424,7 @@ func TestImportTxVerify(t *testing.T) {
 }
 
 func TestNewImportTx(t *testing.T) {
-	importAmount := uint64(5000000)
+	importAmount := uint64(10 * units.Dione)
 	// createNewImportDIONETx adds a UTXO to shared memory and then constructs a new import transaction
 	// and checks that it has the correct fee for the base fee that has been used
 	createNewImportDIONETx := func(t *testing.T, vm *VM, sharedMemory *atomic.Memory) *Tx {
@@ -454,7 +456,7 @@ func TestNewImportTx(t *testing.T) {
 				t.Fatal(err)
 			}
 		case rules.IsApricotPhase2:
-			actualFee = 1000000
+			actualFee = 5 * units.Dione
 		default:
 			actualFee = 0
 		}
@@ -617,7 +619,7 @@ func TestImportTxGasCost(t *testing.T) {
 				}},
 			},
 			Keys:            [][]*secp256k1.PrivateKey{{testKeys[0]}},
-			ExpectedGasUsed: 11230,
+			ExpectedGasUsed: 22230,
 			ExpectedFee:     1,
 			BaseFee:         big.NewInt(1),
 			FixedFee:        true,

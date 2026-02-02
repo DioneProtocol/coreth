@@ -86,7 +86,7 @@ type VersionReply struct {
 }
 
 // ClientVersion returns the version of the VM running
-func (service *DioneAPI) Version(r *http.Request, args *struct{}, reply *VersionReply) error {
+func (service *DioneAPI) Version(r *http.Request, _ *struct{}, reply *VersionReply) error {
 	reply.Version = Version
 	return nil
 }
@@ -112,6 +112,9 @@ func (service *DioneAPI) ExportKey(r *http.Request, args *ExportKeyArgs, reply *
 	if err != nil {
 		return fmt.Errorf("couldn't parse %s to address: %s", args.Address, err)
 	}
+
+	service.vm.ctx.Lock.Lock()
+	defer service.vm.ctx.Lock.Unlock()
 
 	db, err := service.vm.ctx.Keystore.GetDatabase(args.Username, args.Password)
 	if err != nil {
@@ -146,6 +149,9 @@ func (service *DioneAPI) ImportKey(r *http.Request, args *ImportKeyArgs, reply *
 	}
 
 	reply.Address = GetEthAddress(args.PrivateKey).Hex()
+
+	service.vm.ctx.Lock.Lock()
+	defer service.vm.ctx.Lock.Unlock()
 
 	db, err := service.vm.ctx.Keystore.GetDatabase(args.Username, args.Password)
 	if err != nil {
@@ -192,6 +198,9 @@ func (service *DioneAPI) Import(_ *http.Request, args *ImportArgs, response *api
 		return fmt.Errorf("problem parsing chainID %q: %w", args.SourceChain, err)
 	}
 
+	service.vm.ctx.Lock.Lock()
+	defer service.vm.ctx.Lock.Unlock()
+
 	// Get the user's info
 	db, err := service.vm.ctx.Keystore.GetDatabase(args.Username, args.Password)
 	if err != nil {
@@ -225,7 +234,10 @@ func (service *DioneAPI) Import(_ *http.Request, args *ImportArgs, response *api
 	}
 
 	response.TxID = tx.ID()
-	return service.vm.issueTx(tx, true /*=local*/)
+	if err := service.vm.mempool.AddLocalTx(tx); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ExportDIONEArgs are the arguments to ExportDIONE
@@ -290,6 +302,9 @@ func (service *DioneAPI) Export(_ *http.Request, args *ExportArgs, response *api
 		}
 	}
 
+	service.vm.ctx.Lock.Lock()
+	defer service.vm.ctx.Lock.Unlock()
+
 	// Get this user's data
 	db, err := service.vm.ctx.Keystore.GetDatabase(args.Username, args.Password)
 	if err != nil {
@@ -331,7 +346,10 @@ func (service *DioneAPI) Export(_ *http.Request, args *ExportArgs, response *api
 	}
 
 	response.TxID = tx.ID()
-	return service.vm.issueTx(tx, true /*=local*/)
+	if err := service.vm.mempool.AddLocalTx(tx); err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetUTXOs gets all utxos for passed in addresses
@@ -377,6 +395,9 @@ func (service *DioneAPI) GetUTXOs(r *http.Request, args *api.GetUTXOsArgs, reply
 		}
 	}
 
+	service.vm.ctx.Lock.Lock()
+	defer service.vm.ctx.Lock.Unlock()
+
 	utxos, endAddr, endUTXOID, err := service.vm.GetAtomicUTXOs(
 		sourceChain,
 		addrSet,
@@ -413,7 +434,6 @@ func (service *DioneAPI) GetUTXOs(r *http.Request, args *api.GetUTXOsArgs, reply
 	return nil
 }
 
-// IssueTx ...
 func (service *DioneAPI) IssueTx(r *http.Request, args *api.FormattedTx, response *api.JSONTxID) error {
 	log.Info("DELTA: IssueTx called")
 
@@ -431,7 +451,14 @@ func (service *DioneAPI) IssueTx(r *http.Request, args *api.FormattedTx, respons
 	}
 
 	response.TxID = tx.ID()
-	return service.vm.issueTx(tx, true /*=local*/)
+
+	service.vm.ctx.Lock.Lock()
+	defer service.vm.ctx.Lock.Unlock()
+
+	if err := service.vm.mempool.AddLocalTx(tx); err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetAtomicTxStatusReply defines the GetAtomicTxStatus replies returned from the API
@@ -447,6 +474,9 @@ func (service *DioneAPI) GetAtomicTxStatus(r *http.Request, args *api.JSONTxID, 
 	if args.TxID == ids.Empty {
 		return errNilTxID
 	}
+
+	service.vm.ctx.Lock.Lock()
+	defer service.vm.ctx.Lock.Unlock()
 
 	_, status, height, _ := service.vm.getAtomicTx(args.TxID)
 
@@ -470,6 +500,9 @@ func (service *DioneAPI) GetAtomicTx(r *http.Request, args *api.GetTxArgs, reply
 	if args.TxID == ids.Empty {
 		return errNilTxID
 	}
+
+	service.vm.ctx.Lock.Lock()
+	defer service.vm.ctx.Lock.Unlock()
 
 	tx, status, height, err := service.vm.getAtomicTx(args.TxID)
 	if err != nil {

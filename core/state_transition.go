@@ -27,10 +27,12 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
 
+	"github.com/DioneProtocol/coreth/consensus/misc/eip4844"
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/core/vm"
 	"github.com/DioneProtocol/coreth/params"
@@ -39,15 +41,15 @@ import (
 	cmath "github.com/ethereum/go-ethereum/common/math"
 )
 
-// ExecutionResult includes all output after executing given delta
+// ExecutionResult includes all output after executing given evm
 // message no matter the execution itself is successful or not.
 type ExecutionResult struct {
 	UsedGas    uint64 // Total used gas but include the refunded gas
 	Err        error  // Any error encountered during the execution(listed in core/vm/errors.go)
-	ReturnData []byte // Returned data from delta(function result or data supplied with revert opcode)
+	ReturnData []byte // Returned data from evm(function result or data supplied with revert opcode)
 }
 
-// Unwrap returns the internal delta error which allows us for further
+// Unwrap returns the internal evm error which allows us for further
 // analysis outside.
 func (result *ExecutionResult) Unwrap() error {
 	return result.Err
@@ -75,10 +77,10 @@ func (result *ExecutionResult) Revert() []byte {
 }
 
 // IntrinsicGas computes the 'intrinsic gas' for a message with the given data.
-func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation bool, isHomestead, isEIP2028 bool, isEIP3860 bool) (uint64, error) {
+func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation bool, rules params.Rules) (uint64, error) {
 	// Set the starting gas for the raw transaction
 	var gas uint64
-	if isContractCreation && isHomestead {
+	if isContractCreation && rules.IsHomestead {
 		gas = params.TxGasContractCreation
 	} else {
 		gas = params.TxGas
@@ -95,7 +97,7 @@ func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation b
 		}
 		// Make sure we don't exceed uint64 for all data combinations
 		nonZeroGas := params.TxDataNonZeroGasFrontier
-		if isEIP2028 {
+		if rules.IsIstanbul {
 			nonZeroGas = params.TxDataNonZeroGasEIP2028
 		}
 		if (math.MaxUint64-gas)/nonZeroGas < nz {
@@ -109,7 +111,7 @@ func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation b
 		}
 		gas += z * params.TxDataZeroGas
 
-		if isContractCreation && isEIP3860 {
+		if isContractCreation && rules.IsDurango {
 			lenWords := toWordSize(dataLen)
 			if (math.MaxUint64-gas)/params.InitCodeWordGas < lenWords {
 				return 0, ErrGasUintOverflow
@@ -136,16 +138,18 @@ func toWordSize(size uint64) uint64 {
 // A Message contains the data derived from a single transaction that is relevant to state
 // processing.
 type Message struct {
-	To         *common.Address
-	From       common.Address
-	Nonce      uint64
-	Value      *big.Int
-	GasLimit   uint64
-	GasPrice   *big.Int
-	GasFeeCap  *big.Int
-	GasTipCap  *big.Int
-	Data       []byte
-	AccessList types.AccessList
+	To            *common.Address
+	From          common.Address
+	Nonce         uint64
+	Value         *big.Int
+	GasLimit      uint64
+	GasPrice      *big.Int
+	GasFeeCap     *big.Int
+	GasTipCap     *big.Int
+	Data          []byte
+	AccessList    types.AccessList
+	BlobGasFeeCap *big.Int
+	BlobHashes    []common.Hash
 
 	// When SkipAccountChecks is true, the message nonce is not checked against the
 	// account nonce in state. It also disables checking that the sender is an EOA.
@@ -166,6 +170,8 @@ func TransactionToMessage(tx *types.Transaction, s types.Signer, baseFee *big.In
 		Data:              tx.Data(),
 		AccessList:        tx.AccessList(),
 		SkipAccountChecks: false,
+		BlobHashes:        tx.BlobHashes(),
+		BlobGasFeeCap:     tx.BlobGasFeeCap(),
 	}
 	// If baseFee provided, set gasPrice to effectiveGasPrice.
 	if baseFee != nil {
@@ -179,12 +185,12 @@ func TransactionToMessage(tx *types.Transaction, s types.Signer, baseFee *big.In
 // ApplyMessage computes the new state by applying the given message
 // against the old state within the environment.
 //
-// ApplyMessage returns the bytes returned by any DELTA execution (if it took place),
+// ApplyMessage returns the bytes returned by any EVM execution (if it took place),
 // the gas used (which includes gas refunds) and an error if it failed. An error always
 // indicates a core error meaning that the message would always fail for that particular
 // state and would never be accepted within a block.
-func ApplyMessage(delta *vm.DELTA, msg *Message, gp *GasPool) (*ExecutionResult, error) {
-	return NewStateTransition(delta, msg, gp).TransitionDb()
+func ApplyMessage(evm *vm.EVM, msg *Message, gp *GasPool) (*ExecutionResult, error) {
+	return NewStateTransition(evm, msg, gp).TransitionDb()
 }
 
 // StateTransition represents a state transition.
@@ -215,16 +221,16 @@ type StateTransition struct {
 	gasRemaining uint64
 	initialGas   uint64
 	state        vm.StateDB
-	delta        *vm.DELTA
+	evm          *vm.EVM
 }
 
 // NewStateTransition initialises and returns a new state transition object.
-func NewStateTransition(delta *vm.DELTA, msg *Message, gp *GasPool) *StateTransition {
+func NewStateTransition(evm *vm.EVM, msg *Message, gp *GasPool) *StateTransition {
 	return &StateTransition{
 		gp:    gp,
-		delta: delta,
+		evm:   evm,
 		msg:   msg,
-		state: delta.StateDB,
+		state: evm.StateDB,
 	}
 }
 
@@ -239,11 +245,23 @@ func (st *StateTransition) to() common.Address {
 func (st *StateTransition) buyGas() error {
 	mgval := new(big.Int).SetUint64(st.msg.GasLimit)
 	mgval = mgval.Mul(mgval, st.msg.GasPrice)
-	balanceCheck := mgval
+	balanceCheck := new(big.Int).Set(mgval)
 	if st.msg.GasFeeCap != nil {
-		balanceCheck = new(big.Int).SetUint64(st.msg.GasLimit)
-		balanceCheck.Mul(balanceCheck, st.msg.GasFeeCap)
+		balanceCheck.SetUint64(st.msg.GasLimit)
+		balanceCheck = balanceCheck.Mul(balanceCheck, st.msg.GasFeeCap)
 		balanceCheck.Add(balanceCheck, st.msg.Value)
+	}
+	if st.evm.ChainConfig().IsCancun(st.evm.Context.BlockNumber, st.evm.Context.Time) {
+		if blobGas := st.blobGasUsed(); blobGas > 0 {
+			// Check that the user has enough funds to cover blobGasUsed * tx.BlobGasFeeCap
+			blobBalanceCheck := new(big.Int).SetUint64(blobGas)
+			blobBalanceCheck.Mul(blobBalanceCheck, st.msg.BlobGasFeeCap)
+			balanceCheck.Add(balanceCheck, blobBalanceCheck)
+			// Pay for blobGasUsed * actual blob fee
+			blobFee := new(big.Int).SetUint64(blobGas)
+			blobFee.Mul(blobFee, eip4844.CalcBlobFee(*st.evm.Context.ExcessBlobGas))
+			mgval.Add(mgval, blobFee)
+		}
 	}
 	if have, want := st.state.GetBalance(st.msg.From), balanceCheck; have.Cmp(want) < 0 {
 		return fmt.Errorf("%w: address %v have %v want %v", ErrInsufficientFunds, st.msg.From.Hex(), have, want)
@@ -287,9 +305,9 @@ func (st *StateTransition) preCheck() error {
 	}
 
 	// Make sure that transaction gasFeeCap is greater than the baseFee (post london)
-	if st.delta.ChainConfig().IsApricotPhase3(st.delta.Context.Time) {
+	if st.evm.ChainConfig().IsApricotPhase3(st.evm.Context.Time) {
 		// Skip the checks if gas fields are zero and baseFee was explicitly disabled (eth_call)
-		if !st.delta.Config.NoBaseFee || msg.GasFeeCap.BitLen() > 0 || msg.GasTipCap.BitLen() > 0 {
+		if !st.evm.Config.NoBaseFee || msg.GasFeeCap.BitLen() > 0 || msg.GasTipCap.BitLen() > 0 {
 			if l := msg.GasFeeCap.BitLen(); l > 256 {
 				return fmt.Errorf("%w: address %v, maxFeePerGas bit length: %d", ErrFeeCapVeryHigh,
 					msg.From.Hex(), l)
@@ -304,25 +322,48 @@ func (st *StateTransition) preCheck() error {
 			}
 			// This will panic if baseFee is nil, but basefee presence is verified
 			// as part of header validation.
-			if msg.GasFeeCap.Cmp(st.delta.Context.BaseFee) < 0 {
+			if msg.GasFeeCap.Cmp(st.evm.Context.BaseFee) < 0 {
 				return fmt.Errorf("%w: address %v, maxFeePerGas: %s baseFee: %s", ErrFeeCapTooLow,
-					msg.From.Hex(), msg.GasFeeCap, st.delta.Context.BaseFee)
+					msg.From.Hex(), msg.GasFeeCap, st.evm.Context.BaseFee)
 			}
 		}
 	}
+	// Check the blob version validity
+	if msg.BlobHashes != nil {
+		if len(msg.BlobHashes) == 0 {
+			return errors.New("blob transaction missing blob hashes")
+		}
+		for i, hash := range msg.BlobHashes {
+			if hash[0] != params.BlobTxHashVersion {
+				return fmt.Errorf("blob %d hash version mismatch (have %d, supported %d)",
+					i, hash[0], params.BlobTxHashVersion)
+			}
+		}
+	}
+
+	if st.evm.ChainConfig().IsCancun(st.evm.Context.BlockNumber, st.evm.Context.Time) {
+		if st.blobGasUsed() > 0 {
+			// Check that the user is paying at least the current blob fee
+			blobFee := eip4844.CalcBlobFee(*st.evm.Context.ExcessBlobGas)
+			if st.msg.BlobGasFeeCap.Cmp(blobFee) < 0 {
+				return fmt.Errorf("%w: address %v have %v want %v", ErrBlobFeeCapTooLow, st.msg.From.Hex(), st.msg.BlobGasFeeCap, blobFee)
+			}
+		}
+	}
+
 	return st.buyGas()
 }
 
 // TransitionDb will transition the state by applying the current message and
-// returning the delta execution result with following fields.
+// returning the evm execution result with following fields.
 //
 //   - used gas: total gas used (including gas being refunded)
-//   - returndata: the returned data from delta
-//   - concrete execution error: various DELTA errors which abort the execution, e.g.
+//   - returndata: the returned data from evm
+//   - concrete execution error: various EVM errors which abort the execution, e.g.
 //     ErrOutOfGas, ErrExecutionReverted
 //
 // However if any consensus issue encountered, return the error directly with
-// nil delta execution result.
+// nil evm execution result.
 func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	// First check this message satisfies all consensus rules before
 	// applying the message. The rules include these clauses
@@ -339,7 +380,7 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 		return nil, err
 	}
 
-	if tracer := st.delta.Config.Tracer; tracer != nil {
+	if tracer := st.evm.Config.Tracer; tracer != nil {
 		tracer.CaptureTxStart(st.initialGas)
 		defer func() {
 			tracer.CaptureTxEnd(st.gasRemaining)
@@ -349,12 +390,12 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	var (
 		msg              = st.msg
 		sender           = vm.AccountRef(msg.From)
-		rules            = st.delta.ChainConfig().OdysseyRules(st.delta.Context.BlockNumber, st.delta.Context.Time)
+		rules            = st.evm.ChainConfig().OdysseyRules(st.evm.Context.BlockNumber, st.evm.Context.Time)
 		contractCreation = msg.To == nil
 	)
 
 	// Check clauses 4-5, subtract intrinsic gas if everything is correct
-	gas, err := IntrinsicGas(msg.Data, msg.AccessList, contractCreation, rules.IsHomestead, rules.IsIstanbul, rules.IsDUpgrade)
+	gas, err := IntrinsicGas(msg.Data, msg.AccessList, contractCreation, rules)
 	if err != nil {
 		return nil, err
 	}
@@ -364,33 +405,53 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	st.gasRemaining -= gas
 
 	// Check clause 6
-	if msg.Value.Sign() > 0 && !st.delta.Context.CanTransfer(st.state, msg.From, msg.Value) {
+	if msg.Value.Sign() > 0 && !st.evm.Context.CanTransfer(st.state, msg.From, msg.Value) {
 		return nil, fmt.Errorf("%w: address %v", ErrInsufficientFundsForTransfer, msg.From.Hex())
 	}
 
 	// Check whether the init code size has been exceeded.
-	if rules.IsDUpgrade && contractCreation && len(msg.Data) > params.MaxInitCodeSize {
+	if rules.IsDurango && contractCreation && len(msg.Data) > params.MaxInitCodeSize {
 		return nil, fmt.Errorf("%w: code size %v limit %v", vmerrs.ErrMaxInitCodeSizeExceeded, len(msg.Data), params.MaxInitCodeSize)
 	}
 
 	// Execute the preparatory steps for state transition which includes:
 	// - prepare accessList(post-berlin/ApricotPhase2)
 	// - reset transient storage(eip 1153)
-	st.state.Prepare(rules, msg.From, st.delta.Context.Coinbase, msg.To, vm.ActivePrecompiles(rules), msg.AccessList)
+	precompiles := vm.ActivePrecompiles(rules)
+	st.state.Prepare(rules, msg.From, st.evm.Context.Coinbase, msg.To, precompiles, msg.AccessList)
 
 	var (
 		ret   []byte
 		vmerr error // vm errors do not effect consensus and are therefore not assigned to err
 	)
 	if contractCreation {
-		ret, _, st.gasRemaining, vmerr = st.delta.Create(sender, msg.Data, st.gasRemaining, msg.Value)
+		ret, _, st.gasRemaining, vmerr = st.evm.Create(sender, msg.Data, st.gasRemaining, msg.Value)
 	} else {
 		// Increment the nonce for the next transaction
 		st.state.SetNonce(msg.From, st.state.GetNonce(sender.Address())+1)
-		ret, st.gasRemaining, vmerr = st.delta.Call(sender, st.to(), msg.Data, st.gasRemaining, msg.Value)
+
+		// Apply additional gas cost for native token transfers to EOAs
+		if rules.IsPyruniTransferGasLimit && msg.Value.Sign() > 0 {
+			codeSize := st.evm.StateDB.GetCodeSize(*msg.To)
+			_, isPrecompile := vm.PrecompileAllNativeAddresses[*msg.To]
+
+			if codeSize == 0 && !isPrecompile {
+				// Make native transfers 10 times more expensive
+				nativeTransferGas := params.TxGas * 9
+				if st.gasRemaining >= nativeTransferGas {
+					st.gasRemaining -= nativeTransferGas
+				} else {
+					vmerr = vmerrs.ErrOutOfGas
+				}
+			}
+		}
+
+		if vmerr == nil {
+			ret, st.gasRemaining, vmerr = st.evm.Call(sender, st.to(), msg.Data, st.gasRemaining, msg.Value)
+		}
 	}
 	st.refundGas(rules.IsApricotPhase1)
-	st.state.AddBalance(st.delta.Context.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), msg.GasPrice))
+	st.state.AddBalance(st.evm.Context.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), msg.GasPrice))
 
 	return &ExecutionResult{
 		UsedGas:    st.gasUsed(),
@@ -422,4 +483,9 @@ func (st *StateTransition) refundGas(apricotPhase1 bool) {
 // gasUsed returns the amount of gas used up by the state transition.
 func (st *StateTransition) gasUsed() uint64 {
 	return st.initialGas - st.gasRemaining
+}
+
+// blobGasUsed returns the amount of blob gas used by the message.
+func (st *StateTransition) blobGasUsed() uint64 {
+	return uint64(len(st.msg.BlobHashes) * params.BlobTxBlobGasPerBlob)
 }

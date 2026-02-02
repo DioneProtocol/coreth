@@ -12,31 +12,34 @@ import (
 	"github.com/DioneProtocol/coreth/core/rawdb"
 	"github.com/DioneProtocol/coreth/core/state/snapshot"
 	"github.com/DioneProtocol/coreth/core/types"
-	"github.com/DioneProtocol/coreth/ethdb"
-	"github.com/DioneProtocol/coreth/ethdb/memorydb"
 	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	"github.com/DioneProtocol/coreth/sync/handlers/stats"
+	"github.com/DioneProtocol/coreth/sync/syncutils"
 	"github.com/DioneProtocol/coreth/trie"
 	"github.com/DioneProtocol/odysseygo/ids"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLeafsRequestHandler_OnLeafsRequest(t *testing.T) {
 	rand.Seed(1)
 	mockHandlerStats := &stats.MockHandlerStats{}
-	memdb := memorydb.New()
+	memdb := rawdb.NewMemoryDatabase()
 	trieDB := trie.NewDatabase(memdb)
 
-	corruptedTrieRoot, _, _ := trie.GenerateTrie(t, trieDB, 100, common.HashLength)
+	corruptedTrieRoot, _, _ := syncutils.GenerateTrie(t, trieDB, 100, common.HashLength)
+	tr, err := trie.New(trie.TrieID(corruptedTrieRoot), trieDB)
+	if err != nil {
+		t.Fatal(err)
+	}
 	// Corrupt [corruptedTrieRoot]
-	trie.CorruptTrie(t, trieDB, corruptedTrieRoot, 5)
+	syncutils.CorruptTrie(t, memdb, tr, 5)
 
-	largeTrieRoot, largeTrieKeys, _ := trie.GenerateTrie(t, trieDB, 10_000, common.HashLength)
-	smallTrieRoot, _, _ := trie.GenerateTrie(t, trieDB, 500, common.HashLength)
-	accountTrieRoot, accounts := trie.FillAccounts(
+	largeTrieRoot, largeTrieKeys, _ := syncutils.GenerateTrie(t, trieDB, 10_000, common.HashLength)
+	smallTrieRoot, _, _ := syncutils.GenerateTrie(t, trieDB, 500, common.HashLength)
+	accountTrieRoot, accounts := syncutils.FillAccounts(
 		t,
 		trieDB,
 		common.Hash{},
@@ -489,15 +492,12 @@ func TestLeafsRequestHandler_OnLeafsRequest(t *testing.T) {
 					}
 					// modify one entry of 1 in 4 segments
 					if i%(segmentLen*4) == 0 {
-						var acc snapshot.Account
-						if err := rlp.DecodeBytes(it.Account(), &acc); err != nil {
+						acc, err := types.FullAccount(it.Account())
+						if err != nil {
 							t.Fatalf("could not parse snapshot account: %v", err)
 						}
 						acc.Nonce++
-						bytes, err := rlp.EncodeToBytes(acc)
-						if err != nil {
-							t.Fatalf("coult not encode snapshot account to bytes: %v", err)
-						}
+						bytes := types.SlimAccountRLP(*acc)
 						rawdb.WriteAccountSnapshot(memdb, it.Hash(), bytes)
 					}
 					i++
@@ -711,7 +711,7 @@ func assertRangeProofIsValid(t *testing.T, request *message.LeafsRequest, respon
 
 	var proof ethdb.Database
 	if len(response.ProofVals) > 0 {
-		proof = memorydb.New()
+		proof = rawdb.NewMemoryDatabase()
 		defer proof.Close()
 		for _, proofVal := range response.ProofVals {
 			proofKey := crypto.Keccak256(proofVal)

@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/ethdb/memorydb"
 	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	statesyncclient "github.com/DioneProtocol/coreth/sync/client"
 	"github.com/DioneProtocol/coreth/sync/handlers"
@@ -17,6 +16,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,7 +44,7 @@ func testCodeSyncer(t *testing.T, test codeSyncerTest) {
 	mockClient := statesyncclient.NewMockClient(message.Codec, nil, codeRequestHandler, nil)
 	mockClient.GetCodeIntercept = test.getCodeIntercept
 
-	clientDB := memorydb.New()
+	clientDB := rawdb.NewMemoryDatabase()
 
 	codeSyncer := newCodeSyncer(CodeSyncerConfig{
 		MaxOutstandingCodeHashes: DefaultMaxOutstandingCodeHashes,

@@ -31,7 +31,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/DioneProtocol/coreth/precompile"
+	"github.com/DioneProtocol/coreth/precompile/contract"
 	"github.com/DioneProtocol/coreth/utils"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -44,6 +44,12 @@ var (
 	OdysseyTestnetChainID = big.NewInt(131313)
 	// OdysseyLocalChainID ...
 	OdysseyLocalChainID = big.NewInt(131312)
+
+	// During the hardfork, the cost of transfers jumps instantly by 10x —
+	// from 5 to 50 Dione. Meanwhile, the cost of other transactions decreases gradually
+	// by 10x. To avoid an immediate spike in transfer cost, we apply a time offset
+	// before enforcing the new gas limit.
+	pyruniGasLimitTimestampOffset = uint64(60 * 60)
 
 	errNonGenesisForkByHeight = errors.New("coreth only supports forking by height at the genesis block")
 )
@@ -73,7 +79,8 @@ var (
 		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
-		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		DurangoBlockTimestamp:           utils.NewUint64(0),
+		PyruniBlockTimestamp:            nil,
 	}
 
 	// OdysseyTestnetChainConfig is the configuration for the Testnet Test Network
@@ -100,7 +107,9 @@ var (
 		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
-		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		DurangoBlockTimestamp:           utils.NewUint64(0),
+		CancunTime:                      utils.NewUint64(1747040400),
+		PyruniBlockTimestamp:            utils.NewUint64(1754294400),
 	}
 
 	// OdysseyLocalChainConfig is the configuration for the Odyssey Local Network
@@ -127,7 +136,8 @@ var (
 		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
-		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		DurangoBlockTimestamp:           utils.NewUint64(0),
+		PyruniBlockTimestamp:            nil,
 	}
 
 	TestChainConfig = &ChainConfig{
@@ -154,7 +164,8 @@ var (
 		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
-		DUpgradeBlockTimestamp:          utils.NewUint64(0),
+		DurangoBlockTimestamp:           utils.NewUint64(0),
+		PyruniBlockTimestamp:            nil,
 	}
 
 	TestLaunchConfig = &ChainConfig{
@@ -181,7 +192,8 @@ var (
 		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
-		DUpgradeBlockTimestamp:          nil,
+		DurangoBlockTimestamp:           nil,
+		PyruniBlockTimestamp:            nil,
 	}
 
 	TestApricotPhase1Config = &ChainConfig{
@@ -208,7 +220,8 @@ var (
 		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
-		DUpgradeBlockTimestamp:          nil,
+		DurangoBlockTimestamp:           nil,
+		PyruniBlockTimestamp:            nil,
 	}
 
 	TestApricotPhase2Config = &ChainConfig{
@@ -235,7 +248,8 @@ var (
 		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
-		DUpgradeBlockTimestamp:          nil,
+		DurangoBlockTimestamp:           nil,
+		PyruniBlockTimestamp:            nil,
 	}
 
 	TestApricotPhase3Config = &ChainConfig{
@@ -262,7 +276,8 @@ var (
 		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
-		DUpgradeBlockTimestamp:          nil,
+		DurangoBlockTimestamp:           nil,
+		PyruniBlockTimestamp:            nil,
 	}
 
 	TestApricotPhase4Config = &ChainConfig{
@@ -289,7 +304,8 @@ var (
 		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
-		DUpgradeBlockTimestamp:          nil,
+		DurangoBlockTimestamp:           nil,
+		PyruniBlockTimestamp:            nil,
 	}
 
 	TestApricotPhase5Config = &ChainConfig{
@@ -316,7 +332,8 @@ var (
 		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
-		DUpgradeBlockTimestamp:          nil,
+		DurangoBlockTimestamp:           nil,
+		PyruniBlockTimestamp:            nil,
 	}
 
 	TestApricotPhasePre6Config = &ChainConfig{
@@ -343,7 +360,8 @@ var (
 		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
-		DUpgradeBlockTimestamp:          nil,
+		DurangoBlockTimestamp:           nil,
+		PyruniBlockTimestamp:            nil,
 	}
 
 	TestApricotPhase6Config = &ChainConfig{
@@ -370,7 +388,8 @@ var (
 		ApricotPhasePost6BlockTimestamp: nil,
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
-		DUpgradeBlockTimestamp:          nil,
+		DurangoBlockTimestamp:           nil,
+		PyruniBlockTimestamp:            nil,
 	}
 
 	TestApricotPhasePost6Config = &ChainConfig{
@@ -397,7 +416,8 @@ var (
 		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             nil,
 		CortinaBlockTimestamp:           nil,
-		DUpgradeBlockTimestamp:          nil,
+		DurangoBlockTimestamp:           nil,
+		PyruniBlockTimestamp:            nil,
 	}
 
 	TestBanffChainConfig = &ChainConfig{
@@ -424,7 +444,8 @@ var (
 		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           nil,
-		DUpgradeBlockTimestamp:          nil,
+		DurangoBlockTimestamp:           nil,
+		PyruniBlockTimestamp:            nil,
 	}
 
 	TestCortinaChainConfig = &ChainConfig{
@@ -451,10 +472,11 @@ var (
 		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
-		DUpgradeBlockTimestamp:          nil,
+		DurangoBlockTimestamp:           nil,
+		PyruniBlockTimestamp:            nil,
 	}
 
-	TestDUpgradeChainConfig = &ChainConfig{
+	TestDurangoChainConfig = &ChainConfig{
 		OdysseyContext:                  OdysseyContext{common.Hash{1}},
 		ChainID:                         big.NewInt(1),
 		HomesteadBlock:                  big.NewInt(0),
@@ -478,6 +500,37 @@ var (
 		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
 		BanffBlockTimestamp:             utils.NewUint64(0),
 		CortinaBlockTimestamp:           utils.NewUint64(0),
+		DurangoBlockTimestamp:           utils.NewUint64(0),
+		PyruniBlockTimestamp:            nil,
+	}
+
+	TestPyruniConfig = &ChainConfig{
+		OdysseyContext:                  OdysseyContext{common.Hash{1}},
+		ChainID:                         big.NewInt(1),
+		HomesteadBlock:                  big.NewInt(0),
+		DAOForkBlock:                    nil,
+		DAOForkSupport:                  false,
+		EIP150Block:                     big.NewInt(0),
+		EIP155Block:                     big.NewInt(0),
+		EIP158Block:                     big.NewInt(0),
+		ByzantiumBlock:                  big.NewInt(0),
+		ConstantinopleBlock:             big.NewInt(0),
+		PetersburgBlock:                 big.NewInt(0),
+		IstanbulBlock:                   big.NewInt(0),
+		MuirGlacierBlock:                big.NewInt(0),
+		ApricotPhase1BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase2BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase3BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase4BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhase5BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePre6BlockTimestamp:  utils.NewUint64(0),
+		ApricotPhase6BlockTimestamp:     utils.NewUint64(0),
+		ApricotPhasePost6BlockTimestamp: utils.NewUint64(0),
+		BanffBlockTimestamp:             utils.NewUint64(0),
+		CortinaBlockTimestamp:           utils.NewUint64(0),
+		DurangoBlockTimestamp:           utils.NewUint64(0),
+		CancunTime:                      utils.NewUint64(0),
+		PyruniBlockTimestamp:            utils.NewUint64(0),
 	}
 
 	TestRules = TestChainConfig.OdysseyRules(new(big.Int), 0)
@@ -530,13 +583,17 @@ type ChainConfig struct {
 	BanffBlockTimestamp *uint64 `json:"banffBlockTimestamp,omitempty"`
 	// Cortina increases the block gas limit to 15M. (nil = no fork, 0 = already activated)
 	CortinaBlockTimestamp *uint64 `json:"cortinaBlockTimestamp,omitempty"`
-	// DUpgrade activates the Shanghai upgrade from Ethereum. (nil = no fork, 0 = already activated)
-	DUpgradeBlockTimestamp *uint64 `json:"dUpgradeBlockTimestamp,omitempty"`
+	// Durango activates the Shanghai Execution Spec Upgrade from Ethereum (https://github.com/ethereum/execution-specs/blob/master/network-upgrades/mainnet-upgrades/shanghai.md#included-eips).
+	// (nil = no fork, 0 = already activated)
+	// Note: EIP-4895 is excluded since withdrawals are not relevant to the Odyssey D-Chain or Subnets running the EVM.
+	DurangoBlockTimestamp *uint64 `json:"durangoBlockTimestamp,omitempty"`
 	// Cancun activates the Cancun upgrade from Ethereum. (nil = no fork, 0 = already activated)
 	CancunTime *uint64 `json:"cancunTime,omitempty"`
+	// Apricot Phase 7 includes changes in gas prices. (nil = no fork, 0 = already activated)
+	PyruniBlockTimestamp *uint64 `json:"pyruniBlockTimestamp,omitempty"`
 }
 
-// OdysseyContext provides Odyssey specific context directly into the DELTA.
+// OdysseyContext provides Odyssey specific context directly into the EVM.
 type OdysseyContext struct {
 	BlockchainID common.Hash
 }
@@ -551,7 +608,7 @@ func (c *ChainConfig) Description() string {
 	// Create a list of forks with a short description of them. Forks that only
 	// makes sense for mainnet should be optional at printing to avoid bloating
 	// the output for testnets and private networks.
-	banner += "Hard Forks:\n"
+	banner += "Hard Forks (block based):\n"
 	banner += fmt.Sprintf(" - Homestead:                   #%-8v (https://github.com/ethereum/execution-specs/blob/master/network-upgrades/mainnet-upgrades/homestead.md)\n", c.HomesteadBlock)
 	if c.DAOForkBlock != nil {
 		banner += fmt.Sprintf(" - DAO Fork:                    #%-8v (https://github.com/ethereum/execution-specs/blob/master/network-upgrades/mainnet-upgrades/dao-fork.md)\n", c.DAOForkBlock)
@@ -566,18 +623,25 @@ func (c *ChainConfig) Description() string {
 	if c.MuirGlacierBlock != nil {
 		banner += fmt.Sprintf(" - Muir Glacier:                #%-8v (https://github.com/ethereum/execution-specs/blob/master/network-upgrades/mainnet-upgrades/muir-glacier.md)\n", c.MuirGlacierBlock)
 	}
-	banner += fmt.Sprintf(" - Apricot Phase 1 Timestamp:        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.3.0)\n", c.ApricotPhase1BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase 2 Timestamp:        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.4.0)\n", c.ApricotPhase2BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase 3 Timestamp:        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.5.0)\n", c.ApricotPhase3BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase 4 Timestamp:        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.6.0)\n", c.ApricotPhase4BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase 5 Timestamp:        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.7.0)\n", c.ApricotPhase5BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase P6 Timestamp        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.8.0)\n", c.ApricotPhasePre6BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase 6 Timestamp:        #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.8.0)\n", c.ApricotPhase6BlockTimestamp)
-	banner += fmt.Sprintf(" - Apricot Phase Post-6 Timestamp:   #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.8.0\n", c.ApricotPhasePost6BlockTimestamp)
-	banner += fmt.Sprintf(" - Banff Timestamp:                  #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.9.0)\n", c.BanffBlockTimestamp)
-	banner += fmt.Sprintf(" - Cortina Timestamp:                #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.10.0)\n", c.CortinaBlockTimestamp)
-	banner += fmt.Sprintf(" - DUpgrade Timestamp:               #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.11.0)\n", c.DUpgradeBlockTimestamp)
-	banner += fmt.Sprintf(" - Cancun Timestamp:                 #%-8v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.11.0)\n", c.DUpgradeBlockTimestamp)
+
+	banner += "Hard forks (timestamp based):\n"
+	banner += fmt.Sprintf(" - Cancun Timestamp:                 @%-10v (https://github.com/DioneProtocol/odysseygo/releases/tag/v1.12.0)\n", ptrToString(c.CancunTime))
+	banner += "\n"
+
+	banner += "Mandatory Odyssey Upgrades (timestamp based):\n"
+	banner += fmt.Sprintf(" - Apricot Phase 1 Timestamp:        @%-10v\n", ptrToString(c.ApricotPhase1BlockTimestamp))
+	banner += fmt.Sprintf(" - Apricot Phase 2 Timestamp:        @%-10v\n", ptrToString(c.ApricotPhase2BlockTimestamp))
+	banner += fmt.Sprintf(" - Apricot Phase 3 Timestamp:        @%-10v\n", ptrToString(c.ApricotPhase3BlockTimestamp))
+	banner += fmt.Sprintf(" - Apricot Phase 4 Timestamp:        @%-10v\n", ptrToString(c.ApricotPhase4BlockTimestamp))
+	banner += fmt.Sprintf(" - Apricot Phase 5 Timestamp:        @%-10v\n", ptrToString(c.ApricotPhase5BlockTimestamp))
+	banner += fmt.Sprintf(" - Apricot Phase P6 Timestamp        @%-10v\n", ptrToString(c.ApricotPhasePre6BlockTimestamp))
+	banner += fmt.Sprintf(" - Apricot Phase 6 Timestamp:        @%-10v\n", ptrToString(c.ApricotPhase6BlockTimestamp))
+	banner += fmt.Sprintf(" - Apricot Phase Post-6 Timestamp:   @%-10v\n", ptrToString(c.ApricotPhasePost6BlockTimestamp))
+	banner += fmt.Sprintf(" - Banff Timestamp:                  @%-10v\n", ptrToString(c.BanffBlockTimestamp))
+	banner += fmt.Sprintf(" - Cortina Timestamp:                @%-10v\n", ptrToString(c.CortinaBlockTimestamp))
+	banner += fmt.Sprintf(" - Durango Timestamp:                @%-10v\n", ptrToString(c.DurangoBlockTimestamp))
+	banner += fmt.Sprintf(" - Cancun Timestamp:                 @%-10v\n", ptrToString(c.CancunTime))
+	banner += fmt.Sprintf(" - Apricot Phase 7 Timestamp:        @%-10v\n", ptrToString(c.PyruniBlockTimestamp))
 	banner += "\n"
 	return banner
 }
@@ -696,16 +760,22 @@ func (c *ChainConfig) IsCortina(time uint64) bool {
 	return utils.IsTimestampForked(c.CortinaBlockTimestamp, time)
 }
 
-// IsDUpgrade returns whether [time] represents a block
-// with a timestamp after the DUpgrade upgrade time.
-func (c *ChainConfig) IsDUpgrade(time uint64) bool {
-	return utils.IsTimestampForked(c.DUpgradeBlockTimestamp, time)
+// IsDurango returns whether [time] represents a block
+// with a timestamp after the Durango upgrade time.
+func (c *ChainConfig) IsDurango(time uint64) bool {
+	return utils.IsTimestampForked(c.DurangoBlockTimestamp, time)
 }
 
 // IsCancun returns whether [time] represents a block
 // with a timestamp after the Cancun upgrade time.
-func (c *ChainConfig) IsCancun(time uint64) bool {
+func (c *ChainConfig) IsCancun(num *big.Int, time uint64) bool {
 	return utils.IsTimestampForked(c.CancunTime, time)
+}
+
+// IsPyruni returns whether [time] represents a block
+// with a timestamp after the Apricot Phase 7 upgrade time.
+func (c *ChainConfig) IsPyruni(time uint64) bool {
+	return utils.IsTimestampForked(c.PyruniBlockTimestamp, time)
 }
 
 // CheckCompatible checks whether scheduled fork transitions have been imported
@@ -734,14 +804,14 @@ func (c *ChainConfig) CheckCompatible(newcfg *ChainConfig, height uint64, time u
 }
 
 func (c *ChainConfig) LpAddress(time uint64) common.Address {
-	if c.ChainID.Cmp(OdysseyMainnetChainID) == 0 {
+	if c.ChainID != nil && c.ChainID.Cmp(OdysseyMainnetChainID) == 0 {
 		return common.HexToAddress(LpAddressMainnet)
 	}
 	return common.HexToAddress(LpAddressDefault)
 }
 
 func (c *ChainConfig) GovernanceAddress(time uint64) common.Address {
-	if c.ChainID.Cmp(OdysseyMainnetChainID) == 0 {
+	if c.ChainID != nil && c.ChainID.Cmp(OdysseyMainnetChainID) == 0 {
 		return common.HexToAddress(GovernanceAddressMannet)
 	}
 	return common.HexToAddress(GovernanceAddressDefault)
@@ -837,8 +907,9 @@ func (c *ChainConfig) CheckConfigForkOrder() error {
 		{name: "apricotPhasePost6BlockTimestamp", timestamp: c.ApricotPhasePost6BlockTimestamp},
 		{name: "banffBlockTimestamp", timestamp: c.BanffBlockTimestamp},
 		{name: "cortinaBlockTimestamp", timestamp: c.CortinaBlockTimestamp},
-		{name: "dUpgradeBlockTimestamp", timestamp: c.DUpgradeBlockTimestamp},
+		{name: "durangoBlockTimestamp", timestamp: c.DurangoBlockTimestamp},
 		{name: "cancunTime", timestamp: c.CancunTime},
+		{name: "pyruniBlockTimestamp", timestamp: c.PyruniBlockTimestamp},
 	} {
 		if lastFork.name != "" {
 			// Next one must be higher number
@@ -936,11 +1007,14 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, height *big.Int, time
 	if isForkTimestampIncompatible(c.CortinaBlockTimestamp, newcfg.CortinaBlockTimestamp, time) {
 		return newTimestampCompatError("Cortina fork block timestamp", c.CortinaBlockTimestamp, newcfg.CortinaBlockTimestamp)
 	}
-	if isForkTimestampIncompatible(c.DUpgradeBlockTimestamp, newcfg.DUpgradeBlockTimestamp, time) {
-		return newTimestampCompatError("DUpgrade fork block timestamp", c.DUpgradeBlockTimestamp, newcfg.DUpgradeBlockTimestamp)
+	if isForkTimestampIncompatible(c.DurangoBlockTimestamp, newcfg.DurangoBlockTimestamp, time) {
+		return newTimestampCompatError("Durango fork block timestamp", c.DurangoBlockTimestamp, newcfg.DurangoBlockTimestamp)
 	}
 	if isForkTimestampIncompatible(c.CancunTime, newcfg.CancunTime, time) {
-		return newTimestampCompatError("Cancun fork block timestamp", c.DUpgradeBlockTimestamp, newcfg.DUpgradeBlockTimestamp)
+		return newTimestampCompatError("Cancun fork block timestamp", c.CancunTime, newcfg.CancunTime)
+	}
+	if isForkTimestampIncompatible(c.PyruniBlockTimestamp, newcfg.PyruniBlockTimestamp, time) {
+		return newTimestampCompatError("Pyruni fork block timestamp", c.PyruniBlockTimestamp, newcfg.PyruniBlockTimestamp)
 	}
 
 	return nil
@@ -1044,7 +1118,14 @@ func (err *ConfigCompatError) Error() string {
 	if err.StoredBlock != nil {
 		return fmt.Sprintf("mismatching %s in database (have block %d, want block %d, rewindto block %d)", err.What, err.StoredBlock, err.NewBlock, err.RewindToBlock)
 	}
-	return fmt.Sprintf("mismatching %s in database (have timestamp %d, want timestamp %d, rewindto timestamp %d)", err.What, err.StoredTime, err.NewTime, err.RewindToTime)
+	return fmt.Sprintf("mismatching %s in database (have timestamp %s, want timestamp %s, rewindto timestamp %d)", err.What, ptrToString(err.StoredTime), ptrToString(err.NewTime), err.RewindToTime)
+}
+
+func ptrToString(val *uint64) string {
+	if val == nil {
+		return "nil"
+	}
+	return fmt.Sprintf("%d", *val)
 }
 
 // Rules wraps ChainConfig and is merely syntactic sugar or can be used for functions
@@ -1063,7 +1144,9 @@ type Rules struct {
 	IsApricotPhasePre6, IsApricotPhase6, IsApricotPhasePost6                            bool
 	IsBanff                                                                             bool
 	IsCortina                                                                           bool
-	IsDUpgrade                                                                          bool
+	IsDurango                                                                           bool
+	IsPyruni                                                                            bool
+	IsPyruniTransferGasLimit                                                            bool
 
 	LpAllocation, GovernanceAllocation, AllocationDenominator *big.Int
 	OrionAllocation, MaxOrionAllocation                       *big.Int
@@ -1075,7 +1158,7 @@ type Rules struct {
 	// for this rule set.
 	// Note: none of these addresses should conflict with the address space used by
 	// any existing precompiles.
-	Precompiles map[common.Address]precompile.StatefulPrecompiledContract
+	Precompiles map[common.Address]contract.StatefulPrecompiledContract
 }
 
 // Rules ensures c's ChainID is not nil.
@@ -1094,7 +1177,7 @@ func (c *ChainConfig) rules(num *big.Int, timestamp uint64) Rules {
 		IsConstantinople: c.IsConstantinople(num),
 		IsPetersburg:     c.IsPetersburg(num),
 		IsIstanbul:       c.IsIstanbul(num),
-		IsCancun:         c.IsCancun(timestamp),
+		IsCancun:         c.IsCancun(num, timestamp),
 	}
 }
 
@@ -1102,6 +1185,13 @@ func (c *ChainConfig) rules(num *big.Int, timestamp uint64) Rules {
 // network upgrades
 func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
 	rules := c.rules(blockNum, timestamp)
+
+	var gasLimitTimestamp uint64
+	if timestamp < pyruniGasLimitTimestampOffset {
+		gasLimitTimestamp = 0
+	} else {
+		gasLimitTimestamp = timestamp - pyruniGasLimitTimestampOffset
+	}
 
 	rules.IsApricotPhase1 = c.IsApricotPhase1(timestamp)
 	rules.IsApricotPhase2 = c.IsApricotPhase2(timestamp)
@@ -1113,7 +1203,9 @@ func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
 	rules.IsApricotPhasePost6 = c.IsApricotPhasePost6(timestamp)
 	rules.IsBanff = c.IsBanff(timestamp)
 	rules.IsCortina = c.IsCortina(timestamp)
-	rules.IsDUpgrade = c.IsDUpgrade(timestamp)
+	rules.IsDurango = c.IsDurango(timestamp)
+	rules.IsPyruni = c.IsPyruni(timestamp)
+	rules.IsPyruniTransferGasLimit = c.IsPyruni(gasLimitTimestamp)
 	rules.LpAddress = c.LpAddress(timestamp)
 	rules.GovernanceAddress = c.GovernanceAddress(timestamp)
 	rules.LpAllocation = c.LpAllocation(timestamp)
@@ -1125,7 +1217,7 @@ func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
 	rules.PriorityFeeOrionAllocation = c.PriorityFeeOrionAllocation(timestamp)
 
 	// Initialize the stateful precompiles that should be enabled at [blockTimestamp].
-	rules.Precompiles = make(map[common.Address]precompile.StatefulPrecompiledContract)
+	rules.Precompiles = make(map[common.Address]contract.StatefulPrecompiledContract)
 	for _, config := range c.enabledStatefulPrecompiles() {
 		if utils.IsTimestampForked(config.Timestamp(), timestamp) {
 			rules.Precompiles[config.Address()] = config.Contract()
@@ -1139,8 +1231,8 @@ func (c *ChainConfig) OdysseyRules(blockNum *big.Int, timestamp uint64) Rules {
 // by block timestamp.
 // Note: the return value does not include the native precompiles [nativeAssetCall] and [nativeAssetBalance].
 // These are handled in [delta.precompile] directly.
-func (c *ChainConfig) enabledStatefulPrecompiles() []precompile.StatefulPrecompileConfig {
-	statefulPrecompileConfigs := make([]precompile.StatefulPrecompileConfig, 0)
+func (c *ChainConfig) enabledStatefulPrecompiles() []contract.StatefulPrecompileConfig {
+	statefulPrecompileConfigs := make([]contract.StatefulPrecompileConfig, 0)
 
 	return statefulPrecompileConfigs
 }
@@ -1151,9 +1243,9 @@ func (c *ChainConfig) enabledStatefulPrecompiles() []precompile.StatefulPrecompi
 // This function is called:
 // - within genesis setup to configure the starting state for precompiles enabled at genesis,
 // - during block processing to update the state before processing the given block.
-func (c *ChainConfig) CheckConfigurePrecompiles(parentTimestamp *uint64, blockContext precompile.BlockContext, statedb precompile.StateDB) {
+func (c *ChainConfig) CheckConfigurePrecompiles(parentTimestamp *uint64, blockContext contract.BlockContext, statedb contract.StateDB) {
 	// Iterate the enabled stateful precompiles and configure them if needed
 	for _, config := range c.enabledStatefulPrecompiles() {
-		precompile.CheckConfigure(c, parentTimestamp, blockContext, config, statedb)
+		contract.CheckConfigure(c, parentTimestamp, blockContext, config, statedb)
 	}
 }

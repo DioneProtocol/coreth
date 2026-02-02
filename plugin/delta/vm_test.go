@@ -16,8 +16,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/exp/slices"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -60,6 +58,7 @@ import (
 
 	"github.com/DioneProtocol/coreth/consensus/dummy"
 	"github.com/DioneProtocol/coreth/core"
+	"github.com/DioneProtocol/coreth/core/txpool"
 	"github.com/DioneProtocol/coreth/core/types"
 	"github.com/DioneProtocol/coreth/eth"
 	"github.com/DioneProtocol/coreth/params"
@@ -95,6 +94,7 @@ var (
 
 	genesisJSONBanff   = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"apricotPhase1BlockTimestamp\":0,\"apricotPhase2BlockTimestamp\":0,\"apricotPhase3BlockTimestamp\":0,\"apricotPhase4BlockTimestamp\":0,\"apricotPhase5BlockTimestamp\":0,\"apricotPhasePre6BlockTimestamp\":0,\"apricotPhase6BlockTimestamp\":0,\"apricotPhasePost6BlockTimestamp\":0,\"banffBlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
 	genesisJSONCortina = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"apricotPhase1BlockTimestamp\":0,\"apricotPhase2BlockTimestamp\":0,\"apricotPhase3BlockTimestamp\":0,\"apricotPhase4BlockTimestamp\":0,\"apricotPhase5BlockTimestamp\":0,\"apricotPhasePre6BlockTimestamp\":0,\"apricotPhase6BlockTimestamp\":0,\"apricotPhasePost6BlockTimestamp\":0,\"banffBlockTimestamp\":0,\"cortinaBlockTimestamp\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
+	genesisJSONCancun  = "{\"config\":{\"chainId\":43111,\"homesteadBlock\":0,\"daoForkBlock\":0,\"daoForkSupport\":true,\"eip150Block\":0,\"eip150Hash\":\"0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0\",\"eip155Block\":0,\"eip158Block\":0,\"byzantiumBlock\":0,\"constantinopleBlock\":0,\"petersburgBlock\":0,\"istanbulBlock\":0,\"muirGlacierBlock\":0,\"apricotPhase1BlockTimestamp\":0,\"apricotPhase2BlockTimestamp\":0,\"apricotPhase3BlockTimestamp\":0,\"apricotPhase4BlockTimestamp\":0,\"apricotPhase5BlockTimestamp\":0,\"apricotPhasePre6BlockTimestamp\":0,\"apricotPhase6BlockTimestamp\":0,\"apricotPhasePost6BlockTimestamp\":0,\"banffBlockTimestamp\":0,\"cortinaBlockTimestamp\":0,\"durangoBlockTimestamp\":0,\"cancunTime\":0},\"nonce\":\"0x0\",\"timestamp\":\"0x0\",\"extraData\":\"0x00\",\"gasLimit\":\"0x5f5e100\",\"difficulty\":\"0x0\",\"mixHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\",\"coinbase\":\"0x0000000000000000000000000000000000000000\",\"alloc\":{\"0100000000000000000000000000000000000000\":{\"code\":\"0x7300000000000000000000000000000000000000003014608060405260043610603d5760003560e01c80631e010439146042578063b6510bb314606e575b600080fd5b605c60048036036020811015605657600080fd5b503560b1565b60408051918252519081900360200190f35b818015607957600080fd5b5060af60048036036080811015608e57600080fd5b506001600160a01b03813516906020810135906040810135906060013560b6565b005b30cd90565b836001600160a01b031681836108fc8690811502906040516000604051808303818888878c8acf9550505050505015801560f4573d6000803e3d6000fd5b505050505056fea26469706673582212201eebce970fe3f5cb96bf8ac6ba5f5c133fc2908ae3dcd51082cfee8f583429d064736f6c634300060a0033\",\"balance\":\"0x0\"}},\"number\":\"0x0\",\"gasUsed\":\"0x0\",\"parentHash\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}"
 	genesisJSONLatest  = genesisJSONCortina
 
 	apricotRulesPhase0 = params.Rules{}
@@ -348,7 +348,7 @@ func TestCrossChainMessagestoVM(t *testing.T) {
 	require.NoErrorf(err, "could not parse abi: %v")
 
 	calledSendCrossChainAppResponseFn := false
-	importAmount := uint64(5000000000)
+	importAmount := 200 * units.Dione
 	issuer, vm, _, _, appSender := GenesisVMWithUTXOs(t, true, "", "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -383,7 +383,7 @@ func TestCrossChainMessagestoVM(t *testing.T) {
 	importTx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 	require.NoError(err)
 
-	err = vm.issueTx(importTx, true /*=local*/)
+	err = vm.mempool.AddLocalTx(importTx)
 	require.NoError(err)
 
 	<-issuer
@@ -420,7 +420,7 @@ func TestCrossChainMessagestoVM(t *testing.T) {
 		t.Fatalf("Expected last accepted blockID to be the accepted block: %s, but found %s", blk1.ID(), lastAcceptedID)
 	}
 
-	contractTx := types.NewContractCreation(0, common.Big0, 200000, new(big.Int).Mul(big.NewInt(3), initialBaseFee), common.FromHex(abiBin))
+	contractTx := types.NewContractCreation(0, common.Big0, 200000, new(big.Int).Mul(big.NewInt(4), initialBaseFee), common.FromHex(abiBin))
 	contractSignedTx, err := types.SignTx(contractTx, types.NewEIP155Signer(vm.chainID), testKeys[0].ToECDSA())
 	require.NoError(err)
 
@@ -502,8 +502,8 @@ func TestVMConfigDefaults(t *testing.T) {
 	vmConfig.SetDefaults()
 	vmConfig.RPCTxFeeCap = txFeeCap
 	vmConfig.EnabledEthAPIs = enabledEthAPIs
-	assert.Equal(t, vmConfig, vm.config, "VM Config should match default with overrides")
-	assert.NoError(t, vm.Shutdown(context.Background()))
+	require.Equal(t, vmConfig, vm.config, "VM Config should match default with overrides")
+	require.NoError(t, vm.Shutdown(context.Background()))
 }
 
 func TestVMNilConfig(t *testing.T) {
@@ -512,8 +512,8 @@ func TestVMNilConfig(t *testing.T) {
 	// VM Config should match defaults if no config is passed in
 	var vmConfig Config
 	vmConfig.SetDefaults()
-	assert.Equal(t, vmConfig, vm.config, "VM Config should match default config")
-	assert.NoError(t, vm.Shutdown(context.Background()))
+	require.Equal(t, vmConfig, vm.config, "VM Config should match default config")
+	require.NoError(t, vm.Shutdown(context.Background()))
 }
 
 func TestVMContinuosProfiler(t *testing.T) {
@@ -521,18 +521,18 @@ func TestVMContinuosProfiler(t *testing.T) {
 	profilerFrequency := 500 * time.Millisecond
 	configJSON := fmt.Sprintf("{\"continuous-profiler-dir\": %q,\"continuous-profiler-frequency\": \"500ms\"}", profilerDir)
 	_, vm, _, _, _ := GenesisVM(t, false, "", configJSON, "")
-	assert.Equal(t, vm.config.ContinuousProfilerDir, profilerDir, "profiler dir should be set")
-	assert.Equal(t, vm.config.ContinuousProfilerFrequency.Duration, profilerFrequency, "profiler frequency should be set")
+	require.Equal(t, vm.config.ContinuousProfilerDir, profilerDir, "profiler dir should be set")
+	require.Equal(t, vm.config.ContinuousProfilerFrequency.Duration, profilerFrequency, "profiler frequency should be set")
 
 	// Sleep for twice the frequency of the profiler to give it time
 	// to generate the first profile.
 	time.Sleep(2 * time.Second)
-	assert.NoError(t, vm.Shutdown(context.Background()))
+	require.NoError(t, vm.Shutdown(context.Background()))
 
 	// Check that the first profile was generated
 	expectedFileName := filepath.Join(profilerDir, "cpu.profile.1")
 	_, err := os.Stat(expectedFileName)
-	assert.NoError(t, err, "Expected continuous profiler to generate the first CPU profile at %s", expectedFileName)
+	require.NoError(t, err, "Expected continuous profiler to generate the first CPU profile at %s", expectedFileName)
 }
 
 func TestVMUpgrades(t *testing.T) {
@@ -541,21 +541,6 @@ func TestVMUpgrades(t *testing.T) {
 		genesis          string
 		expectedGasPrice *big.Int
 	}{
-		{
-			name:             "Apricot Phase 0",
-			genesis:          genesisJSONApricotPhase0,
-			expectedGasPrice: big.NewInt(params.LaunchMinGasPrice),
-		},
-		{
-			name:             "Apricot Phase 1",
-			genesis:          genesisJSONApricotPhase1,
-			expectedGasPrice: big.NewInt(params.ApricotPhase1MinGasPrice),
-		},
-		{
-			name:             "Apricot Phase 2",
-			genesis:          genesisJSONApricotPhase2,
-			expectedGasPrice: big.NewInt(params.ApricotPhase1MinGasPrice),
-		},
 		{
 			name:             "Apricot Phase 3",
 			genesis:          genesisJSONApricotPhase3,
@@ -601,7 +586,7 @@ func TestVMUpgrades(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			_, vm, _, _, _ := GenesisVM(t, true, test.genesis, "", "")
 
-			if gasPrice := vm.txPool.GasPrice(); gasPrice.Cmp(test.expectedGasPrice) != 0 {
+			if gasPrice := vm.txPool.GasTip(); gasPrice.Cmp(test.expectedGasPrice) != 0 {
 				t.Fatalf("Expected pool gas price to be %d but found %d", test.expectedGasPrice, gasPrice)
 			}
 			defer func() {
@@ -656,7 +641,7 @@ func TestVMUpgrades(t *testing.T) {
 
 func TestImportMissingUTXOs(t *testing.T) {
 	// make a VM with a shared memory that has an importable UTXO to build a block
-	importAmount := uint64(50000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase2, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -667,7 +652,7 @@ func TestImportMissingUTXOs(t *testing.T) {
 
 	importTx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 	require.NoError(t, err)
-	err = vm.issueTx(importTx, true /*=local*/)
+	err = vm.mempool.AddLocalTx(importTx)
 	require.NoError(t, err)
 	<-issuer
 	blk, err := vm.BuildBlock(context.Background())
@@ -694,7 +679,7 @@ func TestImportMissingUTXOs(t *testing.T) {
 // Simple test to ensure we can issue an import transaction followed by an export transaction
 // and they will be indexed correctly when accepted.
 func TestIssueAtomicTxs(t *testing.T) {
-	importAmount := uint64(50000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase2, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -710,7 +695,7 @@ func TestIssueAtomicTxs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -769,7 +754,7 @@ func TestIssueAtomicTxs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(exportTx, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(exportTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -817,7 +802,7 @@ func TestIssueAtomicTxs(t *testing.T) {
 }
 
 func TestBuildEthTxBlock(t *testing.T) {
-	importAmount := uint64(20000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, dbManager, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase2, "{\"pruning-enabled\":true}", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -836,7 +821,7 @@ func TestBuildEthTxBlock(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -976,7 +961,7 @@ func TestBuildEthTxBlock(t *testing.T) {
 }
 
 func testConflictingImportTxs(t *testing.T, genesis string) {
-	importAmount := uint64(10000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesis, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 		testShortIDAddrs[1]: importAmount,
@@ -1011,7 +996,7 @@ func testConflictingImportTxs(t *testing.T, genesis string) {
 		t.Fatal(err)
 	}
 	for i, tx := range importTxs[:2] {
-		if err := vm.issueTx(tx, true /*=local*/); err != nil {
+		if err := vm.mempool.AddLocalTx(tx); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1045,7 +1030,7 @@ func testConflictingImportTxs(t *testing.T, genesis string) {
 	// the VM returns an error when it attempts to issue the conflict into the mempool
 	// and when it attempts to build a block with the conflict force added to the mempool.
 	for i, tx := range conflictTxs[:2] {
-		if err := vm.issueTx(tx, true /*=local*/); err == nil {
+		if err := vm.mempool.AddLocalTx(tx); err == nil {
 			t.Fatal("Expected issueTx to fail due to conflicting transaction")
 		}
 		// Force issue transaction directly to the mempool
@@ -1067,7 +1052,7 @@ func testConflictingImportTxs(t *testing.T, genesis string) {
 	// Generate one more valid block so that we can copy the header to create an invalid block
 	// with modified extra data. This new block will be invalid for more than one reason (invalid merkle root)
 	// so we check to make sure that the expected error is returned from block verification.
-	if err := vm.issueTx(importTxs[2], true); err != nil {
+	if err := vm.mempool.AddLocalTx(importTxs[2]); err != nil {
 		t.Fatal(err)
 	}
 	<-issuer
@@ -1096,7 +1081,7 @@ func testConflictingImportTxs(t *testing.T, genesis string) {
 		t.Fatal(err)
 	}
 
-	conflictingAtomicTxBlock := types.NewBlock(
+	conflictingAtomicTxBlock := types.NewBlockWithExtData(
 		types.CopyHeader(validEthBlock.Header()),
 		nil,
 		nil,
@@ -1132,7 +1117,7 @@ func testConflictingImportTxs(t *testing.T, genesis string) {
 	header := types.CopyHeader(validEthBlock.Header())
 	header.ExtDataGasUsed.Mul(common.Big2, header.ExtDataGasUsed)
 
-	internalConflictBlock := types.NewBlock(
+	internalConflictBlock := types.NewBlockWithExtData(
 		header,
 		nil,
 		nil,
@@ -1162,7 +1147,7 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 
 	for name, issueTxs := range map[string]func(t *testing.T, vm *VM, sharedMemory *atomic.Memory) (issued []*Tx, discarded []*Tx){
 		"single UTXO override": func(t *testing.T, vm *VM, sharedMemory *atomic.Memory) (issued []*Tx, evicted []*Tx) {
-			utxo, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
+			utxo, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, 50*units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1175,21 +1160,21 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err := vm.issueTx(tx1, true); err != nil {
+			if err := vm.mempool.AddLocalTx(tx1); err != nil {
 				t.Fatal(err)
 			}
-			if err := vm.issueTx(tx2, true); err != nil {
+			if err := vm.mempool.AddLocalTx(tx2); err != nil {
 				t.Fatal(err)
 			}
 
 			return []*Tx{tx2}, []*Tx{tx1}
 		},
 		"one of two UTXOs overrides": func(t *testing.T, vm *VM, sharedMemory *atomic.Memory) (issued []*Tx, evicted []*Tx) {
-			utxo1, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
+			utxo1, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, 50*units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
-			utxo2, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
+			utxo2, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, 50*units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1202,21 +1187,21 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err := vm.issueTx(tx1, true); err != nil {
+			if err := vm.mempool.AddLocalTx(tx1); err != nil {
 				t.Fatal(err)
 			}
-			if err := vm.issueTx(tx2, true); err != nil {
+			if err := vm.mempool.AddLocalTx(tx2); err != nil {
 				t.Fatal(err)
 			}
 
 			return []*Tx{tx2}, []*Tx{tx1}
 		},
 		"hola": func(t *testing.T, vm *VM, sharedMemory *atomic.Memory) (issued []*Tx, evicted []*Tx) {
-			utxo1, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
+			utxo1, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, 50*units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
-			utxo2, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, units.Dione, testShortIDAddrs[0])
+			utxo2, err := addUTXO(sharedMemory, vm.ctx, ids.GenerateTestID(), 0, vm.ctx.DIONEAssetID, 50*units.Dione, testShortIDAddrs[0])
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1235,15 +1220,15 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := vm.issueTx(importTx1, true /*=local*/); err != nil {
+			if err := vm.mempool.AddLocalTx(importTx1); err != nil {
 				t.Fatal(err)
 			}
 
-			if err := vm.issueTx(importTx2, true /*=local*/); err != nil {
+			if err := vm.mempool.AddLocalTx(importTx2); err != nil {
 				t.Fatal(err)
 			}
 
-			if err := vm.issueTx(reissuanceTx1, true /*=local*/); !errors.Is(err, errConflictingAtomicTx) {
+			if err := vm.mempool.AddLocalTx(reissuanceTx1); !errors.Is(err, errConflictingAtomicTx) {
 				t.Fatalf("Expected to fail with err: %s, but found err: %s", errConflictingAtomicTx, err)
 			}
 
@@ -1255,7 +1240,7 @@ func TestReissueAtomicTxHigherGasPrice(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := vm.issueTx(reissuanceTx2, true /*=local*/); err != nil {
+			if err := vm.mempool.AddLocalTx(reissuanceTx2); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1307,7 +1292,7 @@ func TestConflictingImportTxsAcrossBlocks(t *testing.T) {
 func TestSetPreferenceRace(t *testing.T) {
 	// Create two VMs which will agree on block A and then
 	// build the two distinct preferred chains above
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "{\"pruning-enabled\":true}", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -1335,7 +1320,7 @@ func TestSetPreferenceRace(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm1.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm1.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1557,7 +1542,7 @@ func TestConflictingTransitiveAncestryWithGap(t *testing.T) {
 	key1 := testKeys[1]
 	addr1 := key1.PublicKey().Address()
 
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 
 	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "", "",
 		map[ids.ShortID]uint64{
@@ -1584,7 +1569,7 @@ func TestConflictingTransitiveAncestryWithGap(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(importTx0A, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(importTx0A); err != nil {
 		t.Fatalf("Failed to issue importTx0A: %s", err)
 	}
 
@@ -1642,7 +1627,7 @@ func TestConflictingTransitiveAncestryWithGap(t *testing.T) {
 		t.Fatalf("Failed to issue importTx1 due to: %s", err)
 	}
 
-	if err := vm.issueTx(importTx1, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(importTx1); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1661,7 +1646,7 @@ func TestConflictingTransitiveAncestryWithGap(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(importTx0B, true /*=local*/); err == nil {
+	if err := vm.mempool.AddLocalTx(importTx0B); err == nil {
 		t.Fatalf("Should not have been able to issue import tx with conflict")
 	}
 	// Force issue transaction directly into the mempool
@@ -1721,7 +1706,7 @@ func TestBonusBlocksTxs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1783,7 +1768,7 @@ func TestBonusBlocksTxs(t *testing.T) {
 // accept block C, which should be an orphaned block at this point and
 // get rejected.
 func TestReorgProtection(t *testing.T) {
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "{\"pruning-enabled\":false}", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -1814,7 +1799,7 @@ func TestReorgProtection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm1.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm1.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1965,7 +1950,7 @@ func TestReorgProtection(t *testing.T) {
 //	 / \
 //	B   C
 func TestNonCanonicalAccept(t *testing.T) {
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -1996,7 +1981,7 @@ func TestNonCanonicalAccept(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm1.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm1.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2090,7 +2075,7 @@ func TestNonCanonicalAccept(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	vm1.blockChain.GetVMConfig().AllowUnfinalizedQueries = true
+	vm1.eth.APIBackend.SetAllowUnfinalizedQueries(true)
 
 	blkBHeight := vm1BlkB.Height()
 	blkBHash := vm1BlkB.(*chain.BlockWrapper).Block.(*Block).ethBlock.Hash()
@@ -2140,7 +2125,7 @@ func TestNonCanonicalAccept(t *testing.T) {
 //	    |
 //	    D
 func TestStickyPreference(t *testing.T) {
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -2171,7 +2156,7 @@ func TestStickyPreference(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm1.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm1.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2265,7 +2250,7 @@ func TestStickyPreference(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	vm1.blockChain.GetVMConfig().AllowUnfinalizedQueries = true
+	vm1.eth.APIBackend.SetAllowUnfinalizedQueries(true)
 
 	blkBHeight := vm1BlkB.Height()
 	blkBHash := vm1BlkB.(*chain.BlockWrapper).Block.(*Block).ethBlock.Hash()
@@ -2414,7 +2399,7 @@ func TestStickyPreference(t *testing.T) {
 //	    |
 //	    D
 func TestUncleBlock(t *testing.T) {
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -2444,7 +2429,7 @@ func TestUncleBlock(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm1.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm1.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2584,7 +2569,7 @@ func TestUncleBlock(t *testing.T) {
 	uncleBlockHeader := types.CopyHeader(blkDEthBlock.Header())
 	uncleBlockHeader.UncleHash = types.CalcUncleHash(uncles)
 
-	uncleEthBlock := types.NewBlock(
+	uncleEthBlock := types.NewBlockWithExtData(
 		uncleBlockHeader,
 		blkDEthBlock.Transactions(),
 		uncles,
@@ -2627,7 +2612,7 @@ func TestEmptyBlock(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2641,7 +2626,7 @@ func TestEmptyBlock(t *testing.T) {
 	// Create empty block from blkA
 	ethBlock := blk.(*chain.BlockWrapper).Block.(*Block).ethBlock
 
-	emptyEthBlock := types.NewBlock(
+	emptyEthBlock := types.NewBlockWithExtData(
 		types.CopyHeader(ethBlock.Header()),
 		nil,
 		nil,
@@ -2677,7 +2662,7 @@ func TestEmptyBlock(t *testing.T) {
 //	    |
 //	    D
 func TestAcceptReorg(t *testing.T) {
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer1, vm1, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase0, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -2708,7 +2693,7 @@ func TestAcceptReorg(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm1.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm1.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2903,7 +2888,7 @@ func TestFutureBlock(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -2922,7 +2907,7 @@ func TestFutureBlock(t *testing.T) {
 	// Set the modified time to exceed the allowed future time
 	modifiedTime := modifiedHeader.Time + uint64(maxFutureBlockTime.Seconds()+1)
 	modifiedHeader.Time = modifiedTime
-	modifiedBlock := types.NewBlock(
+	modifiedBlock := types.NewBlockWithExtData(
 		modifiedHeader,
 		nil,
 		nil,
@@ -2947,7 +2932,7 @@ func TestFutureBlock(t *testing.T) {
 // Regression test to ensure we can build blocks if we are starting with the
 // Apricot Phase 1 ruleset in genesis.
 func TestBuildApricotPhase1Block(t *testing.T) {
-	importAmount := uint64(1000000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase1, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 	})
@@ -2968,7 +2953,7 @@ func TestBuildApricotPhase1Block(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -3084,7 +3069,7 @@ func TestLastAcceptedBlockNumberAllow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -3110,7 +3095,7 @@ func TestLastAcceptedBlockNumberAllow(t *testing.T) {
 	blkHeight := blk.Height()
 	blkHash := blk.(*chain.BlockWrapper).Block.(*Block).ethBlock.Hash()
 
-	vm.blockChain.GetVMConfig().AllowUnfinalizedQueries = true
+	vm.eth.APIBackend.SetAllowUnfinalizedQueries(true)
 
 	ctx := context.Background()
 	b, err := vm.eth.APIBackend.BlockByNumber(ctx, rpc.BlockNumber(blkHeight))
@@ -3121,7 +3106,7 @@ func TestLastAcceptedBlockNumberAllow(t *testing.T) {
 		t.Fatalf("expected block at %d to have hash %s but got %s", blkHeight, blkHash.Hex(), b.Hash().Hex())
 	}
 
-	vm.blockChain.GetVMConfig().AllowUnfinalizedQueries = false
+	vm.eth.APIBackend.SetAllowUnfinalizedQueries(false)
 
 	_, err = vm.eth.APIBackend.BlockByNumber(ctx, rpc.BlockNumber(blkHeight))
 	if !errors.Is(err, eth.ErrUnfinalizedData) {
@@ -3162,7 +3147,7 @@ func TestReissueAtomicTx(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -3264,7 +3249,7 @@ func TestAtomicTxFailsDELTAStateTransferBuildBlock(t *testing.T) {
 	exportTxs := createExportTxOptions(t, vm, issuer, sharedMemory)
 	exportTx1, exportTx2 := exportTxs[0], exportTxs[1]
 
-	if err := vm.issueTx(exportTx1, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(exportTx1); err != nil {
 		t.Fatal(err)
 	}
 	<-issuer
@@ -3280,7 +3265,7 @@ func TestAtomicTxFailsDELTAStateTransferBuildBlock(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(exportTx2, true /*=local*/); err == nil {
+	if err := vm.mempool.AddLocalTx(exportTx2); err == nil {
 		t.Fatal("Should have failed to issue due to an invalid export tx")
 	}
 
@@ -3343,11 +3328,11 @@ func TestBuildInvalidBlockHead(t *testing.T) {
 
 	// Verify that the transaction fails verification when attempting to issue
 	// it into the atomic mempool.
-	if err := vm.issueTx(tx, true /*=local*/); err == nil {
+	if err := vm.mempool.AddLocalTx(tx); err == nil {
 		t.Fatal("Should have failed to issue invalid transaction")
 	}
 	// Force issue the transaction directly to the mempool
-	if err := vm.mempool.AddTx(tx); err != nil {
+	if err := vm.mempool.ForceAddTx(tx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -3380,7 +3365,7 @@ func TestConfigureLogLevel(t *testing.T) {
 		},
 		{
 			name:        "Invalid log level",
-			logConfig:   "{\"log-level\": \"cchain\"}",
+			logConfig:   "{\"log-level\": \"dchain\"}",
 			genesisJSON: genesisJSONApricotPhase3,
 			upgradeJSON: "",
 			expectedErr: "failed to initialize logger due to",
@@ -3414,7 +3399,7 @@ func TestConfigureLogLevel(t *testing.T) {
 				}
 			}
 
-			// If the VM was not initialized, do not attept to shut it down
+			// If the VM was not initialized, do not attempt to shut it down
 			if err == nil {
 				shutdownChan := make(chan error, 1)
 				shutdownFunc := func() {
@@ -3455,7 +3440,7 @@ func TestBuildApricotPhase4Block(t *testing.T) {
 	key := testKeys[0].ToECDSA()
 	address := testEthAddrs[0]
 
-	importAmount := uint64(1000000000)
+	importAmount := 200 * units.Dione
 	utxoID := dione.UTXOID{TxID: ids.GenerateTestID()}
 
 	utxo := &dione.UTXO{
@@ -3491,7 +3476,7 @@ func TestBuildApricotPhase4Block(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -3540,7 +3525,7 @@ func TestBuildApricotPhase4Block(t *testing.T) {
 
 	txs := make([]*types.Transaction, 10)
 	for i := 0; i < 5; i++ {
-		tx := types.NewTransaction(uint64(i), address, big.NewInt(10), 21000, big.NewInt(params.LaunchMinGasPrice), nil)
+		tx := types.NewTransaction(uint64(i), address, big.NewInt(10), 21000, new(big.Int).Mul(big.NewInt(params.LaunchMinGasPrice), big.NewInt(3)), nil)
 		signedTx, err := types.SignTx(tx, types.NewEIP155Signer(vm.chainID), key)
 		if err != nil {
 			t.Fatal(err)
@@ -3548,14 +3533,14 @@ func TestBuildApricotPhase4Block(t *testing.T) {
 		txs[i] = signedTx
 	}
 	for i := 5; i < 10; i++ {
-		tx := types.NewTransaction(uint64(i), address, big.NewInt(10), 21000, big.NewInt(params.ApricotPhase1MinGasPrice), nil)
+		tx := types.NewTransaction(uint64(i), address, big.NewInt(10), 21000, new(big.Int).Mul(big.NewInt(params.ApricotPhase1MinGasPrice), big.NewInt(3)), nil)
 		signedTx, err := types.SignTx(tx, types.NewEIP155Signer(vm.chainID), key)
 		if err != nil {
 			t.Fatal(err)
 		}
 		txs[i] = signedTx
 	}
-	errs := vm.txPool.AddRemotes(txs)
+	errs := vm.txPool.AddRemotesSync(txs)
 	for i, err := range errs {
 		if err != nil {
 			t.Fatalf("Failed to add tx at index %d: %s", i, err)
@@ -3637,7 +3622,7 @@ func TestBuildApricotPhase5Block(t *testing.T) {
 	key := testKeys[0].ToECDSA()
 	address := testEthAddrs[0]
 
-	importAmount := uint64(1000000000)
+	importAmount := 200 * units.Dione
 	utxoID := dione.UTXOID{TxID: ids.GenerateTestID()}
 
 	utxo := &dione.UTXO{
@@ -3673,7 +3658,7 @@ func TestBuildApricotPhase5Block(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vm.issueTx(importTx, true /*=local*/); err != nil {
+	if err := vm.mempool.AddLocalTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -3704,8 +3689,8 @@ func TestBuildApricotPhase5Block(t *testing.T) {
 	if eBlockGasCost := ethBlk.BlockGasCost(); eBlockGasCost == nil || eBlockGasCost.Cmp(common.Big0) != 0 {
 		t.Fatalf("expected blockGasCost to be 0 but got %d", eBlockGasCost)
 	}
-	if eExtDataGasUsed := ethBlk.ExtDataGasUsed(); eExtDataGasUsed == nil || eExtDataGasUsed.Cmp(big.NewInt(11230)) != 0 {
-		t.Fatalf("expected extDataGasUsed to be 11230 but got %d", eExtDataGasUsed)
+	if eExtDataGasUsed := ethBlk.ExtDataGasUsed(); eExtDataGasUsed == nil || eExtDataGasUsed.Cmp(big.NewInt(22230)) != 0 {
+		t.Fatalf("expected extDataGasUsed to be 22230 but got %d", eExtDataGasUsed)
 	}
 	minRequiredTip, err := dummy.MinRequiredTip(vm.chainConfig, ethBlk.Header())
 	if err != nil {
@@ -3729,7 +3714,11 @@ func TestBuildApricotPhase5Block(t *testing.T) {
 		}
 		txs[i] = signedTx
 	}
-	errs := vm.txPool.AddRemotes(txs)
+	wrapped := make([]*txpool.Transaction, len(txs))
+	for i, tx := range txs {
+		wrapped[i] = &txpool.Transaction{Tx: tx}
+	}
+	errs := vm.txPool.Add(wrapped, false, false)
 	for i, err := range errs {
 		if err != nil {
 			t.Fatalf("Failed to add tx at index %d: %s", i, err)
@@ -3813,7 +3802,7 @@ func TestConsecutiveAtomicTransactionsRevertSnapshot(t *testing.T) {
 	importTxs := createImportTxOptions(t, vm, sharedMemory)
 
 	// Issue the first import transaction, build, and accept the block.
-	if err := vm.issueTx(importTxs[0], true); err != nil {
+	if err := vm.mempool.AddLocalTx(importTxs[0]); err != nil {
 		t.Fatal(err)
 	}
 
@@ -3856,7 +3845,7 @@ func TestConsecutiveAtomicTransactionsRevertSnapshot(t *testing.T) {
 }
 
 func TestAtomicTxBuildBlockDropsConflicts(t *testing.T) {
-	importAmount := uint64(10000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, _, _ := GenesisVMWithUTXOs(t, true, genesisJSONApricotPhase5, "", "", map[ids.ShortID]uint64{
 		testShortIDAddrs[0]: importAmount,
 		testShortIDAddrs[1]: importAmount,
@@ -3879,7 +3868,7 @@ func TestAtomicTxBuildBlockDropsConflicts(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := vm.issueTx(importTx, true /*=local*/); err != nil {
+		if err := vm.mempool.AddLocalTx(importTx); err != nil {
 			t.Fatal(err)
 		}
 		conflictSets[index].Add(importTx.ID())
@@ -3887,7 +3876,7 @@ func TestAtomicTxBuildBlockDropsConflicts(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := vm.issueTx(conflictTx, true /*=local*/); err == nil {
+		if err := vm.mempool.AddLocalTx(conflictTx); err == nil {
 			t.Fatal("should conflict with the utxoSet in the mempool")
 		}
 		// force add the tx
@@ -3925,7 +3914,7 @@ func TestAtomicTxBuildBlockDropsConflicts(t *testing.T) {
 }
 
 func TestBuildBlockDoesNotExceedAtomicGasLimit(t *testing.T) {
-	importAmount := uint64(10000000)
+	importAmount := 50 * units.Dione
 	issuer, vm, _, sharedMemory, _ := GenesisVM(t, true, genesisJSONApricotPhase5, "", "")
 
 	defer func() {
@@ -3948,7 +3937,7 @@ func TestBuildBlockDoesNotExceedAtomicGasLimit(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := vm.issueTx(importTx, true); err != nil {
+		if err := vm.mempool.AddLocalTx(importTx); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -3970,7 +3959,7 @@ func TestBuildBlockDoesNotExceedAtomicGasLimit(t *testing.T) {
 }
 
 func TestExtraStateChangeAtomicGasLimitExceeded(t *testing.T) {
-	importAmount := uint64(10000000)
+	importAmount := 50 * units.Dione
 	// We create two VMs one in ApriotPhase4 and one in ApricotPhase5, so that we can construct a block
 	// containing a large enough atomic transaction that it will exceed the atomic gas limit in
 	// ApricotPhase5.
@@ -4007,7 +3996,7 @@ func TestExtraStateChangeAtomicGasLimitExceeded(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := vm1.issueTx(importTx, true); err != nil {
+	if err := vm1.mempool.ForceAddTx(importTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -4028,7 +4017,7 @@ func TestExtraStateChangeAtomicGasLimitExceeded(t *testing.T) {
 	}
 
 	// Construct the new block with the extra data in the new format (slice of atomic transactions).
-	ethBlk2 := types.NewBlock(
+	ethBlk2 := types.NewBlockWithExtData(
 		types.CopyHeader(validEthBlock.Header()),
 		nil,
 		nil,
@@ -4049,12 +4038,6 @@ func TestExtraStateChangeAtomicGasLimitExceeded(t *testing.T) {
 	}
 }
 
-func TestGetAtomicRepositoryRepairHeights(t *testing.T) {
-	mainnetHeights := getAtomicRepositoryRepairHeights(bonusBlockMainnetHeights, canonicalBlockMainnetHeights)
-	assert.Len(t, mainnetHeights, 76)
-	assert.True(t, slices.IsSorted(mainnetHeights))
-}
-
 func TestSkipChainConfigCheckCompatible(t *testing.T) {
 	// Hack: registering metrics uses global variables, so we need to disable metrics here so that we can initialize the VM twice.
 	metrics.Enabled = false
@@ -4070,7 +4053,7 @@ func TestSkipChainConfigCheckCompatible(t *testing.T) {
 	// accept one block to test the SkipUpgradeCheck functionality.
 	importTx, err := vm.newImportTx(vm.ctx.AChainID, testEthAddrs[0], initialBaseFee, []*secp256k1.PrivateKey{testKeys[0]})
 	require.NoError(t, err)
-	require.NoError(t, vm.issueTx(importTx, true /*=local*/))
+	require.NoError(t, vm.mempool.AddLocalTx(importTx))
 	<-issuer
 
 	blk, err := vm.BuildBlock(context.Background())

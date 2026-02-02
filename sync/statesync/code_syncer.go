@@ -10,12 +10,12 @@ import (
 	"sync"
 
 	"github.com/DioneProtocol/coreth/core/rawdb"
-	"github.com/DioneProtocol/coreth/ethdb"
-	"github.com/DioneProtocol/coreth/params"
+	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	statesyncclient "github.com/DioneProtocol/coreth/sync/client"
 	"github.com/DioneProtocol/odysseygo/ids"
 	"github.com/DioneProtocol/odysseygo/utils/set"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
 )
 
 const (
@@ -39,7 +39,7 @@ type CodeSyncerConfig struct {
 	DB ethdb.Database
 }
 
-// codeSyncer syncs code bytes from the network in a seprate thread.
+// codeSyncer syncs code bytes from the network in a separate thread.
 // Tracks outstanding requests in the DB, so that it will still fulfill them if interrupted.
 type codeSyncer struct {
 	lock sync.Mutex
@@ -140,7 +140,7 @@ func (c *codeSyncer) addCodeToFetchFromDBToQueue() error {
 // work fulfills any incoming requests from the producer channel by fetching code bytes from the network
 // and fulfilling them by updating the database.
 func (c *codeSyncer) work(ctx context.Context) error {
-	codeHashes := make([]common.Hash, 0, params.MaxCodeHashesPerRequest)
+	codeHashes := make([]common.Hash, 0, message.MaxCodeHashesPerRequest)
 
 	for {
 		select {
@@ -159,7 +159,7 @@ func (c *codeSyncer) work(ctx context.Context) error {
 			codeHashes = append(codeHashes, codeHash)
 			// Try to wait for at least [MaxCodeHashesPerRequest] code hashes to batch into a single request
 			// if there's more work remaining.
-			if len(codeHashes) < params.MaxCodeHashesPerRequest {
+			if len(codeHashes) < message.MaxCodeHashesPerRequest {
 				continue
 			}
 			if err := c.fulfillCodeRequest(ctx, codeHashes); err != nil {

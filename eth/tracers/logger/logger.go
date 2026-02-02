@@ -47,7 +47,7 @@ func (s Storage) Copy() Storage {
 	return cpy
 }
 
-// Config are the configuration options for structured logger the DELTA
+// Config are the configuration options for structured logger the EVM
 type Config struct {
 	EnableMemory     bool // enable memory capture
 	DisableStack     bool // disable stack capture
@@ -61,7 +61,7 @@ type Config struct {
 
 //go:generate gencodec -type StructLog -field-override structLogMarshaling -out gen_structlog.go
 
-// StructLog is emitted to the DELTA each cycle and lists information about the current internal state
+// StructLog is emitted to the EVM each cycle and lists information about the current internal state
 // prior to the execution of the statement.
 type StructLog struct {
 	Pc            uint64                      `json:"pc"`
@@ -101,14 +101,14 @@ func (s *StructLog) ErrorString() string {
 	return ""
 }
 
-// StructLogger is an DELTA state logger and implements DELTALogger.
+// StructLogger is an EVM state logger and implements EVMLogger.
 //
 // StructLogger can capture state based on the given Log configuration and also keeps
 // a track record of modified storage which is used in reporting snapshots of the
 // contract their storage.
 type StructLogger struct {
 	cfg Config
-	env *vm.DELTA
+	env *vm.EVM
 
 	storage  map[common.Address]Storage
 	logs     []StructLog
@@ -140,8 +140,8 @@ func (l *StructLogger) Reset() {
 	l.err = nil
 }
 
-// CaptureStart implements the DELTALogger interface to initialize the tracing operation.
-func (l *StructLogger) CaptureStart(env *vm.DELTA, from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
+// CaptureStart implements the EVMLogger interface to initialize the tracing operation.
+func (l *StructLogger) CaptureStart(env *vm.EVM, from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
 	l.env = env
 }
 
@@ -157,6 +157,7 @@ func (l *StructLogger) CaptureState(pc uint64, op vm.OpCode, gas, cost uint64, s
 	if l.cfg.Limit != 0 && l.cfg.Limit <= len(l.logs) {
 		return
 	}
+
 	memory := scope.Memory
 	stack := scope.Stack
 	contract := scope.Contract
@@ -207,12 +208,12 @@ func (l *StructLogger) CaptureState(pc uint64, op vm.OpCode, gas, cost uint64, s
 		rdata = make([]byte, len(rData))
 		copy(rdata, rData)
 	}
-	// create a new snapshot of the DELTA.
+	// create a new snapshot of the EVM.
 	log := StructLog{pc, op, gas, cost, mem, memory.Len(), stck, rdata, storage, depth, l.env.StateDB.GetRefund(), err}
 	l.logs = append(l.logs, log)
 }
 
-// CaptureFault implements the DELTALogger interface to trace an execution fault
+// CaptureFault implements the EVMLogger interface to trace an execution fault
 // while running an opcode.
 func (l *StructLogger) CaptureFault(pc uint64, op vm.OpCode, gas, cost uint64, scope *vm.ScopeContext, depth int, err error) {
 }
@@ -328,7 +329,7 @@ func WriteLogs(writer io.Writer, logs []*types.Log) {
 type mdLogger struct {
 	out io.Writer
 	cfg *Config
-	env *vm.DELTA
+	env *vm.EVM
 }
 
 // NewMarkdownLogger creates a logger which outputs information in a format adapted
@@ -341,7 +342,7 @@ func NewMarkdownLogger(cfg *Config, writer io.Writer) *mdLogger {
 	return l
 }
 
-func (t *mdLogger) CaptureStart(env *vm.DELTA, from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
+func (t *mdLogger) CaptureStart(env *vm.EVM, from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
 	t.env = env
 	if !create {
 		fmt.Fprintf(t.out, "From: `%v`\nTo: `%v`\nData: `%#x`\nGas: `%d`\nValue `%v` wei\n",
@@ -398,7 +399,7 @@ func (*mdLogger) CaptureTxStart(gasLimit uint64) {}
 
 func (*mdLogger) CaptureTxEnd(restGas uint64) {}
 
-// ExecutionResult groups all structured logs emitted by the DELTA
+// ExecutionResult groups all structured logs emitted by the EVM
 // while replaying a transaction in debug mode as well as transaction
 // execution status, the amount of gas used and the return value
 type ExecutionResult struct {
@@ -408,7 +409,7 @@ type ExecutionResult struct {
 	StructLogs  []StructLogRes `json:"structLogs"`
 }
 
-// StructLogRes stores a structured log emitted by the DELTA while replaying a
+// StructLogRes stores a structured log emitted by the EVM while replaying a
 // transaction in debug mode
 type StructLogRes struct {
 	Pc            uint64             `json:"pc"`
@@ -418,12 +419,13 @@ type StructLogRes struct {
 	Depth         int                `json:"depth"`
 	Error         string             `json:"error,omitempty"`
 	Stack         *[]string          `json:"stack,omitempty"`
+	ReturnData    string             `json:"returnData,omitempty"`
 	Memory        *[]string          `json:"memory,omitempty"`
 	Storage       *map[string]string `json:"storage,omitempty"`
 	RefundCounter uint64             `json:"refund,omitempty"`
 }
 
-// formatLogs formats DELTA returned structured logs for json output
+// formatLogs formats EVM returned structured logs for json output
 func formatLogs(logs []StructLog) []StructLogRes {
 	formatted := make([]StructLogRes, len(logs))
 	for index, trace := range logs {
@@ -442,6 +444,9 @@ func formatLogs(logs []StructLog) []StructLogRes {
 				stack[i] = stackValue.Hex()
 			}
 			formatted[index].Stack = &stack
+		}
+		if trace.ReturnData != nil && len(trace.ReturnData) > 0 {
+			formatted[index].ReturnData = hexutil.Bytes(trace.ReturnData).String()
 		}
 		if trace.Memory != nil {
 			memory := make([]string, 0, (len(trace.Memory)+31)/32)

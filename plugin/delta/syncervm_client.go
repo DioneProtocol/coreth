@@ -11,7 +11,6 @@ import (
 	"github.com/DioneProtocol/coreth/core/rawdb"
 	"github.com/DioneProtocol/coreth/core/state/snapshot"
 	"github.com/DioneProtocol/coreth/eth"
-	"github.com/DioneProtocol/coreth/ethdb"
 	"github.com/DioneProtocol/coreth/params"
 	"github.com/DioneProtocol/coreth/plugin/delta/message"
 	syncclient "github.com/DioneProtocol/coreth/sync/client"
@@ -24,6 +23,7 @@ import (
 	"github.com/DioneProtocol/odysseygo/snow/engine/snowman/block"
 	"github.com/DioneProtocol/odysseygo/vms/components/chain"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
 )
 
@@ -264,7 +264,7 @@ func (client *stateSyncerClient) syncBlocks(ctx context.Context, fromHash common
 		}
 		blocks, err := client.client.GetBlocks(ctx, nextHash, nextHeight, parentsPerRequest)
 		if err != nil {
-			log.Warn("could not get blocks from peer", "err", err, "nextHash", nextHash, "remaining", i+1)
+			log.Error("could not get blocks from peer", "err", err, "nextHash", nextHash, "remaining", i+1)
 			return err
 		}
 		for _, block := range blocks {

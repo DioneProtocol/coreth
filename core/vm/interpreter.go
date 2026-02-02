@@ -34,22 +34,17 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 )
 
-var (
-	BuiltinAddr = common.Address{
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	}
-)
+var BuiltinAddr = common.Address{
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+}
 
 // Config are the configuration options for the Interpreter
 type Config struct {
-	Tracer                  DELTALogger // Opcode logger
-	NoBaseFee               bool        // Forces the EIP-1559 baseFee to 0 (needed for 0 price calls)
-	EnablePreimageRecording bool        // Enables recording of SHA3/keccak preimages
-	ExtraEips               []int       // Additional EIPS that are to be enabled
-
-	// AllowUnfinalizedQueries allow unfinalized queries
-	AllowUnfinalizedQueries bool
+	Tracer                  EVMLogger // Opcode logger
+	NoBaseFee               bool      // Forces the EIP-1559 baseFee to 0 (needed for 0 price calls)
+	EnablePreimageRecording bool      // Enables recording of SHA3/keccak preimages
+	ExtraEips               []int     // Additional EIPS that are to be enabled
 }
 
 // ScopeContext contains the things that are per-call, such as stack and memory,
@@ -60,52 +55,54 @@ type ScopeContext struct {
 	Contract *Contract
 }
 
-// DELTAInterpreter represents an DELTA interpreter
-type DELTAInterpreter struct {
-	delta *DELTA
+// EVMInterpreter represents an EVM interpreter
+type EVMInterpreter struct {
+	evm   *EVM
 	table *JumpTable
 
 	hasher    crypto.KeccakState // Keccak256 hasher instance shared across opcodes
-	hasherBuf common.Hash        // Keccak256 hasher result array shared aross opcodes
+	hasherBuf common.Hash        // Keccak256 hasher result array shared across opcodes
 
 	readOnly   bool   // Whether to throw on stateful modifications
 	returnData []byte // Last CALL's return data for subsequent reuse
 }
 
-// NewDELTAInterpreter returns a new instance of the Interpreter.
-func NewDELTAInterpreter(delta *DELTA) *DELTAInterpreter {
+// NewEVMInterpreter returns a new instance of the Interpreter.
+func NewEVMInterpreter(evm *EVM) *EVMInterpreter {
 	// If jump table was not initialised we set the default one.
 	var table *JumpTable
 	switch {
-	case delta.chainRules.IsDUpgrade:
-		table = &dUpgradeInstructionSet
-	case delta.chainRules.IsApricotPhase3:
+	case evm.chainRules.IsCancun:
+		table = &cancunInstructionSet
+	case evm.chainRules.IsDurango:
+		table = &durangoInstructionSet
+	case evm.chainRules.IsApricotPhase3:
 		table = &apricotPhase3InstructionSet
-	case delta.chainRules.IsApricotPhase2:
+	case evm.chainRules.IsApricotPhase2:
 		table = &apricotPhase2InstructionSet
-	case delta.chainRules.IsApricotPhase1:
+	case evm.chainRules.IsApricotPhase1:
 		table = &apricotPhase1InstructionSet
-	case delta.chainRules.IsIstanbul:
+	case evm.chainRules.IsIstanbul:
 		table = &istanbulInstructionSet
-	case delta.chainRules.IsConstantinople:
+	case evm.chainRules.IsConstantinople:
 		table = &constantinopleInstructionSet
-	case delta.chainRules.IsByzantium:
+	case evm.chainRules.IsByzantium:
 		table = &byzantiumInstructionSet
-	case delta.chainRules.IsEIP158:
+	case evm.chainRules.IsEIP158:
 		table = &spuriousDragonInstructionSet
-	case delta.chainRules.IsEIP150:
+	case evm.chainRules.IsEIP150:
 		table = &tangerineWhistleInstructionSet
-	case delta.chainRules.IsHomestead:
+	case evm.chainRules.IsHomestead:
 		table = &homesteadInstructionSet
 	default:
 		table = &frontierInstructionSet
 	}
 	var extraEips []int
-	if len(delta.Config.ExtraEips) > 0 {
+	if len(evm.Config.ExtraEips) > 0 {
 		// Deep-copy jumptable to prevent modification of opcodes in other tables
 		table = copyJumpTable(table)
 	}
-	for _, eip := range delta.Config.ExtraEips {
+	for _, eip := range evm.Config.ExtraEips {
 		if err := EnableEIP(eip, table); err != nil {
 			// Disable it, so caller can check if it's activated or not
 			log.Error("EIP activation failed", "eip", eip, "error", err)
@@ -113,8 +110,8 @@ func NewDELTAInterpreter(delta *DELTA) *DELTAInterpreter {
 			extraEips = append(extraEips, eip)
 		}
 	}
-	delta.Config.ExtraEips = extraEips
-	return &DELTAInterpreter{delta: delta, table: table}
+	evm.Config.ExtraEips = extraEips
+	return &EVMInterpreter{evm: evm, table: table}
 }
 
 // Run loops and evaluates the contract's code with the given input data and returns
@@ -123,12 +120,12 @@ func NewDELTAInterpreter(delta *DELTA) *DELTAInterpreter {
 // It's important to note that any errors returned by the interpreter should be
 // considered a revert-and-consume-all-gas operation except for
 // ErrExecutionReverted which means revert-and-keep-gas-left.
-func (in *DELTAInterpreter) Run(contract *Contract, input []byte, readOnly bool) (ret []byte, err error) {
+func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (ret []byte, err error) {
 	// Deprecate special handling of [BuiltinAddr] as of ApricotPhase2.
 	// In ApricotPhase2, the contract deployed in the genesis is overridden by a deprecated precompiled
 	// contract which will return an error immediately if its ever called. Therefore, this function should
 	// never be called after ApricotPhase2 with [BuiltinAddr] as the contract address.
-	if !in.delta.chainRules.IsApricotPhase2 && contract.Address() == BuiltinAddr {
+	if !in.evm.chainRules.IsApricotPhase2 && contract.Address() == BuiltinAddr {
 		self := AccountRef(contract.Caller())
 		if _, ok := contract.caller.(*Contract); ok {
 			contract = contract.AsDelegate()
@@ -137,8 +134,8 @@ func (in *DELTAInterpreter) Run(contract *Contract, input []byte, readOnly bool)
 	}
 
 	// Increment the call depth which is restricted to 1024
-	in.delta.depth++
-	defer func() { in.delta.depth-- }()
+	in.evm.depth++
+	defer func() { in.evm.depth-- }()
 
 	// Make sure the readOnly is only set if we aren't in readOnly yet.
 	// This also makes sure that the readOnly flag isn't removed for child calls.
@@ -173,11 +170,11 @@ func (in *DELTAInterpreter) Run(contract *Contract, input []byte, readOnly bool)
 		pc   = uint64(0) // program counter
 		cost uint64
 		// copies used by tracer
-		pcCopy  uint64 // needed for the deferred DELTALogger
-		gasCopy uint64 // for DELTALogger to log gas remaining before execution
-		logged  bool   // deferred DELTALogger should ignore already logged steps
+		pcCopy  uint64 // needed for the deferred EVMLogger
+		gasCopy uint64 // for EVMLogger to log gas remaining before execution
+		logged  bool   // deferred EVMLogger should ignore already logged steps
 		res     []byte // result of the opcode execution function
-		debug   = in.delta.Config.Tracer != nil
+		debug   = in.evm.Config.Tracer != nil
 	)
 
 	// Don't move this deferred function, it's placed before the capturestate-deferred method,
@@ -192,9 +189,9 @@ func (in *DELTAInterpreter) Run(contract *Contract, input []byte, readOnly bool)
 		defer func() {
 			if err != nil {
 				if !logged {
-					in.delta.Config.Tracer.CaptureState(pcCopy, op, gasCopy, cost, callContext, in.returnData, in.delta.depth, err)
+					in.evm.Config.Tracer.CaptureState(pcCopy, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
 				} else {
-					in.delta.Config.Tracer.CaptureFault(pcCopy, op, gasCopy, cost, callContext, in.delta.depth, err)
+					in.evm.Config.Tracer.CaptureFault(pcCopy, op, gasCopy, cost, callContext, in.evm.depth, err)
 				}
 			}
 		}()
@@ -244,21 +241,21 @@ func (in *DELTAInterpreter) Run(contract *Contract, input []byte, readOnly bool)
 			// Consume the gas and return an error if not enough gas is available.
 			// cost is explicitly set so that the capture state defer method can get the proper cost
 			var dynamicCost uint64
-			dynamicCost, err = operation.dynamicGas(in.delta, contract, stack, mem, memorySize)
+			dynamicCost, err = operation.dynamicGas(in.evm, contract, stack, mem, memorySize)
 			cost += dynamicCost // for tracing
 			if err != nil || !contract.UseGas(dynamicCost) {
 				return nil, vmerrs.ErrOutOfGas
 			}
 			// Do tracing before memory expansion
 			if debug {
-				in.delta.Config.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.delta.depth, err)
+				in.evm.Config.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
 				logged = true
 			}
 			if memorySize > 0 {
 				mem.Resize(memorySize)
 			}
 		} else if debug {
-			in.delta.Config.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.delta.depth, err)
+			in.evm.Config.Tracer.CaptureState(pc, op, gasCopy, cost, callContext, in.returnData, in.evm.depth, err)
 			logged = true
 		}
 
