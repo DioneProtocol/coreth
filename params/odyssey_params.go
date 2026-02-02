@@ -32,7 +32,7 @@ const (
 	ApricotPhase4BaseFeeChangeDenominator uint64 = 12
 	ApricotPhase5TargetGas                uint64 = 15_000_000
 	ApricotPhase5BaseFeeChangeDenominator uint64 = 36
-	ApricotPhase7MinBaseFee               int64  = 23_809_523_809_524
+	PyruniMinBaseFee                      int64  = 23_809_523_809_524
 
 	LpAddressDefault         string = "0x0000000000000000000000000000000000000001"
 	GovernanceAddressDefault string = "0x0000000000000000000000000000000000000002"

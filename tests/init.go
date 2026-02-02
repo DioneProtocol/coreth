@@ -312,7 +312,7 @@ var Forks = map[string]*params.ChainConfig{
 		DurangoBlockTimestamp:       utils.NewUint64(0),
 		CancunTime:                  utils.NewUint64(0),
 	},
-	"ApricotPhase7": {
+	"Pyruni": {
 		ChainID:                     big.NewInt(1),
 		HomesteadBlock:              big.NewInt(0),
 		EIP150Block:                 big.NewInt(0),
@@ -330,7 +330,7 @@ var Forks = map[string]*params.ChainConfig{
 		BanffBlockTimestamp:         utils.NewUint64(0),
 		CortinaBlockTimestamp:       utils.NewUint64(0),
 		DurangoBlockTimestamp:       utils.NewUint64(0),
-		ApricotPhase7BlockTimestamp: utils.NewUint64(0),
+		PyruniBlockTimestamp:        utils.NewUint64(0),
 	},
 }
 

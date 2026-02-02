@@ -26,7 +26,7 @@ func LookupInstructionSet(rules params.Rules) (JumpTable, error) {
 	switch {
 	case rules.IsCancun:
 		return newCancunInstructionSet(), nil
-	case rules.IsDurango, rules.IsApricotPhase7:
+	case rules.IsDurango, rules.IsPyruni:
 		return newDurangoInstructionSet(), nil
 	case rules.IsApricotPhase3, rules.IsApricotPhase4,
 		rules.IsApricotPhase5, rules.IsApricotPhasePre6,

@@ -431,7 +431,7 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 		st.state.SetNonce(msg.From, st.state.GetNonce(sender.Address())+1)
 
 		// Apply additional gas cost for native token transfers to EOAs
-		if rules.IsApricotPhase7TransferGasLimit && msg.Value.Sign() > 0 {
+		if rules.IsPyruniTransferGasLimit && msg.Value.Sign() > 0 {
 			codeSize := st.evm.StateDB.GetCodeSize(*msg.To)
 			_, isPrecompile := vm.PrecompileAllNativeAddresses[*msg.To]
 

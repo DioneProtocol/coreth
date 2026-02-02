@@ -20,7 +20,7 @@ var (
 	ApricotPhase3MaxBaseFee = big.NewInt(params.ApricotPhase3MaxBaseFee)
 	ApricotPhase4MinBaseFee = big.NewInt(params.ApricotPhase4MinBaseFee)
 	ApricotPhase4MaxBaseFee = big.NewInt(params.ApricotPhase4MaxBaseFee)
-	ApricotPhase7MinBaseFee = big.NewInt(params.ApricotPhase7MinBaseFee)
+	PyruniMinBaseFee        = big.NewInt(params.PyruniMinBaseFee)
 
 	ApricotPhase4BaseFeeChangeDenominator = new(big.Int).SetUint64(params.ApricotPhase4BaseFeeChangeDenominator)
 	ApricotPhase5BaseFeeChangeDenominator = new(big.Int).SetUint64(params.ApricotPhase5BaseFeeChangeDenominator)
@@ -45,7 +45,7 @@ func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uin
 		isApricotPhase3 = config.IsApricotPhase3(parent.Time)
 		isApricotPhase4 = config.IsApricotPhase4(parent.Time)
 		isApricotPhase5 = config.IsApricotPhase5(parent.Time)
-		isApricotPhase7 = config.IsApricotPhase7(parent.Time)
+		isPyruni        = config.IsPyruni(parent.Time)
 	)
 	if !isApricotPhase3 || parent.Number.Cmp(common.Big0) == 0 {
 		initialSlice := make([]byte, params.DynamicFeeExtraDataSize)
@@ -178,8 +178,8 @@ func CalcBaseFee(config *params.ChainConfig, parent *types.Header, timestamp uin
 
 	// Ensure that the base fee does not increase/decrease outside of the bounds
 	switch {
-	case isApricotPhase7:
-		baseFee = selectBigWithinBounds(ApricotPhase7MinBaseFee, baseFee, nil)
+	case isPyruni:
+		baseFee = selectBigWithinBounds(PyruniMinBaseFee, baseFee, nil)
 	case isApricotPhase5:
 		baseFee = selectBigWithinBounds(ApricotPhase4MinBaseFee, baseFee, nil)
 	case isApricotPhase4:
