@@ -92,7 +92,6 @@ type StateDB interface {
 	Snapshot() int
 
 	AddLog(*types.Log)
-	GetLogData() (topics [][]common.Hash, data [][]byte)
 	AddPreimage(common.Hash, []byte)
 }
 
