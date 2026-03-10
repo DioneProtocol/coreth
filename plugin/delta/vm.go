@@ -987,8 +987,6 @@ func (vm *VM) distributeFees(totalBaseFee *big.Int, totalPriorityFee *big.Int, s
 		nodes := rules.OrionNodes.GetNodesList(state)
 		vm.orionNodes = nodes
 		vm.orionSyncTimestamp = timestamp
-
-		vm.ctx.FeeCollector.UpdateOrionsNodes(vm.orionNodes, timestamp)
 	}
 
 	orionNodesAmount := uint64(len(vm.orionNodes))
