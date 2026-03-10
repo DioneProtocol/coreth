@@ -790,7 +790,7 @@ func (p *BlobPool) Reset(oldHead, newHead *types.Header) {
 		}
 	}
 	// Flush out any blobs from limbo that are older than the latest finality
-	if p.chain.Config().IsCancun(p.head.Number, p.head.Time) {
+	if p.chain.Config().IsCancun(p.head.Time) {
 		p.limbo.finalize(p.chain.CurrentFinalBlock())
 	}
 	_, baseFee, err := dummy.EstimateNextBaseFee(

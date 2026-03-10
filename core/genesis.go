@@ -299,7 +299,6 @@ func (g *Genesis) toBlock(db ethdb.Database, triedb *trie.Database) *types.Block
 		head.Difficulty = params.GenesisDifficulty
 	}
 	if conf := g.Config; conf != nil {
-		num := new(big.Int).SetUint64(g.Number)
 		if conf.IsApricotPhase3(g.Timestamp) {
 			if g.BaseFee != nil {
 				head.BaseFee = g.BaseFee
@@ -307,7 +306,7 @@ func (g *Genesis) toBlock(db ethdb.Database, triedb *trie.Database) *types.Block
 				head.BaseFee = new(big.Int).SetInt64(params.ApricotPhase3InitialBaseFee)
 			}
 		}
-		if conf.IsCancun(num, g.Timestamp) {
+		if conf.IsCancun(g.Timestamp) {
 			head.ExcessBlobGas = g.ExcessBlobGas
 			head.BlobGasUsed = g.BlobGasUsed
 			if head.ExcessBlobGas == nil {

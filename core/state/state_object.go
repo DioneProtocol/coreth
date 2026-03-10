@@ -450,7 +450,7 @@ func (s *stateObject) AddBalanceMultiCoin(coinID common.Hash, amount *big.Int, d
 
 		return
 	}
-	s.SetBalanceMultiCoin(coinID, new(big.Int).Add(s.BalanceMultiCoin(coinID, db), amount), db)
+	s.SetBalanceMultiCoin(coinID, new(big.Int).Add(s.BalanceMultiCoin(coinID, db), amount))
 }
 
 // SubBalanceMultiCoin removes amount of coinID from s's balance.
@@ -459,10 +459,10 @@ func (s *stateObject) SubBalanceMultiCoin(coinID common.Hash, amount *big.Int, d
 	if amount.Sign() == 0 {
 		return
 	}
-	s.SetBalanceMultiCoin(coinID, new(big.Int).Sub(s.BalanceMultiCoin(coinID, db), amount), db)
+	s.SetBalanceMultiCoin(coinID, new(big.Int).Sub(s.BalanceMultiCoin(coinID, db), amount))
 }
 
-func (s *stateObject) SetBalanceMultiCoin(coinID common.Hash, amount *big.Int, db Database) {
+func (s *stateObject) SetBalanceMultiCoin(coinID common.Hash, amount *big.Int) {
 	s.EnableMultiCoin()
 	NormalizeCoinID(&coinID)
 	s.SetState(coinID, common.BigToHash(amount))

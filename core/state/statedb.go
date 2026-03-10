@@ -262,20 +262,6 @@ func (s *StateDB) Logs() []*types.Log {
 	return logs
 }
 
-// GetLogData returns the underlying topics and data from each log included in the StateDB
-// Test helper function.
-func (s *StateDB) GetLogData() ([][]common.Hash, [][]byte) {
-	var logData [][]byte
-	var topics [][]common.Hash
-	for _, lgs := range s.logs {
-		for _, log := range lgs {
-			topics = append(topics, log.Topics)
-			logData = append(logData, common.CopyBytes(log.Data))
-		}
-	}
-	return topics, logData
-}
-
 // AddPreimage records a SHA3 preimage seen by the VM.
 func (s *StateDB) AddPreimage(hash common.Hash, preimage []byte) {
 	if _, ok := s.preimages[hash]; !ok {
@@ -510,7 +496,7 @@ func (s *StateDB) SubBalanceMultiCoin(addr common.Address, coinID common.Hash, a
 func (s *StateDB) SetBalanceMultiCoin(addr common.Address, coinID common.Hash, amount *big.Int) {
 	stateObject := s.GetOrNewStateObject(addr)
 	if stateObject != nil {
-		stateObject.SetBalanceMultiCoin(coinID, amount, s.db)
+		stateObject.SetBalanceMultiCoin(coinID, amount)
 	}
 }
 
