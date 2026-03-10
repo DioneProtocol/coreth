@@ -152,6 +152,8 @@ func (b *Block) Accept(context.Context) error {
 		}
 	}
 
+	b.vm.ctx.FeeCollector.UpdateOrionsNodes(vm.orionNodes, vm.orionSyncTimestamp)
+
 	// Update VM state for atomic txs in this block. This includes updating the
 	// atomic tx repo, atomic trie, and shared memory.
 	atomicState, err := b.vm.atomicBackend.GetVerifiedAtomicState(common.Hash(b.ID()))
